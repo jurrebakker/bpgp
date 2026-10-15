@@ -1,0 +1,10 @@
+.release
+.aiscripts
+ExternalLibs
+locales_*
+TESTING
+merger.py
+report.log
+old_bidding_GUI.lua
+scripts/mdin*
+scripts/mdout*
