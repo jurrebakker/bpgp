@@ -971,7 +971,6 @@ local function ValidateBidLimited(auction, item, name, userResponse)
     if (not auction:GetUseOS()) and (userResponse:Type() == CONSTANTS.BID_TYPE.OFF_SPEC) then
         return false, CONSTANTS.AUCTION_COMM.DENY_BID_REASON.OFF_SPEC_NOT_ALLOWED
     end
-    local value = userResponse:Value()
     -- sanity check
     local profile = CLM.MODULES.ProfileManager:GetProfileByName(name)
     if not profile then return false, CONSTANTS.AUCTION_COMM.DENY_BID_REASON.NOT_IN_ROSTER end

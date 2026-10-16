@@ -289,7 +289,6 @@ function Filters:Filter(playerName, playerClass, searchFieldsList)
         end
     end
 
-    local profile = CLM.MODULES.ProfileManager:GetProfileByName(playerName)
     local guildies = CLM.MODULES.TrustInfoProvider:GetGuildies()
     local inGuild = (guildies[playerName] ~= nil)
     if self.rank and self.inGuild then

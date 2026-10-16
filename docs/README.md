@@ -2,11 +2,14 @@
 
 Planning documents for BP EPGP. Code-level documentation stays next to the code (`ARCHITECTURE.md`, comments).
 
+**Where are we?** See the status table at the top of [release-plan-v1.md §6](release-plan-v1.md#6-work-plan-phases).
+
 | Folder / file | What goes there |
 |---|---|
 | [release-plan-v1.md](release-plan-v1.md) | The v1.0 plan: scope, architecture, phases, test checklist, releasing |
 | [sync-and-security.md](sync-and-security.md) | How ledger sync works, security issues found, decisions S1-S9 |
 | [features/](features/) | Planned features: agreed on, scoped, ready to be built |
+| [design/](design/) | The Claude Design spec for the UI redesign (open the `.dc.html` in a browser) |
 | [ideas/](ideas/) | Loose ideas that may grow into features. Rough notes are fine |
 
 ## From idea to feature
@@ -44,10 +47,10 @@ How we'll verify it in-game.
 ## Index
 
 ### Features
-- [UI overhaul: settings as tabs in the main window](features/ui-overhaul.md) (planned, v1.0)
+- [UI overhaul: settings in the main window](features/ui-overhaul.md) (planned, v1.0; per-setting keep/drop list. Layout decisions D4/D8 are replaced by the redesign)
 - [Test mode: isolated test ledger and simulation tools](features/test-mode.md) (done, v1.0)
 - [Claude Design brief: native Blizzard look for every window](features/ui-design-brief.md) (prompt for the UI redesign)
-- [UI redesign: native Blizzard windows](features/ui-redesign.md) (planned, v1.0, Phase 9; spec in [design/](design/))
+- [UI redesign: native Blizzard windows](features/ui-redesign.md) (in progress, v1.0, Phase 9: 9a done, 9b next; spec in [design/](design/))
 
 ### Ideas
 _None yet._

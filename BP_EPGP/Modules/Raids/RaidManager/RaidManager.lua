@@ -333,14 +333,12 @@ function RaidManager:StartRaid(raid)
     end
 
     local players = {}
-    local joining_players_guids = {}
     for i=1,MAX_RAID_MEMBERS do
         local name = GroupMemberInfo(i)
         if name then
             local profile = CLM.MODULES.ProfileManager:GetProfileByName(UTILS.Disambiguate(name))
             if profile then
                 tinsert(players, profile)
-                joining_players_guids[profile:GUID()] = true
             end
         end
     end

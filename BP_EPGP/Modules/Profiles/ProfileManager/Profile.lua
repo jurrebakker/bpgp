@@ -3,7 +3,7 @@ local  _, CLM = ...
 ---@cast CLM CLMNamespace
 -- ------ CLM common cache ------- --
 -- local LOG       = CLM.LOG
-local CONSTANTS = CLM.CONSTANTS
+-- local CONSTANTS = CLM.CONSTANTS
 local UTILS     = CLM.UTILS
 -- ------------------------------- --
 
