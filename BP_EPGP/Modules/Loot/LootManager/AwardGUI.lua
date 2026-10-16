@@ -180,7 +180,7 @@ local function UpdateOptions(self)
                     self.itemLink,
                     UTILS.ColorCodeText(Ambiguate(self.awardPlayer, "none"), "FFD100"),
                     tostring(self.awardValue),
-                    (self.roster and self.roster:GetPointType() == CONSTANTS.POINT_TYPE.EPGP) and CLM.L["GP"] or CLM.L["DKP"]
+                    CLM.L["GP"]
                 )
             end),
             width = 0.55,

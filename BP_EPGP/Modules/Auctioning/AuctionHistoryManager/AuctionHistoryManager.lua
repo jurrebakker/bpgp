@@ -90,7 +90,6 @@ function AuctionHistoryManager:AddAuctionItem(auctionItem, uuid)
         local auction = CLM.MODULES.AuctionManager:GetCurrentAuctionInfo()
         local roster = auction:GetRoster()
         local namedButtonsMode = auction:GetNamedButtonsMode()
-        local isEPGP = (roster:GetPointType() == CONSTANTS.POINT_TYPE.EPGP)
         local bids = {}
         local bidNames = {}
         local rolls = {}
@@ -120,7 +119,6 @@ function AuctionHistoryManager:AddAuctionItem(auctionItem, uuid)
             rolls     = rolls,
             upgraded  = items,
             time      = auction:GetEndTime(),
-            isEPGP    = isEPGP,
             uuid      = uuidData
         })
         CLM.GUI.AuctionHistory:Refresh(true)
@@ -195,7 +193,7 @@ function AuctionHistoryManager:PostData(data)
             UTILS.SendChatMessage(
                 bidder .. ": " ..
                 tostring(bid) .. " " ..
-                (data.isEPGP and CLM.L["GP"] or CLM.L["DKP"]) ..
+                CLM.L["GP"] ..
                 rolls ..
                 bidName ..
                 items,

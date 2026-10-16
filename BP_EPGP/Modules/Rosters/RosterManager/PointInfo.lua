@@ -24,7 +24,6 @@ function PointInfo:New()
     -- Points received
     o.received = 0
     -- Pointes not received due to caps
-    o.blocked = 0
     -- Points lost due to decay
     o.decayed = 0
 
@@ -48,11 +47,6 @@ end
 ---@param value number
 function PointInfo:AddReceived(value)
     Add(self, "received", value)
-end
-
----@param value number
-function PointInfo:AddBlocked(value)
-    Add(self, "blocked", value)
 end
 
 ---@param value number

@@ -797,16 +797,6 @@ function UTILS.WeekStart(week, offset)
     return ((week * 604800) + (offset or 0))
 end
 
----@return number
-function UTILS.GetWeekOffsetEU()
-    return 543600
-end
-
----@return number
-function UTILS.GetWeekOffsetUS()
-    return 486000
-end
-
 ---@param number number
 ---@param decimals number?
 ---@return number
@@ -1192,19 +1182,15 @@ function UTILS.GetRosterConditionalFieldName(key, roster, prefix, suffix)
     return name
 end
 
--- TODO this doesnt look good in history, we dont want DKP displayed there really
-function UTILS.DecodePointTypeChangeName(pointType, changeType, displayDKP)
-    local points = displayDKP and CLM.L["DKP"] or "" -- not test_cameraDynamicPitch
-    if pointType == CONSTANTS.POINT_TYPE.EPGP then
-        if changeType == CONSTANTS.POINT_CHANGE_TYPE.SPENT then
-            points = CLM.L["GP"]
-        elseif changeType == CONSTANTS.POINT_CHANGE_TYPE.POINTS then
-            points = CLM.L["EP"]
-        else
-            points = CLM.L["EP/GP"]
-        end
+---@param changeType number
+---@return string
+function UTILS.DecodePointTypeChangeName(changeType)
+    if changeType == CONSTANTS.POINT_CHANGE_TYPE.SPENT then
+        return CLM.L["GP"]
+    elseif changeType == CONSTANTS.POINT_CHANGE_TYPE.POINTS then
+        return CLM.L["EP"]
     end
-    return points
+    return CLM.L["EP/GP"]
 end
 
 local raidChannels = UTILS.Set({"RAID", "RAID_WARNING"})

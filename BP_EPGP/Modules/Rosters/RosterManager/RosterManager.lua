@@ -24,12 +24,10 @@ local function initializePoints(entry, roster, GUID)
         roster:SetStandings(GUID, basePoints)
         CLM.MODULES.PointManager:AddFakePointHistory(roster, { GUID }, basePoints, CONSTANTS.POINT_CHANGE_REASON.ROSTER_JOIN, entry:time(), entry:creatorFull(), nil, CONSTANTS.POINT_CHANGE_TYPE.POINTS)
     end
-    if roster:GetPointType() == CONSTANTS.POINT_TYPE.EPGP then
-        local baseSpent = roster:GetConfiguration("baseSpent")
-        if baseSpent > 0 then
-            roster:UpdateSpent(GUID, baseSpent)
-            CLM.MODULES.PointManager:AddFakePointHistory(roster, { GUID }, baseSpent, CONSTANTS.POINT_CHANGE_REASON.ROSTER_JOIN, entry:time(), entry:creatorFull(), nil, CONSTANTS.POINT_CHANGE_TYPE.SPENT)
-        end
+    local baseSpent = roster:GetConfiguration("baseSpent")
+    if baseSpent > 0 then
+        roster:UpdateSpent(GUID, baseSpent)
+        CLM.MODULES.PointManager:AddFakePointHistory(roster, { GUID }, baseSpent, CONSTANTS.POINT_CHANGE_REASON.ROSTER_JOIN, entry:time(), entry:creatorFull(), nil, CONSTANTS.POINT_CHANGE_TYPE.SPENT)
     end
 end
 
@@ -50,13 +48,11 @@ function RosterManager:Initialize()
             LOG:TraceAndCount("mutator(RosterCreate)")
             local uid = entry:rosterUid()
             local name = entry:name()
-            local pointType = entry:pointType()
             if self.cache.rosters[name] or self.cache.rostersUidMap[uid] then
                 LOG:Debug("Roster [%s:%s] already exists. Verify data integrity with other officers.", name, uid)
                 return
             end
-            if not (pointType and CONSTANTS.POINT_TYPES[pointType] ~= nil) then return end
-            local roster = CLM.MODELS.Roster:New(uid, pointType)
+            local roster = CLM.MODELS.Roster:New(uid)
             self.cache.rosters[name] = roster
             self.cache.rostersUidMap[uid] = name
         end))
@@ -304,9 +300,8 @@ function RosterManager:GetRosterNameByUid(uid)
     return self.cache.rostersUidMap[uid]
 end
 
----@param pointType number
 ---@param name string?
-function RosterManager:NewRoster(pointType, name)
+function RosterManager:NewRoster(name)
     LOG:Trace("RosterManager:NewRoster()")
 
     name = name or self:GenerateName()
@@ -319,11 +314,7 @@ function RosterManager:NewRoster(pointType, name)
         uid = uid +  1
     end
 
-    if not (pointType and CONSTANTS.POINT_TYPES[pointType] ~= nil) then
-        LOG:Error("RosterManager:NewRoster(): Invalid point type")
-        return
-    end
-    CLM.MODULES.LedgerManager:Submit(CLM.MODELS.LEDGER.ROSTER.Create:new(uid, name, pointType), true)
+    CLM.MODULES.LedgerManager:Submit(CLM.MODELS.LEDGER.ROSTER.Create:new(uid, name), true)
 end
 
 ---@param name string

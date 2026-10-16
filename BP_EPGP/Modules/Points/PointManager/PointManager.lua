@@ -47,8 +47,7 @@ local function update_profile_standings(mutate, roster, targets, value, reason, 
                     {
                         value = value,
                         reason = reason,
-                        changeType = changeType,
-                        rosterType = roster:GetPointType()
+                        changeType = changeType
                     }, timestamp, GUID)
                 if not alreadyApplied[GUID] then
                     mutate(roster, GUID, value, timestamp)
@@ -144,16 +143,7 @@ local function mutate_decay_spent(roster, GUID, value, timestamp)
 end
 
 local function verify_modify_point_change_type(roster, pointChangeType, functionName)
-    local success = false
-    if (roster:GetPointType() == CONSTANTS.POINT_TYPE.EPGP) then
-        if CONSTANTS.POINT_AWARD_TYPES[pointChangeType] then
-            success = true
-        end
-    else
-        if pointChangeType == CONSTANTS.POINT_CHANGE_TYPE.POINTS then
-            success = true
-        end
-    end
+    local success = CONSTANTS.POINT_AWARD_TYPES[pointChangeType] and true or false
     if not success then
         LOG:Error("%s: Invalid point award type (%s)", functionName, pointChangeType)
     end
@@ -172,16 +162,7 @@ local function verify_set_point_change_type(roster, pointChangeType, functionNam
 end
 
 local function verify_decay_point_change_type(roster, pointChangeType, functionName)
-    local success = false
-    if (roster:GetPointType() == CONSTANTS.POINT_TYPE.EPGP) then
-        if CONSTANTS.POINT_DECAY_TYPES[pointChangeType] then
-            success = true
-        end
-    else
-        if pointChangeType == CONSTANTS.POINT_CHANGE_TYPE.POINTS then
-            success = true
-        end
-    end
+    local success = CONSTANTS.POINT_DECAY_TYPES[pointChangeType] and true or false
     if not success then
         LOG:Error("%s: Invalid point decay type (%s)", functionName, pointChangeType)
     end

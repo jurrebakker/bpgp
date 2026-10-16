@@ -58,23 +58,11 @@ local configDecodeFunctions = {
     itemValueMode = (function(value)
         return CLM.L["Item value mode"], CONSTANTS.ITEM_VALUE_MODES_GUI[value] or ""
     end),
-    zeroSumBank = (function(value)
-        return CLM.L["Zero-Sum Bank"], boolToString(value)
-    end),
-    zeroSumBankInflation = (function(value)
-        return CLM.L["Zero-Sum Bank Inflation"], safeToString(value)
-    end),
     auctionTime = (function(value)
         return CLM.L["Auction Time"], safeToString(value)
     end),
     antiSnipe = (function(value)
         return CLM.L["Anti-snipe"], safeToString(value)
-    end),
-    allowBelowMinStandings = (function(value)
-        return CLM.L["Allow going below minimum points"], boolToString(value)
-    end),
-    allowNegativeBidders = (function(value)
-        return CLM.L["Allow bidding below minimum points"], boolToString(value)
     end),
     onTimeBonus = (function(value)
         return CLM.L["On Time Bonus"], boolToString(value)
@@ -82,23 +70,11 @@ local configDecodeFunctions = {
     onTimeBonusValue = (function(value)
         return CLM.L["On Time Bonus value"], safeToString(value)
     end),
-    hardCap = (function(value)
-        return CLM.L["Hard cap"], safeToString(value)
-    end),
-    weeklyCap = (function(value)
-        return CLM.L["Weekly cap"], safeToString(value)
-    end),
-    weeklyReset = (function(value)
-        return CLM.L["Weekly reset"], CONSTANTS.WEEKLY_RESETS_GUI[value] or ""
-    end),
     roundDecimals = (function(value)
         return CLM.L["Round to"], safeToString(value)
     end),
     minimalIncrement = (function(value)
         return CLM.L["Min bid increment"], safeToString(value)
-    end),
-    tax = (function(value)
-        return CLM.L["Tax"], safeToString(value)
     end),
     minimumPoints = (function(value)
         return CLM.L["Minimum points (DKP / EP)"], safeToString(value)
@@ -253,8 +229,7 @@ local describeFunctions  = {
     ["R0"] = (function(entry)
         return
             entry:rosterUid() ..
-            " <" .. UTILS.ColorCodeText(entry:name(), "ebb434") .. "> "  ..
-            (CONSTANTS.POINT_TYPES_GUI[entry:pointType()] or "")
+            " <" .. UTILS.ColorCodeText(entry:name(), "ebb434") .. ">"
     end),
     ["R1"] = (function(entry)
         return

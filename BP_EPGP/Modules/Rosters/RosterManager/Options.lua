@@ -19,7 +19,6 @@ local CBTYPE = {
 ---@field copy_source_name string?
 ---@field externalOptions table
 ---@field handlers table
----@field pointType number
 ---@field readOnly boolean
 ---@field rosterName string
 local RosterManagerOptions = { externalOptions = {} }
@@ -36,7 +35,6 @@ end
 
 ---@return nil
 function RosterManagerOptions:Initialize()
-    self.pointType = CONSTANTS.POINT_TYPE.DKP
     self.rosterName = CLM.MODULES.RosterManager:GenerateName()
     self.readOnly = not CLM.MODULES.ACL:CheckLevel(CONSTANTS.ACL.LEVEL.MANAGER)
     self.handlers = {
@@ -81,12 +79,6 @@ function RosterManagerOptions:Initialize()
         general_on_time_bonus_value_set = (function(name, value)
             SetRosterOption(name, "onTimeBonusValue", value)
         end),
-        general_weekly_reset_timezone_get = (function(name)
-            return GetRosterOption(name, "weeklyReset")
-        end),
-        general_weekly_reset_timezone_set = (function(name, value)
-            SetRosterOption(name, "weeklyReset", value)
-        end),
         general_named_buttons_toggle_set = (function(name, value)
             SetRosterOption(name, "namedButtons", value)
         end),
@@ -94,12 +86,6 @@ function RosterManagerOptions:Initialize()
             return GetRosterOption(name, "namedButtons")
         end),
         -- Caps
-        general_hard_cap_get = (function(name)
-            return tostring(GetRosterOption(name, "hardCap"))
-        end),
-        general_hard_cap_set = (function(name, value)
-            SetRosterOption(name, "hardCap", value)
-        end),
         general_round_decimals_get = (function(name)
             return GetRosterOption(name, "roundDecimals")
         end),
@@ -118,12 +104,6 @@ function RosterManagerOptions:Initialize()
         general_min_gp_set = (function(name, value)
             SetRosterOption(name, "minGP", value)
         end),
-        general_weekly_cap_get = (function(name)
-            return tostring(GetRosterOption(name, "weeklyCap"))
-        end),
-        general_weekly_cap_set = (function(name, value)
-            SetRosterOption(name, "weeklyCap", value)
-        end),
         -- Auction
         auction_auction_type_get = (function(name)
             return GetRosterOption(name, "auctionType")
@@ -137,30 +117,6 @@ function RosterManagerOptions:Initialize()
         auction_item_value_mode_set = (function(name, value)
             SetRosterOption(name, "itemValueMode", value)
         end),
-        auction_base_always_get = (function(name)
-            return GetRosterOption(name, "baseAlways")
-        end),
-        auction_base_always_set = (function(name, value)
-            SetRosterOption(name, "baseAlways", value)
-        end),
-        auction_allin_always_get = (function(name)
-            return GetRosterOption(name, "allInAlways")
-        end),
-        auction_allin_always_set = (function(name, value)
-            SetRosterOption(name, "allInAlways", value)
-        end),
-        auction_always0_get = (function(name)
-            return GetRosterOption(name, "always0")
-        end),
-        auction_always0_set = (function(name, value)
-            SetRosterOption(name, "always0", value)
-        end),
-        auction_equalbids_get = (function(name)
-            return GetRosterOption(name, "allowEqualMax")
-        end),
-        auction_equalbids_set = (function(name, value)
-            SetRosterOption(name, "allowEqualMax", value)
-        end),
         auction_cancelpass_get = (function(name)
             return GetRosterOption(name, "allowCancelPass")
         end),
@@ -172,36 +128,6 @@ function RosterManagerOptions:Initialize()
         end),
         auction_use_os_set = (function(name, value)
             SetRosterOption(name, "useOS", value)
-        end),
-        auction_zero_sum_bank_get = (function(name)
-            return GetRosterOption(name, "zeroSumBank")
-        end),
-        auction_zero_sum_bank_set = (function(name, value)
-            SetRosterOption(name, "zeroSumBank", value)
-        end),
-        auction_zero_sum_bank_inflation_value_get = (function(name)
-            return tostring(GetRosterOption(name, "zeroSumBankInflation"))
-        end),
-        auction_zero_sum_bank_inflation_value_set = (function(name, value)
-            SetRosterOption(name, "zeroSumBankInflation", value)
-        end),
-        auction_allow_below_min_standings_get = (function(name)
-            return GetRosterOption(name, "allowBelowMinStandings")
-        end),
-        auction_allow_below_min_standings_set = (function(name, value)
-            SetRosterOption(name, "allowBelowMinStandings", value)
-        end),
-        auction_minimal_increment_get = (function(name)
-            return tostring(GetRosterOption(name, "minimalIncrement"))
-        end),
-        auction_minimal_increment_set = (function(name, value)
-            SetRosterOption(name, "minimalIncrement", value)
-        end),
-        auction_tax_get = (function(name)
-            return tostring(GetRosterOption(name, "tax"))
-        end),
-        auction_tax_set = (function(name, value)
-            SetRosterOption(name, "tax", value)
         end),
         auction_auction_time_get = (function(name)
             return tostring(GetRosterOption(name, "auctionTime"))
@@ -457,7 +383,6 @@ function RosterManagerOptions:GenerateRosterOptions(name)
     end
     local isManager = CLM.MODULES.ACL:CheckLevel(CONSTANTS.ACL.LEVEL.MANAGER)
 
-    local isEPGP = (roster:GetPointType() == CONSTANTS.POINT_TYPE.EPGP)
     local disableManage = (function() return not isManager end)
 
 
@@ -484,19 +409,6 @@ function RosterManagerOptions:GenerateRosterOptions(name)
                         type = "input",
                         width = 1,
                         order = 0
-                    },
-                    point_type = { -- informative
-                        name = CLM.L["Point type"],
-                        type = "select",
-                        -- style = "radio",
-                        get = (function(i)
-                            if not roster then return nil end
-                            return roster:GetPointType()
-                        end),
-                        order = 1,
-                        disabled = true,
-                        width = 1,
-                        values = CONSTANTS.POINT_TYPES_GUI
                     },
                     round_decimals = {
                         name = CLM.L["Rounding"],
@@ -530,9 +442,7 @@ function RosterManagerOptions:GenerateRosterOptions(name)
                             local v = {}
                             local r = CLM.MODULES.RosterManager:GetRosters()
                             for n, _r in pairs(r) do
-                                if _r:GetPointType() == roster:GetPointType() then
-                                    v[n] = n
-                                end
+                                v[n] = n
                             end
                             return v
                         end),
@@ -575,39 +485,6 @@ function RosterManagerOptions:GenerateRosterOptions(name)
                         disabled = disableManage,
                         width = 1
                     },
-                    point_caps_header = {
-                        name = CLM.L["Point caps"],
-                        type = "header",
-                        order = 17,
-                        width = "full"
-                    },
-                    weekly_reset_timezone = {
-                        name = CLM.L["Weekly reset timezone"],
-                        desc = CLM.L["Select weekly reset timezone. EU: Wed 07:00 GMT or US: Tue 15:00 GMT"],
-                        type = "select",
-                        -- style = "radio",
-                        disabled = disableManage,
-                        order = 18,
-                        values = CONSTANTS.WEEKLY_RESETS_GUI
-                    },
-                    weekly_cap = {
-                        name = CLM.L["Weekly cap"],
-                        desc = CLM.L["Maximum point cap player can receive per raid week. Set to 0 to disable."],
-                        type = "input",
-                        disabled = disableManage,
-                        order = 19,
-                        pattern = CONSTANTS.REGEXP_FLOAT_POSITIVE,
-                        -- width = 0.6
-                    },
-                    hard_cap = {
-                        name = CLM.L["Hard cap"],
-                        desc = CLM.L["Maximum point cap that player can have. Set to 0 to disable."],
-                        type = "input",
-                        disabled = disableManage,
-                        order = 20,
-                        pattern = CONSTANTS.REGEXP_FLOAT_POSITIVE,
-                        -- width = 0.6
-                    },
                     starting_points_header = {
                         name = CLM.L["Starting points"],
                         type = "header",
@@ -615,8 +492,8 @@ function RosterManagerOptions:GenerateRosterOptions(name)
                         width = "full"
                     },
                     starting_points = {
-                        name = function() return string.format(CLM.L["Starting %s"], isEPGP and CLM.L["EP"] or CLM.L["DKP"]) end,
-                        desc = function() return string.format(CLM.L["%s to be awarded to player when joining roster."], isEPGP and CLM.L["EP"] or CLM.L["DKP"]) end,
+                        name = function() return string.format(CLM.L["Starting %s"], CLM.L["EP"]) end,
+                        desc = function() return string.format(CLM.L["%s to be awarded to player when joining roster."], CLM.L["EP"]) end,
                         type = "input",
                         disabled = disableManage,
                         order = 22,
@@ -628,7 +505,6 @@ function RosterManagerOptions:GenerateRosterOptions(name)
                         type = "input",
                         disabled = disableManage,
                         order = 23,
-                        hidden = not isEPGP,
                         pattern = CONSTANTS.REGEXP_FLOAT_POSITIVE,
                     },
                     named_buttons_header = {
@@ -642,7 +518,6 @@ function RosterManagerOptions:GenerateRosterOptions(name)
                         type = "header",
                         order = 36,
                         width = "full",
-                        hidden = not isEPGP,
                     },
                     min_gp = {
                         name = CLM.L["Minimum GP"],
@@ -651,7 +526,6 @@ function RosterManagerOptions:GenerateRosterOptions(name)
                         disabled = disableManage,
                         pattern = CONSTANTS.REGEXP_FLOAT_POSITIVE,
                         order = 37,
-                        hidden = not isEPGP,
                     },
                     round_pr = {
                         name = CLM.L["PR Rounding"],
@@ -660,7 +534,6 @@ function RosterManagerOptions:GenerateRosterOptions(name)
                         width = 1,
                         disabled = disableManage,
                         order = 38,
-                        hidden = not isEPGP,
                         values = CONSTANTS.ALLOWED_ROUNDINGS_GUI
                     },
                 },
@@ -797,104 +670,6 @@ function RosterManagerOptions:GenerateRosterOptions(name)
         }
         order = order + 1
     end
-    -- Point Specific auction settings
-    if roster:GetPointType() == CONSTANTS.POINT_TYPE.DKP then
-        options.args.auction.args.base_always = {
-            name = CLM.L["Always allow Base bids"],
-            desc = CLM.L["Enable to allow base bids even if higher bids are present if player didn't bid yet. Affects Open-Ascending Auction."],
-            type = "toggle",
-            disabled = disableManage,
-            width = 1,
-            order = 12.1
-        }
-        options.args.auction.args.allin_always = {
-            name = CLM.L["Always allow All-In bids"],
-            desc = CLM.L["Enable to always allow All-In bids. Affects Open-Ascending Auction."],
-            type = "toggle",
-            disabled = disableManage,
-            width = 1,
-            order = 12.2
-        }
-        options.args.auction.args.equalbids = {
-            name = CLM.L["Allow equal bids"],
-            desc = CLM.L["Enable to allow equal bids. Affects Open-Ascending Auction."],
-            type = "toggle",
-            disabled = disableManage,
-            width = 1,
-            order = 12.3
-        }
-        options.args.auction.args.always0 = {
-            name = CLM.L["Always allow 0 bids"],
-            desc = CLM.L["Enable to always allow 0 bids. Affects ascending item value mode."],
-            type = "toggle",
-            disabled = disableManage,
-            width = 1,
-            order = 12.4
-        }
-        options.args.auction.args.item_value_mode = {
-            name = CLM.L["Item value mode"],
-            desc = CLM.L["|cff00ee44Single-Priced:|r Static value mode. Only bidding Base value is supported.\n\n|cff00ee44Ascending:|r Ranged value mode. Allows bidding any value in |cff44ee00<base, max>|r.\n\n|cff00ee44Tiered:|r Ranged value mode. Allows bidding only specific values. Up to 5 tiers are configurable in |cff44ee00<base, small, medium, large, max>|r."],
-            type = "select",
-            disabled = disableManage,
-            order = 5,
-            values = CONSTANTS.ITEM_VALUE_MODES_GUI
-        }
-        options.args.auction.args.zero_sum_header = {
-            name = CLM.L["Zero-Sum"],
-            type = "header",
-            order = 7,
-            width = "full"
-        }
-        options.args.auction.args.zero_sum_bank = {
-            name = CLM.L["Zero-Sum Bank"],
-            desc = CLM.L["Enable paid value splitting amongst raiders."],
-            type = "toggle",
-            disabled = disableManage,
-            width = 1,
-            order = 8
-        }
-        options.args.auction.args.zero_sum_bank_inflation_value = {
-            name = CLM.L["Zero-Sum Inflation Value"],
-            desc = CLM.L["Additional points to be given to players atop of the split value."],
-            type = "input",
-            disabled = disableManage,
-            pattern = CONSTANTS.REGEXP_FLOAT_POSITIVE,
-            width = 1,
-            order = 9
-        }
-        options.args.auction.args.allow_below_min_standings = {
-            name = CLM.L["Allow biding more than current standings"],
-            desc = CLM.L["Allow biding more than current standings and ending up with less than minimum standings."],
-            type = "toggle",
-            disabled = disableManage,
-            width = 2,
-            order = 11
-        }
-        options.args.auction.args.other_header = {
-            name = CLM.L["Other"],
-            type = "header",
-            order = 16,
-            width = "full"
-        }
-        options.args.auction.args.minimal_increment = {
-            name = CLM.L["Minimal increment"],
-            desc = CLM.L["Minimal value increment for open auction mode."],
-            type = "input",
-            disabled = disableManage,
-            pattern = CONSTANTS.REGEXP_FLOAT_POSITIVE,
-            width = 1,
-            order = 17
-        }
-        options.args.auction.args.tax = {
-            name = CLM.L["Tax"],
-            desc = CLM.L["Additional cost (tax) to add to the award value."],
-            type = "input",
-            disabled = disableManage,
-            pattern = CONSTANTS.REGEXP_FLOAT_POSITIVE,
-            width = 1,
-            order = 18
-        }
-    end
     return options
 end
 
@@ -904,7 +679,7 @@ function RosterManagerOptions:UpdateOptions()
             name = CLM.L["Create"],
             desc = CLM.L["Creates new roster with default configuration"],
             type = "execute",
-            func = function() CLM.MODULES.RosterManager:NewRoster(self.pointType, self.rosterName); self.rosterName = CLM.MODULES.RosterManager:GenerateName() end,
+            func = function() CLM.MODULES.RosterManager:NewRoster(self.rosterName); self.rosterName = CLM.MODULES.RosterManager:GenerateName() end,
             disabled = (function() return not CLM.MODULES.ACL:CheckLevel(CONSTANTS.ACL.LEVEL.MANAGER) end),
             order = 1
         },
@@ -916,16 +691,6 @@ function RosterManagerOptions:UpdateOptions()
             get = (function(i) return self.rosterName end),
             disabled = (function() return not CLM.MODULES.ACL:CheckLevel(CONSTANTS.ACL.LEVEL.MANAGER) end),
             order = 2,
-        },
-        point_type = {
-            name = CLM.L["Point type"],
-            desc = CLM.L["Select DKP or EPGP point system."],
-            type = "select",
-            set = (function(i, v) self.pointType = v end),
-            get = (function(i) return self.pointType end),
-            order = 3,
-            -- disabled = true,--(function() return not CLM.MODULES.ACL:CheckLevel(CONSTANTS.ACL.LEVEL.MANAGER) end),
-            values = CONSTANTS.POINT_TYPES_GUI
         },
     }
     for _, name in pairs(CLM.MODULES.RosterManager:GetRostersUidMap()) do

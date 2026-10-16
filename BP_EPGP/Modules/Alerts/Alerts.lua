@@ -11,16 +11,7 @@ if not eventDispatcher then return end
 local function PointReceivedAlertFrame_SetUp(self, data)
     local value = tonumber(data.value) or 0
     local valueText = (value ~= nil) and tostring(value) or tostring(data.value)
-    local suffix = "DKP"
-    if data.rosterType == CLM.CONSTANTS.POINT_TYPE.EPGP then
-        if data.changeType == CLM.CONSTANTS.POINT_CHANGE_TYPE.POINTS then
-            suffix = "EP"
-        elseif data.changeType == CLM.CONSTANTS.POINT_CHANGE_TYPE.SPENT then
-            suffix = "GP"
-        else
-            suffix = "EP/GP"
-        end
-    end
+    local suffix = CLM.UTILS.DecodePointTypeChangeName(data.changeType)
     if data.reason ~= CLM.CONSTANTS.POINT_CHANGE_REASON.DECAY then
         self.Amount:SetText(string.format(CLM.L["%s %s"], valueText, suffix))
     else

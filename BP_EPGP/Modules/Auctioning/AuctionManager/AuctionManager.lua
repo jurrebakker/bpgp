@@ -983,7 +983,6 @@ local function ValidateBid(auction, uid, item, name, userResponse)
     local itemValueMode = auction:GetMode()
     local roster = auction:GetRoster()
     local values = item:GetValues()
-    local isDKP  = roster:GetPointType() == CONSTANTS.POINT_TYPE.DKP
     -- bid cancelling
     if userResponse:Type() == CONSTANTS.BID_TYPE.CANCEL then
         if auction:GetAllowCancelPass() then return true end
@@ -1019,11 +1018,6 @@ local function ValidateBid(auction, uid, item, name, userResponse)
     local current = roster:Standings(GUID)
     local minimumPoints = auction:GetMinimumPoints()
     if current < minimumPoints then return false, CONSTANTS.AUCTION_COMM.DENY_BID_REASON.BELOW_MIN_BIDDER end
-    -- allow negative standings after bid
-    local new = UTILS.round(current - value, auction:GetRounding())
-    if (new < minimumPoints) and not auction:GetAllowBelowMinStandings() and isDKP then
-        return false, CONSTANTS.AUCTION_COMM.DENY_BID_REASON.NEGATIVE_STANDING_AFTER
-    end
     -- bid value
     if itemValueMode == CONSTANTS.ITEM_VALUE_MODE.ASCENDING then
         -- ascending
@@ -1050,9 +1044,7 @@ local function ValidateBid(auction, uid, item, name, userResponse)
                     return false, CONSTANTS.AUCTION_COMM.DENY_BID_REASON.SPEC_CHANGE
                 end
             end
-            if not isDKP then
-                return true
-            end
+            do return true end -- EPGP: no standings limit; ascending mode goes in Phase 5
             if auction:GetAlwaysAllowAllInBids() and (current == value) then
                 return true
             end
@@ -1110,9 +1102,6 @@ local function ValidateBidLimited(auction, item, name, userResponse)
     local current = roster:Standings(GUID)
     local minimumPoints = auction:GetMinimumPoints()
     if current < minimumPoints then return false, CONSTANTS.AUCTION_COMM.DENY_BID_REASON.BELOW_MIN_BIDDER end
-    -- allow negative standings after bid
-    local new = UTILS.round(current - value, auction:GetRounding())
-    if (new < minimumPoints) and not auction:GetAllowBelowMinStandings() and (roster:GetPointType() == CONSTANTS.POINT_TYPE.DKP) then return false, CONSTANTS.AUCTION_COMM.DENY_BID_REASON.NEGATIVE_STANDING_AFTER end
     -- accept otherwise
     return true
 end
@@ -1143,7 +1132,7 @@ local function AnnounceBid(auction, uid, name, userResponse, newHighBid)
     message = string.format(CLM.L["New highest bid on %s: %s %s %s"],
                         auction:GetItemByUID(uid):GetItemLink(),
                         userResponse:Value(),
-                        auction:GetRoster():GetPointType() == CONSTANTS.POINT_TYPE.DKP and CLM.L["DKP"] or CLM.L["GP"],
+                        CLM.L["GP"],
                         nameModdified)
     UTILS.SendChatMessage(message, CHAT_MESSAGE_CHANNEL)
 end

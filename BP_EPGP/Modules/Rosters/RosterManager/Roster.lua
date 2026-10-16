@@ -7,9 +7,6 @@ local CONSTANTS = CLM.CONSTANTS
 local UTILS     = CLM.UTILS
 -- ------------------------------- --
 
-local weekOffsetEU = UTILS.GetWeekOffsetEU()
-local weekOffsetUS = UTILS.GetWeekOffsetUS()
-
 local GLOBAL_FAKE_INVENTORY_SLOT = "_GLOBAL"
 
 local SIX_MONTHS_IN_SECONDS = 60 * 60 * 24 * 30 * 6
@@ -36,7 +33,6 @@ end
 
 ---@class Roster
 ---@field uid integer
----@field pointType any
 ---@field configuration RosterConfiguration
 ---@field defaultSlotValues table
 ---@field fieldNames table
@@ -52,12 +48,10 @@ end
 ---@field recentRaidPointHistoryCache table?
 ---@field recentRaidPointHistoryCacheSeconds number?
 ---@field standings table
----@field weeklyGains table
 local Roster = {}
 ---@param uid integer
----@param pointType any
 ---@return Roster
-function Roster:New(uid, pointType)
+function Roster:New(uid)
     local o = {}
 
     setmetatable(o, self)
@@ -65,7 +59,6 @@ function Roster:New(uid, pointType)
 
     -- CONFIGURATION --
     o.uid  = tonumber(uid)
-    o.pointType = pointType
     o.configuration  = CLM.MODELS.RosterConfiguration:New()
     o.defaultSlotValues = { [GLOBAL_FAKE_INVENTORY_SLOT] = {} }
     fillSlotsArray(o.defaultSlotValues[GLOBAL_FAKE_INVENTORY_SLOT])
@@ -81,15 +74,9 @@ function Roster:New(uid, pointType)
     o.profilePointHistory = {}  -- Point changes in to players in roster (dict of lists)
     o.raidLoot = {}             -- Loot received in the roster (list). Time descending
     o.profileLoot = {}          -- Loot received by players (dict of lists). Time descending per player
-    o.weeklyGains = {}          -- Weekly point gains per player
     -- END ROSTER STATE --
 
     return o
-end
-
----@return any
-function Roster:GetPointType()
-    return self.pointType
 end
 
 ---@param GUID string
@@ -97,21 +84,17 @@ function Roster:AddProfileByGUID(GUID)
     LOG:Debug("Add profile [%s] to roster [%s]", GUID, self:UID())
     if self:IsProfileInRoster(GUID) then return end
     self.standings[GUID] = 0
-    self.weeklyGains[GUID] = {}
     self.profileLoot[GUID] = {}
     self.profilePointHistory[GUID] = {}
     self.inRoster[GUID] = true
     self.pointInfo[GUID] = CLM.MODELS.PointInfo:New()
-    if self:GetPointType() == CONSTANTS.POINT_TYPE.EPGP then
-        self.pointInfo[GUID].spent = self.configuration._.minGP
-    end
+    self.pointInfo[GUID].spent = self.configuration._.minGP
 end
 
 ---@param GUID string
 function Roster:RemoveProfileByGUID(GUID)
     LOG:Debug("Remove profile [%s] from roster [%s]", GUID, self:UID())
     self.standings[GUID] = nil
-    self.weeklyGains[GUID] = nil
     self.profileLoot[GUID] = nil
     self.profilePointHistory[GUID] = nil
     self.inRoster[GUID] = nil
@@ -180,45 +163,10 @@ function Roster:Priority(GUID)
     end
 end
 
---[[
- *****************
- * Weekly Values *
- *****************
-]]--
-
----@return table
-function Roster:GetAllWeeklyGains()
-    return self.weeklyGains or {}
-end
-
----@param GUID string
----@return table
-function Roster:GetWeeklyGainsForPlayer(GUID)
-    return self.weeklyGains[GUID] or {}
-end
-
----@param GUID string
----@return number
-function Roster:GetCurrentGainsForPlayer(GUID)
-    local week = UTILS.WeekNumber(GetServerTime(), (self.configuration._.weeklyReset == CONSTANTS.WEEKLY_RESET.EU) and weekOffsetEU or weekOffsetUS)
-    return self:GetWeeklyGainsForPlayerWeek(GUID, week)
-end
-
 ---@param GUID string
 ---@return PointInfo
 function Roster:GetPointInfoForPlayer(GUID)
     return self.pointInfo[GUID] or CLM.MODELS.PointInfo:New()
-end
-
----@param GUID string
----@param week number
----@return number
-function Roster:GetWeeklyGainsForPlayerWeek(GUID, week)
-    local weeklyGains = self.weeklyGains[GUID]
-    if not weeklyGains then
-        self.weeklyGains[GUID] = {}
-    end
-    return self.weeklyGains[GUID][week] or 0
 end
 
 --[[
@@ -231,48 +179,10 @@ end
 ---@param value number
 ---@param timestamp? number
 function Roster:UpdateStandings(GUID, value, timestamp)
-    timestamp = timestamp or 0
     LOG:Debug("Roster:UpdateStandings(%s, %s, %s)", GUID, self.uid, value)
-    local originalValue = value
-    local isPointGain = (value > 0)
-    local week = 0
-    local standings = self:Standings(GUID)
-    if isPointGain then
-        -- Handle the caps if the update was a positive (gain)
-        -- Hard Cap
-        if self.configuration.hasHardCap then
-            local hardCap = self.configuration._.hardCap
-            -- We do not modify points if they are already exceeded during newly introduced cap
-            if (standings >= hardCap) then
-                return
-            end
-            local maxGain = hardCap - standings
-            if maxGain <= 0 then -- sanity check (here it shouldn't be be 0 due to above check)
-                LOG:Debug("Roster:UpdateStandings(): maxGain %d for %s(%s) is lower than 0 for hard cap", maxGain, GUID, self.uid)
-                return
-            end
-            -- Saturate the initial value
-            if value > maxGain then value = maxGain end
-        end
-        -- Weekly Cap
-        week = UTILS.WeekNumber(timestamp, (self.configuration._.weeklyReset == CONSTANTS.WEEKLY_RESET.EU) and weekOffsetEU or weekOffsetUS)
-        if self.configuration.hasWeeklyCap then
-            local maxGain = self.configuration._.weeklyCap - self:GetWeeklyGainsForPlayerWeek(GUID, week)
-            if maxGain < 0 then -- sanity check (here it can be 0 and this can happen if cap was lowered before awarding dkp)
-                LOG:Debug("Roster:UpdateStandings(): maxGain %d for %s(%s) is lower than 0 for weekly cap", maxGain, GUID, self.uid)
-                return
-            end
-            if value > maxGain then value = maxGain end
-        end
-    end
-    -- Handle the standings update
     value = UTILS.round(value, self.configuration._.roundDecimals)
-    if isPointGain then
-        self.weeklyGains[GUID][week] = self:GetWeeklyGainsForPlayerWeek(GUID, week) + value
-    end
-    self.standings[GUID] = standings + value
+    self.standings[GUID] = self:Standings(GUID) + value
     self.pointInfo[GUID]:AddReceived(value)
-    self.pointInfo[GUID]:AddBlocked(originalValue - value)
 end
 
 ---@param GUID string
@@ -307,16 +217,8 @@ end
 ---@param GUID string
 ---@param value number
 function Roster:DecaySpent(GUID, value)
-    -- Not decayed in DKP - that's an artificial limitation coming from events
-    -- Originally Decay events didnt discern if its total, spent or current points
-    -- for DKP it would mean current for EPGP total
-    -- If DKP would ever need to decay spent then a look into mutators would be needed
-    -- currently lack of the old field is treated as decay total
-    -- Spent in EPGP = GP -> thus needs to be decayed also
-    if self:GetPointType() == CONSTANTS.POINT_TYPE.EPGP then
-        local new = UTILS.round(((self.pointInfo[GUID].spent * (100 - value)) / 100), self.configuration._.roundDecimals)
-        self.pointInfo[GUID].spent = math.max(new, self.configuration._.minGP)
-    end
+    local new = UTILS.round(((self.pointInfo[GUID].spent * (100 - value)) / 100), self.configuration._.roundDecimals)
+    self.pointInfo[GUID].spent = math.max(new, self.configuration._.minGP)
 end
 
 ---@param GUID string
@@ -559,12 +461,6 @@ function Roster:AddLoot(loot, profile)
     self.raidLoot[#self.raidLoot+1] = loot
     self.recentRaidLootCache = nil
     self.pointInfo[GUID]:AddSpent(loot:Value())
-    if self:GetPointType() == CONSTANTS.POINT_TYPE.DKP then
-        -- Charging for the item
-        self:UpdateStandings(GUID, -loot:Value(), 0)
-        -- Correct for the spending since it will be subtracted in update standings
-        self.pointInfo[GUID]:AddReceived(loot:Value())
-    end
 end
 
 ---@return table
@@ -679,27 +575,6 @@ end
 CLM.MODELS.Roster = Roster
 
 -- Constants
-CONSTANTS.POINT_TYPE = {
-    DKP = 0,
-    EPGP = 1,
-    -- ROLL = 2,
-    -- SK = 3
-}
-
-CONSTANTS.POINT_TYPES = UTILS.Set({
-    CONSTANTS.POINT_TYPE.DKP, -- DKP
-    CONSTANTS.POINT_TYPE.EPGP, -- EPGP
-    -- CONSTANTS.POINT_TYPE.ROLL, -- ROLL
-    -- CONSTANTS.POINT_TYPE.SK  -- SK
-})
-
-CONSTANTS.POINT_TYPES_GUI = {
-    [CONSTANTS.POINT_TYPE.DKP] = CLM.L["DKP"],
-    [CONSTANTS.POINT_TYPE.EPGP] = CLM.L["EPGP"],
-    -- [CONSTANTS.POINT_TYPE.ROLL] = CLM.L["ROLL"],
-    -- [CONSTANTS.POINT_TYPE.SK] = CLM.L["SK"]
-}
-
 CONSTANTS.AUCTION_TYPE = {
     OPEN = 0,
     SEALED = 1,
@@ -854,21 +729,6 @@ CONSTANTS.INVENTORY_TYPES_GUI = {
     ["INVTYPE_THROWN"] = CLM.L["Thrown"],
     ["INVTYPE_QUIVER"] = CLM.L["Quiver"],
     ["INVTYPE_RELIC"] = CLM.L["Relic"]
-}
-
-CONSTANTS.WEEKLY_RESET = {
-    EU = 0,
-    US = 1
-}
-
-CONSTANTS.WEEKLY_RESETS = UTILS.Set({
-    CONSTANTS.WEEKLY_RESET.EU,
-    CONSTANTS.WEEKLY_RESET.US
-})
-
-CONSTANTS.WEEKLY_RESETS_GUI = {
-    [CONSTANTS.WEEKLY_RESET.EU] = CLM.L["Europe"],
-    [CONSTANTS.WEEKLY_RESET.US] = CLM.L["Americas"]
 }
 
 CONSTANTS.ALLOWED_ROUNDINGS = UTILS.Set({

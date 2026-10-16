@@ -27,24 +27,6 @@ local function mutateLootAward(entry, roster)
         -- Force caching loot from server
         UTILS.GetItemInfo(loot:Id())
         CLM.MODULES.EventManager:DispatchEvent(CONSTANTS.EVENTS.USER_RECEIVED_ITEM, { link = loot:String() }, entry:time(), GUID)
-        -- Handle Zero-Sum Bank mode
-        local raid = CLM.MODULES.RaidManager:GetRaidByUid(loot:RaidUid())
-        if not raid then
-            LOG:Debug("mutateLootAward(): Loot not awarded to raid. Skipping handling zero-sum bank.")
-            return
-        end
-        if raid:Configuration():Get("zeroSumBank") then
-            local players = raid:Players()
-            local num_players = #players
-            if num_players > 0 then
-                local value = (loot:Value()/num_players) + roster:GetConfiguration("zeroSumBankInflation")
-                value = UTILS.round(value, raid:Configuration():Get("roundDecimals"))
-                CLM.MODULES.PointManager:UpdatePointsDirectly(roster, players, value, CONSTANTS.POINT_CHANGE_REASON.ZERO_SUM_AWARD, CONSTANTS.POINT_CHANGE_TYPE.POINTS, loot:Timestamp(), entry:creatorFull())
-            else
-                LOG:Debug("mutateLootAward(): Empty player list in raid.")
-                return
-            end
-        end
     else
         LOG:Debug("mutateLootAward(): Unknown profile guid [%s] in roster [%s]", GUID, roster:UID())
         return
@@ -131,10 +113,9 @@ function LootManager:AwardItem(raidOrRoster, name, itemLink, itemId, extra, valu
         else
             entry = CLM.MODELS.LEDGER.LOOT.Award:new(roster:UID(), profile, itemId, value, extra)
         end
-        local pointTypeSuffix = ((roster:GetPointType() == CONSTANTS.POINT_TYPE.DKP) and CLM.L["DKP"] or CLM.L["GP"])
         CLM.MODULES.LedgerManager:Submit(entry, forceInstant)
         if CLM.GlobalConfigs:GetLootWarning() then
-            local message = string.format(CLM.L["%s awarded to %s for %s %s"], itemLink, name, value, pointTypeSuffix)
+            local message = string.format(CLM.L["%s awarded to %s for %s %s"], itemLink, name, value, CLM.L["GP"])
             UTILS.SendChatMessage(message, CHAT_MESSAGE_CHANNEL)
             if CLM.GlobalConfigs:GetAnnounceAwardToGuild() then
                 UTILS.SendChatMessage(message, "GUILD")

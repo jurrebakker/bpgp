@@ -1264,11 +1264,7 @@ local function BuildBidRow(name, response, roster, namedButtonMode, auction)
         class = profile:ClassInternal()
         classColor = UTILS.GetClassColor(profile:Class())
         if roster then
-            if roster:GetPointType() == CONSTANTS.POINT_TYPE.DKP then
-                current = roster:Standings(profile:GUID())
-            else
-                current = roster:Priority(profile:GUID())
-            end
+            current = roster:Priority(profile:GUID())
         end
     end
     local bidTypeString
@@ -1352,12 +1348,7 @@ local function UpdateCurrentStandings(self)
     if not auction then return end
     local roster = CLM.MODULES.BiddingManager:GetAuctionInfo():GetRoster()
     if roster and roster:IsProfileInRoster(whoamiGUID) then
-        local value
-        if roster:GetPointType() == CONSTANTS.POINT_TYPE.DKP then
-            value = tostring(roster:Standings(whoamiGUID)) .. " " .. CLM.L["DKP"]
-        else
-            value = tostring(roster:Priority(whoamiGUID)) .. " " .. CLM.L["PR"]
-        end
+        local value = tostring(roster:Priority(whoamiGUID)) .. " " .. CLM.L["PR"]
         self.top:SetTitle(CLM.L["Bidding"] .. " | " .. CLM.L["Current"] .. ": " .. value)
     end
 end

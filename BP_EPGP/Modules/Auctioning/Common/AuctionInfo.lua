@@ -167,10 +167,8 @@ function AuctionInfo:NewShim(auctionType, mode, useOS, namedButtons, increment, 
     o.GetAlwaysAllowAll0 = nil
     o.GetAllowEqualBids = nil
     o.GetAllowCancelPass = nil
-    o.GetTax = nil
     o.GetRounding = nil
     o.GetMinimumPoints = nil
-    o.GetAllowBelowMinStandings = nil
 
     -- Overwrite new ones
     self.auctionType = auctionType
@@ -588,11 +586,6 @@ function AuctionInfo:GetIncrement()
 end
 
 ---@return number
-function AuctionInfo:GetTax()
-    return self.configuration:Get("tax")
-end
-
----@return number
 function AuctionInfo:GetRounding()
     return self.configuration:Get("roundDecimals")
 end
@@ -600,11 +593,6 @@ end
 ---@return number
 function AuctionInfo:GetMinimumPoints()
     return self.configuration:Get("minimumPoints")
-end
-
----@return boolean
-function AuctionInfo:GetAllowBelowMinStandings()
-    return self.configuration:Get("allowBelowMinStandings")
 end
 
 ---@return number

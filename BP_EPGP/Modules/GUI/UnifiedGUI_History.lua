@@ -351,7 +351,6 @@ local function tableDataFeeder()
     local roster = CLM.MODULES.RosterManager:GetRosterByUid(UnifiedGUI_History.roster)
     if not roster then return {} end
 
-    local isEPGP = (roster:GetPointType() == CONSTANTS.POINT_TYPE.EPGP)
     -- TODO: Change from loot type and profile name to filter as its faster
     local profile = CLM.MODULES.ProfileManager:GetProfileByName(UnifiedGUI_History.profile or "")
     if UnifiedGUI_History.historyType ~= CONSTANTS.HISTORY_TYPE.POINT then
@@ -377,12 +376,7 @@ local function tableDataFeeder()
 
         for _,lootData in ipairs(displayedLoot) do
             local loot = lootData[1]
-            local value = tostring(loot:Value())
-            if isEPGP then
-                value = (value) .. " " .. CLM.L["GP"]
-            -- else
-                -- value = (value) .. " " .. CLM.L["DKP"]
-            end
+            local value = tostring(loot:Value()) .. " " .. CLM.L["GP"]
             local row = {cols = {
                 {value = lootData[2]},
                 {value = lootData[2]}, -- itemLink
@@ -415,7 +409,7 @@ local function tableDataFeeder()
             if reason == CONSTANTS.POINT_CHANGE_REASON.DECAY then
                 value = value .. "%"
             end
-            local suffix = UTILS.DecodePointTypeChangeName(roster:GetPointType(), history:Type())
+            local suffix = UTILS.DecodePointTypeChangeName(history:Type())
             value = value .. " " .. suffix
             local color
             local profiles = history:Profiles()
@@ -432,7 +426,7 @@ local function tableDataFeeder()
                 {value = ""},
                 {value = CONSTANTS.POINT_CHANGE_REASONS.ALL[reason] or ""},
                 {value = value,
-                    color = ((isEPGP and (history:Type() == CONSTANTS.POINT_CHANGE_TYPE.SPENT)) and colorTurquoise)
+                    color = ((history:Type() == CONSTANTS.POINT_CHANGE_TYPE.SPENT) and colorTurquoise)
                 },
                 {value = date(CLM.L["%Y/%m/%d %H:%M:%S (%A)"], history:Timestamp())},
                 {value = player, color = color},

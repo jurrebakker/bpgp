@@ -56,7 +56,7 @@ end
 
 local function UpdateAwardPrice(self)
     local auction = CLM.MODULES.AuctionManager:GetCurrentAuctionInfo()
-    self.awardPrice = UTILS.round(self.awardValue + (auction:GetTax() or 0), auction:GetRounding())
+    self.awardPrice = UTILS.round(self.awardValue, auction:GetRounding())
 end
 
 local function SetInputAwardValue(self, value)
@@ -321,7 +321,7 @@ local function GenerateAwardOptions(self)
                     self.auctionItem:GetItemLink(),
                     UTILS.ColorCodeText(self.awardPlayer, "FFD100"),
                     tostring(self.awardPrice),
-                    (roster and roster:GetPointType() == CONSTANTS.POINT_TYPE.EPGP) and CLM.L["GP"] or CLM.L["DKP"]
+                    CLM.L["GP"]
                 )
             end),
             width = 0.5+0.2,
@@ -787,11 +787,7 @@ local function BuildBidRow(name, response, roster, namedButtonMode, externalData
     if profile then
         class = profile:ClassInternal()
         classColor = UTILS.GetClassColor(profile:Class())
-        if roster:GetPointType() == CONSTANTS.POINT_TYPE.DKP then
-            current = roster:Standings(profile:GUID())
-        else
-            current = roster:Priority(profile:GUID())
-        end
+        current = roster:Priority(profile:GUID())
     end
     local bidTypeString
     if namedButtonMode then

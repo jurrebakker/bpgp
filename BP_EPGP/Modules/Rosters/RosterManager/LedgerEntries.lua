@@ -18,7 +18,6 @@ local deflate = UTILS.deflate
 ---@class RosterCreate
 ---@field n string name
 ---@field r number rosterUid
----@field p number pointType
 local RosterCreate                  = LogEntry:extend("R0")
 ---@class RosterDelete
 ---@field r number rosterUid
@@ -82,13 +81,11 @@ local RosterFieldRename             = LogEntry:extend("RF")
 -- ------------ --
 ---@param rosterUid number
 ---@param name string
----@param pointType number
 ---@return RosterCreate
-function RosterCreate:new(rosterUid, name, pointType)
+function RosterCreate:new(rosterUid, name)
     local o = LogEntry.new(self);
     o.n = tostring(name) or ""
     o.r = tonumber(rosterUid) or 0
-    o.p = tonumber(pointType) or 0
     return o
 end
 
@@ -102,12 +99,7 @@ function RosterCreate:name()
     return self.n
 end
 
----@return number
-function RosterCreate:pointType()
-    return self.p
-end
-
-local RosterCreateFields = mergeLists(LogEntry:fields(), {"r", "n", "p"})
+local RosterCreateFields = mergeLists(LogEntry:fields(), {"r", "n"})
 function RosterCreate:fields()
     return RosterCreateFields
 end
