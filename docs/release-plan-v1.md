@@ -73,13 +73,13 @@ Because we start a fresh ledger, we are **free to delete ledger entry types and 
 | Auction history window | `Modules/Auctioning/AuctionHistoryManager/*` |
 | Trade helper (track & open trades for awarded items) | `Modules/Auctioning/AutoAssign/*` (trade part only) |
 | Officer sync (ledger + ACL from guild rank permissions) | `Modules/Ledger/LedgerManager`, `Libs/LibEventSourcing`, `Modules/Common/ACL` |
-| Standings / History / Raids / Profiles (slim) / Audit tabs | `Modules/GUI/*` |
+| Standings / History / Raids / Manage roster / Audit tabs | `Modules/GUI/*` |
 | Minimap icon (incl. sync status) | `MinimapIcon.lua` |
 | Alert popups | `ClassicLootManager_Alerts` → merged into main addon |
 | Raid warnings (auction start/countdown/winner, raid start/end) | `Utils.lua:1220` `SendChatMessage` callers |
 | Version check between guild members | `Modules/Common/Version` |
 | **Test mode** (new): isolated test ledger + comm prefix, simulated raid/bidders, add items by ID ([features/test-mode.md](features/test-mode.md)) | replaces `SandboxManager` and the dev fakes |
-| Keybindings, `/bpepgp` slash commands, settings (as tabs in the main window, Phase 9) | `Bindings.xml`, `Modules/Global/*`, `ConfigManager` |
+| `/bpepgp` slash commands, settings (as tabs in the main window, Phase 9). Keybindings were removed after the Phase 3 smoke test | `Modules/Global/*`, `ConfigManager` |
 
 ### 3.2 Remove
 
@@ -174,8 +174,8 @@ BP_EPGP/
     ├── Auctioning/  AuctionManager · BiddingManager · AuctionHistoryManager · TradeHelper (was AutoAssign) · Common
     ├── Import/      NEW: StandingsImport (paste Name,EP,GP)
     ├── Alerts/      merged from ClassicLootManager_Alerts
-    ├── Global/      Bindings · Configs · SlashCommands · GuildChangeHandler · ChatMessageHandlers
-    └── GUI/         UnifiedGUI · Standings · History · Raids · Profiles · Audit · widgets · Filters
+    ├── Global/      Configs · SlashCommands · GuildChangeHandler · ChatMessageHandlers
+    └── GUI/         UnifiedGUI · Standings · History · Raids · ManageRoster · Audit · widgets · Filters
 ```
 
 **Naming / isolation**
@@ -365,8 +365,8 @@ There is no automated test harness for WoW UI code; luacheck catches syntax/glob
 - [ ] Keep `NOTICE` and add: `BP EPGP — modified by Jurre Bakker, 2026. Based on Core Loot Manager.`
 - [ ] README: "Based on Core Loot Manager by Lantis and contributors, heavily modified."
 - [ ] Mark modified files (short header comment or a note in NOTICE/README that all files were modified).
-- [ ] Don't use the names "Core Loot Manager" / "CLM" or the CLM logo as our branding (Apache §6 trademarks). Replace icons in `Media/Icons`.
-- [ ] Remove CLM's Patreon, Discord, Curse/Wago IDs, "Created by Lantis" in-game strings → move credit to an About/credits line instead.
+- [ ] Don't use the names "Core Loot Manager" / "CLM" or the CLM logo as our branding (Apache §6 trademarks). Icons in `Media/Icons` are replaced by `bp-epgp-32.png` (done); in-game "CLM" strings remain.
+- [ ] Remove CLM's Patreon, Discord, Curse/Wago IDs, "Created by Lantis" in-game strings → move credit to an About/credits line instead. (In-game settings header done: logo + "BP EPGP <version>".)
 - [ ] Keep each vendored library's own license file.
 - [ ] Update `CREDITS.md` (keep original credits, add ours).
 

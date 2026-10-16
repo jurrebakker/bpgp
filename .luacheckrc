@@ -12,8 +12,6 @@ exclude_files = {
 }
 ignore = {
 	"11./SLASH_.*", -- Setting an undefined (Slash handler) global variable
-	"11./BINDING_.*", -- Setting an undefined (Keybinding header) global variable
-	"11./BPEPGP_Binding_.*", -- Keybinding handlers (Bindings.xml)
 	"113/Enum*",
 	"211/CLM", -- internal namespace local
 	"212", -- Unused argument
@@ -22,6 +20,7 @@ ignore = {
 globals = {
 	-- Design
 	"BPEPGP",
+	"BPEPGP_ToggleMainWindow", -- AddonCompartmentFunc
 	"LibStub",
 	-- Saved Variables
 	"BPEPGP_DB",
@@ -116,6 +115,7 @@ globals = {
 	"C_AddOns.GetAddOnInfo",
 	"C_Timer.After",
 	"C_Timer.NewTicker",
+	"GetMaxLevelForPlayerExpansion",
 	"GetNumGuildMembers",
 	"GetGuildRosterInfo",
 	"GetTime",

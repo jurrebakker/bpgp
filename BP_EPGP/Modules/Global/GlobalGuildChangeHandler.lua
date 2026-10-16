@@ -24,7 +24,6 @@ function GlobalGuildChangeHandler:Initialize()
         CLM.MODULES.LedgerManager:DisableAdvertising()
         CLM.MODULES.Database:ForceFallback()
         CLM.MODULES.TrustInfoProvider:WipeAll()
-        CLM.MODULES.Minimap:UpdateIcon()
         GlobalGuildChangeHandler.changeDetected = true
         GlobalGuildChangeHandler.isInGuild = IsInGuild()
     end)

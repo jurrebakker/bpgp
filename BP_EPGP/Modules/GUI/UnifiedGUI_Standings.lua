@@ -37,10 +37,6 @@ local function ST_GetHighlight(row)
     return row.cols[9].value
 end
 
-local function ST_GetClass(row)
-    return row.cols[10].value
-end
-
 local highlightPlayer = UTILS.getHighlightMethod(colorBlueTransparent, true)
 
 local function refreshFn(...)
@@ -50,9 +46,8 @@ end
 ---@class UnifiedGUI_Standings
 ---@field context number
 ---@field roster string?
----@field awardReason number
----@field awardType number?
----@field awardValue string?
+---@field awardValueEP string?
+---@field awardValueGP string?
 ---@field decayType number?
 ---@field decayValue string?
 ---@field note string?
@@ -60,23 +55,11 @@ end
 ---@field RightClickMenu table
 local UnifiedGUI_Standings = {
     name = "standings",
-    awardReason = CONSTANTS.POINT_CHANGE_REASON.MANUAL_ADJUSTMENT,
-    filter = CLM.MODELS.Filters:New(
-    (function() CLM.GUI.Unified:FilterScrollingTable() end),
-    UTILS.Set({
-        "class", "inRaid",
-        "inGuild", "external", "rank"
-    }),
-    UTILS.Set({
-        "buttons", "search"
-    }),
-    nil, 2),
     tooltip = CreateFrame("GameTooltip", "BPEPGPUnifiedGUIStandingsDialogTooltip", UIParent, "GameTooltipTemplate"),
 }
 
 local function HandleRosterChange(rosterUid)
     UnifiedGUI_Standings.roster = rosterUid
-    UnifiedGUI_Standings.awardType = CONSTANTS.POINT_CHANGE_TYPE.POINTS
     UnifiedGUI_Standings.decayType = CONSTANTS.POINT_CHANGE_TYPE.TOTAL
 end
 
@@ -122,8 +105,103 @@ local function GenerateUntrustedOptions(self)
         width = "full",
         order = 0
     }
-    UTILS.mergeDictsInline(options, self.filter:GetAceOptions())
     return options
+end
+
+---@param awardType number CONSTANTS.POINT_CHANGE_TYPE.POINTS (EP) or SPENT (GP)
+---@param value string?
+local function AwardPoints(self, awardType, value)
+    -- Award Value
+    local awardValue = tonumber(value)
+    if not awardValue then LOG:Debug("UnifiedGUI_Standings(Award): missing award value"); return end
+    local awardReason = CONSTANTS.POINT_CHANGE_REASON.MANUAL_ADJUSTMENT
+
+    local note = ""
+    if self.note and strlen(self.note) > 0 then
+        note = ": " .. tostring(self.note)
+    end
+
+    local points = UTILS.DecodePointTypeChangeName(awardType)
+    local roster = CLM.MODULES.RosterManager:GetRosterByUid(self.roster)
+    if self.context == CONSTANTS.ACTION_CONTEXT.RAID then
+        if CLM.MODULES.RaidManager:IsInRaid() then
+            local raid = CLM.MODULES.RaidManager:GetRaid()
+            CLM.MODULES.PointManager:UpdateRaidPoints(raid, awardValue, awardReason, CONSTANTS.POINT_MANAGER_ACTION.MODIFY, self.note, awardType)
+
+            if CLM.GlobalConfigs:GetAnnounceAwardToGuild() then
+                UTILS.SendChatMessage(
+                    string.format(
+                        CLM.L["Awarded %s %s for %s to all players in raid %s"] .. note,
+                        awardValue, points, CONSTANTS.POINT_CHANGE_REASONS.ALL[awardReason] or "", raid:Name()
+                    ),
+                    "GUILD"
+                )
+            end
+
+        else
+            LOG:Warning("You are not in raid.")
+        end
+    elseif self.context == CONSTANTS.ACTION_CONTEXT.ROSTER then
+        if roster then
+            CLM.MODULES.PointManager:UpdateRosterPoints(roster, awardValue, awardReason, CONSTANTS.POINT_MANAGER_ACTION.MODIFY, false, self.note, awardType)
+
+            if CLM.GlobalConfigs:GetAnnounceAwardToGuild() then
+                UTILS.SendChatMessage(
+                    string.format(
+                        CLM.L["Awarded %s %s to %s player(s) for %s in <%s>"] .. note,
+                        awardValue, points, string.lower(CLM.L["All"]), CONSTANTS.POINT_CHANGE_REASONS.ALL[awardReason] or "",
+                        CLM.MODULES.RosterManager:GetRosterNameByUid(roster:UID())
+                    ),
+                    "GUILD"
+                )
+            end
+
+        else
+            LOG:Warning("Missing valid roster.")
+        end
+    elseif self.context == CONSTANTS.ACTION_CONTEXT.SELECTED then
+        local profiles = UnifiedGUI_Standings:GetSelection()
+        if not profiles or #profiles == 0 then
+            LOG:Message(CLM.L["No players selected"])
+            LOG:Debug("UnifiedGUI_Standings(Award): profiles == 0")
+            return
+        end
+        if roster then
+            CLM.MODULES.PointManager:UpdatePoints(roster, profiles, awardValue, awardReason, CONSTANTS.POINT_MANAGER_ACTION.MODIFY, self.note, awardType)
+
+            if CLM.GlobalConfigs:GetAnnounceAwardToGuild() then
+
+                UTILS.SendChatMessage(
+                    string.format(
+                        CLM.L["Awarded %s %s to %s player(s) for %s in <%s>"] .. note,
+                        awardValue, points, #profiles, CONSTANTS.POINT_CHANGE_REASONS.ALL[awardReason] or "",
+                        CLM.MODULES.RosterManager:GetRosterNameByUid(roster:UID())
+                    ),
+                    "GUILD"
+                )
+            end
+
+        else
+            LOG:Warning("Missing valid roster.")
+        end
+    end
+end
+
+---@param awardType number
+---@param value string?
+local function AwardConfirmText(self, awardType, value)
+    local awardValue = tonumber(value)
+    if not awardValue then return CLM.L["Missing award value"] end
+    local points = UTILS.DecodePointTypeChangeName(awardType)
+    if self.context == CONSTANTS.ACTION_CONTEXT.RAID then
+        return string.format(CLM.L["Award %s %s to everyone in raid."], awardValue, points)
+    elseif self.context == CONSTANTS.ACTION_CONTEXT.ROSTER then
+        return string.format(CLM.L["Award %s %s to everyone in roster."], awardValue, points)
+    elseif self.context == CONSTANTS.ACTION_CONTEXT.SELECTED then
+        local profiles = UnifiedGUI_Standings:GetSelection()
+        if not profiles then profiles = {} end
+        return string.format(CLM.L["Award %s %s to %s selected players."], awardValue, points, #profiles)
+    end
 end
 
 local function GenerateAssistantOptions(self)
@@ -145,7 +223,7 @@ local function GenerateAssistantOptions(self)
         award_dkp_note = {
             name = CLM.L["Note"],
             desc = (function()
-                local n = CLM.L["Note to be added to award. Max 25 characters. It is recommended to not include date nor selected reason here. If you will input encounter ID it will be transformed into boss name."]
+                local n = CLM.L["Note to be added to award. Max 25 characters. It is recommended to not include the date here. If you will input encounter ID it will be transformed into boss name."]
                 if strlen(self.note or "") > 0 then
                     n = n .. "\n\n|cffeeee00Note:|r " .. self.note
                 end
@@ -157,137 +235,55 @@ local function GenerateAssistantOptions(self)
             width = "full",
             order = 12
         },
-        award_reason = {
-            name = CLM.L["Reason"],
-            type = "select",
-            values = CONSTANTS.POINT_CHANGE_REASONS.GENERAL,
-            set = function(i, v) self.awardReason = v end,
-            get = function(i) return self.awardReason end,
-            order = 11,
-            width = "full"
-        },
-        award_dkp_value = {
-            name = CLM.L["Award value"],
-            desc = CLM.L["Points value that will be awarded."],
+        award_ep_value = {
+            name = CLM.L["EP"],
+            desc = CLM.L["EP that will be awarded."],
             type = "input",
-            set = function(i, v) self.awardValue = v end,
-            get = function(i) return self.awardValue end,
+            set = function(i, v) self.awardValueEP = v end,
+            get = function(i) return self.awardValueEP end,
+            dialogControl = "BPEPGPEditBoxNoButton",
             width = 0.5,
-            pattern = CONSTANTS.REGEXP_FLOAT,
             order = 13
         },
-        award_dkp = {
-            name = CLM.L["Award"],
-            desc = CLM.L["Award points to players based on context."],
+        award_ep = {
+            name = CLM.L["Award EP"],
+            desc = CLM.L["Award EP to players based on context."],
             type = "execute",
             width = isElvUI and 0.5 or 0.575,
-            func = (function(i)
-                -- Award Value
-                local awardValue = tonumber(self.awardValue)
-                if not awardValue then LOG:Debug("UnifiedGUI_Standings(Award): missing award value"); return end
-                -- Reason
-                local awardReason
-                if self.awardReason and CONSTANTS.POINT_CHANGE_REASONS.GENERAL[self.awardReason] then
-                    awardReason = self.awardReason
-                else
-                    LOG:Debug("UnifiedGUI_Standings(Award): missing reason");
-                    awardReason = CONSTANTS.POINT_CHANGE_REASON.MANUAL_ADJUSTMENT
-                end
-
-                local note = ""
-                if self.note and strlen(self.note) > 0 then
-                    note = ": " .. tostring(self.note)
-                end
-
-                local roster = CLM.MODULES.RosterManager:GetRosterByUid(self.roster)
-                if self.context == CONSTANTS.ACTION_CONTEXT.RAID then
-                    if CLM.MODULES.RaidManager:IsInRaid() then
-                        local raid = CLM.MODULES.RaidManager:GetRaid()
-                        CLM.MODULES.PointManager:UpdateRaidPoints(raid, awardValue, awardReason, CONSTANTS.POINT_MANAGER_ACTION.MODIFY, self.note, self.awardType)
-
-                        if CLM.GlobalConfigs:GetAnnounceAwardToGuild() then
-                            UTILS.SendChatMessage(
-                                string.format(
-                                    CLM.L["Awarded %s points for %s to all players in raid %s"] .. note,
-                                    awardValue, CONSTANTS.POINT_CHANGE_REASONS.ALL[awardReason] or "", raid:Name()
-                                ),
-                                "GUILD"
-                            )
-                        end
-
-                    else
-                        LOG:Warning("You are not in raid.")
-                    end
-                elseif self.context == CONSTANTS.ACTION_CONTEXT.ROSTER then
-                    if roster then
-                        CLM.MODULES.PointManager:UpdateRosterPoints(roster, awardValue, awardReason, CONSTANTS.POINT_MANAGER_ACTION.MODIFY, false, self.note, self.awardType)
-
-                        if CLM.GlobalConfigs:GetAnnounceAwardToGuild() then
-                            UTILS.SendChatMessage(
-                                string.format(
-                                    CLM.L["Awarded %s points to %s player(s) for %s in <%s>"] .. note,
-                                    awardValue, string.lower(CLM.L["All"]), CONSTANTS.POINT_CHANGE_REASONS.ALL[awardReason] or "",
-                                    CLM.MODULES.RosterManager:GetRosterNameByUid(roster:UID())
-                                ),
-                                "GUILD"
-                            )
-                        end
-
-                    else
-                        LOG:Warning("Missing valid roster.")
-                    end
-                elseif self.context == CONSTANTS.ACTION_CONTEXT.SELECTED then
-                    local profiles = UnifiedGUI_Standings:GetSelection()
-                    if not profiles or #profiles == 0 then
-                        LOG:Message(CLM.L["No players selected"])
-                        LOG:Debug("UnifiedGUI_Standings(Award): profiles == 0")
-                        return
-                    end
-                    if roster then
-                        CLM.MODULES.PointManager:UpdatePoints(roster, profiles, awardValue, awardReason, CONSTANTS.POINT_MANAGER_ACTION.MODIFY, self.note, self.awardType)
-
-                        if CLM.GlobalConfigs:GetAnnounceAwardToGuild() then
-
-                            UTILS.SendChatMessage(
-                                string.format(
-                                    CLM.L["Awarded %s points to %s player(s) for %s in <%s>"] .. note,
-                                    awardValue, #profiles, CONSTANTS.POINT_CHANGE_REASONS.ALL[awardReason] or "",
-                                    CLM.MODULES.RosterManager:GetRosterNameByUid(roster:UID())
-                                ),
-                                "GUILD"
-                            )
-                        end
-
-                    else
-                        LOG:Warning("Missing valid roster.")
-                    end
-                end
-            end),
-            confirm = (function()
-                local awardValue = tonumber(self.awardValue)
-                if not awardValue then return CLM.L["Missing award value"] end
-                local points = UTILS.DecodePointTypeChangeName(self.awardType)
-                if self.context == CONSTANTS.ACTION_CONTEXT.RAID then
-                    return string.format(CLM.L["Award %s %s to everyone in raid."], awardValue, points)
-                elseif self.context == CONSTANTS.ACTION_CONTEXT.ROSTER then
-                    return string.format(CLM.L["Award %s %s to everyone in roster."], awardValue, points)
-                elseif self.context == CONSTANTS.ACTION_CONTEXT.SELECTED then
-                    local profiles = UnifiedGUI_Standings:GetSelection()
-                    if not profiles then profiles = {} end
-                    return string.format(CLM.L["Award %s %s to %s selected players."], awardValue, points, #profiles)
-                end
-            end),
+            func = (function(i) AwardPoints(self, CONSTANTS.POINT_CHANGE_TYPE.POINTS, self.awardValueEP) end),
+            confirm = (function() return AwardConfirmText(self, CONSTANTS.POINT_CHANGE_TYPE.POINTS, self.awardValueEP) end),
             order = 14
         },
-        award_type_dropdown = {
-            name = CLM.L["Type"],
-            type = "select",
-            values = CONSTANTS.EPGP_POINT_AWARD_TYPES_GUI,
-            set = function(i, v) self.awardType = v end,
-            get = function(i) return self.awardType end,
-            control = "BPEPGPButtonDropDown",
-            order = 15,
-            width = 0.2
+        award_ep_break = {
+            name = "",
+            type = "description",
+            width = "full",
+            order = 14.5
+        },
+        award_gp_value = {
+            name = CLM.L["GP"],
+            desc = CLM.L["GP that will be added."],
+            type = "input",
+            set = function(i, v) self.awardValueGP = v end,
+            get = function(i) return self.awardValueGP end,
+            dialogControl = "BPEPGPEditBoxNoButton",
+            width = 0.5,
+            order = 15
+        },
+        award_gp = {
+            name = CLM.L["Award GP"],
+            desc = CLM.L["Add GP to players based on context."],
+            type = "execute",
+            width = isElvUI and 0.5 or 0.575,
+            func = (function(i) AwardPoints(self, CONSTANTS.POINT_CHANGE_TYPE.SPENT, self.awardValueGP) end),
+            confirm = (function() return AwardConfirmText(self, CONSTANTS.POINT_CHANGE_TYPE.SPENT, self.awardValueGP) end),
+            order = 16
+        },
+        award_gp_break = {
+            name = "",
+            type = "description",
+            width = "full",
+            order = 16.5
         },
     }
 end
@@ -300,8 +296,8 @@ local function GenerateManagerOptions(self)
             type = "input",
             set = function(i, v) self.decayValue = v end,
             get = function(i) return self.decayValue end,
+            dialogControl = "BPEPGPEditBoxNoButton",
             width = 0.5,
-            pattern = CONSTANTS.REGEXP_FLOAT,
             order = 21
         },
         decay_type_dropodown = {
@@ -389,12 +385,6 @@ local tableStructure = {
     rows = 25,
     -- columns - structure of the ScrollingTable
     columns = columns,
-    -- Function to filter ScrollingTable
-    filter = (function(stobject, row)
-        local playerName = ST_GetName(row)
-        local class = ST_GetClass(row)
-        return UnifiedGUI_Standings.filter:Filter(playerName, class, {playerName, class})
-    end),
     -- Events to override for ScrollingTable
     events = {
         -- OnEnter handler -> on hover
@@ -561,10 +551,7 @@ local function beforeShowHandler()
     UnifiedGUI_Standings.context = CONSTANTS.ACTION_CONTEXT.ROSTER
     if CLM.MODULES.RaidManager:IsInRaid() then
         HandleRosterChange(CLM.MODULES.RaidManager:GetRaid():Roster():UID())
-        UnifiedGUI_Standings.filter:SetFilterValue(CONSTANTS.FILTER.IN_RAID, true)
         UnifiedGUI_Standings.context = CONSTANTS.ACTION_CONTEXT.RAID
-    else
-        UnifiedGUI_Standings.filter:SetFilterValue(CONSTANTS.FILTER.IN_RAID, false)
     end
 
     refreshHandler() -- this is actually here only for the structure update
@@ -618,5 +605,5 @@ CLM.GUI.Unified:RegisterTab(
         restore = restoreHandler,
         dataReady = dataReadyHandler
     },
-    CLM.MEDIA_PATH .. "Icons\\clm-dark-32.png"
+    CLM.MEDIA_PATH .. "Icons\\bp-epgp-32.png"
 )

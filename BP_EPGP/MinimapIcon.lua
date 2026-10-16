@@ -3,29 +3,21 @@ local _, CLM = ...
 
 local addonName = "BP EPGP" -- same as the UI name for config
 
-local OpenToCategory = InterfaceOptionsFrame_OpenToCategory or Settings.OpenToCategory
-
 local ldb = LibStub:GetLibrary("LibDataBroker-1.1", true)
 if not ldb then return end
 
 local icon = LibStub("LibDBIcon-1.0", true)
 if not icon then return end
 
-local function CreateMinimapDBI(self, dropdown)
+local function CreateMinimapDBI()
     CLM.MinimapDBI = ldb:NewDataObject(addonName, {
         type = "data source",
         text = "0",
-        icon = CLM.MEDIA_PATH .. "Icons\\clm-blue-32.tga"
+        icon = CLM.MEDIA_PATH .. "Icons\\bp-epgp-32.png"
     })
 
-    CLM.MinimapDBI.OnClick = function(s, button)
-        if button == "RightButton" then
-            if self:IsInitialized() then
-                CLM.UTILS.LibDD:ToggleDropDownMenu(1, nil, dropdown, s, -20, 0)
-            end
-        else
-            CLM.GUI.Unified:Toggle()
-        end
+    CLM.MinimapDBI.OnClick = function()
+        CLM.GUI.Unified:Toggle()
     end
 
     CLM.MinimapDBI.OnTooltipShow = function(tooltip)
@@ -62,13 +54,6 @@ local function CreateMinimapDBI(self, dropdown)
     icon:Register(addonName, CLM.MinimapDBI, BPEPGP_Minimap)
 end
 
----@param ic string
----@return string
-local function getIcon(ic)
-    return CLM.MEDIA_PATH .. "Icons\\clm-" .. ic .. "-32.tga"
-end
-
-local dropdown
 ---@class Minimap
 ---@field _initialized boolean
 local Minimap = {}
@@ -93,84 +78,12 @@ local function CreateConfig(self)
     CLM.MODULES.ConfigManager:Register(CLM.CONSTANTS.CONFIGS.GROUP.GLOBAL, options)
 end
 
-local function updateIcon()
-    local ic
-    if CLM.MODULES.LedgerManager:IsInIncoherentState() or CLM.MODULES.LedgerManager:IsDisabled() then
-        ic = "red"
-    elseif CLM.MODULES.LedgerManager:IsInSync() then
-        ic = "green"
-    elseif CLM.MODULES.LedgerManager:IsSyncOngoing() then
-        ic = "yellow"
-    else -- Unknown state
-        ic = "blue"
-    end
-    CLM.MinimapDBI.icon = getIcon(ic)
-end
-
 function Minimap:Initialize()
     CreateConfig(self)
     if not BPEPGP_Minimap then BPEPGP_Minimap = {} end
-    -- Minimap icon dropdown menu
-    local options = {
-        {
-            title = CLM.L["Menu"],
-            isTitle = true
-        },
-        {
-            title = CLM.L["Auctioning"],
-            func = (function() CLM.GUI.AuctionManager:Toggle() end),
-            trustedOnly = true
-        },
-        {
-            title = CLM.L["Auction History"],
-            func = (function() CLM.GUI.AuctionHistory:Toggle() end),
-            trustedOnly = true
-        },
-        {
-            title = CLM.L["Trade List"],
-            func = (function() CLM.GUI.TradeList:Toggle() end),
-            trustedOnly = true
-        },
-        {
-            title = CLM.L["Bidding"],
-            func = (function() CLM.GUI.BiddingManager:Toggle() end)
-        },
-        {
-            title = CLM.L["Award"],
-            func = (function() CLM.GUI.Award:Toggle() end),
-            trustedOnly = true
-        },
-        -- Management
-        {
-            separator = true,
-        },
-        -- { -- TODO this should come from the Integrations addon
-        --     title = CLM.L["Export"],
-        --     func = (function() CLM.GUI.Export:Toggle() end),
-        --     trustedOnly = true,
-        --     managerOnly = true
-        -- },
-        {
-            title = CLM.L["Configuration"],
-            icon = CLM.MEDIA_PATH .. "Icons\\clm-dark-32.png",
-            func = (function()
-                OpenToCategory(CLM.GUI_ID)
-            end)
-        },
-
-    }
-
-    dropdown = CLM.UTILS.GenerateDropDownMenu(
-        options,
-        CLM.MODULES.ACL:CheckLevel(CLM.CONSTANTS.ACL.LEVEL.OFFICER),
-        CLM.MODULES.ACL:CheckLevel(CLM.CONSTANTS.ACL.LEVEL.OFFICER)
-    )
 
     -- Create Minimap Icon
-    CreateMinimapDBI(self, dropdown)
-
-    -- Hook Minimap Icon
-    hooksecurefunc(CLM.MODULES.LedgerManager, "UpdateSyncState", updateIcon)
+    CreateMinimapDBI()
 
     if BPEPGP_Minimap.disable then icon:Hide(addonName) end
 
@@ -180,12 +93,6 @@ end
 ---@return boolean
 function Minimap:IsInitialized()
     return self._initialized
-end
-
-function Minimap:UpdateIcon()
-    if self:IsInitialized() then
-        updateIcon()
-    end
 end
 
 function Minimap:Enable()

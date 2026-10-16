@@ -652,38 +652,6 @@ function RosterManager:RemoveProfilesFromRoster(roster, profiles)
 end
 
 ---@param roster Roster
-function RosterManager:AddFromRaidToRoster(roster)
-    LOG:Trace("RosterManager:AddFromRaidToRoster()")
-    if not UTILS.typeof(roster, CLM.MODELS.Roster) then
-        LOG:Error("RosterManager:AddFromRaidToRoster(): Invalid roster object")
-        return
-    end
-    if not IsInRaid() then return end
-    -- Lazy fill profiles
-    CLM.MODULES.ProfileManager:FillFromRaid()
-    local missingProfiles = {}
-    for i=1,MAX_RAID_MEMBERS do
-        local name  = GetRaidRosterInfo(i)
-        if name then
-            name = UTILS.Disambiguate(name)
-            local profile = CLM.MODULES.ProfileManager:GetProfileByName(name)
-            if profile then
-                local GUID = profile:GUID()
-                if not roster:IsProfileInRoster(GUID) then
-                    tinsert(missingProfiles, GUID)
-                end
-            else
-                LOG:Debug("Missing [%s] profile after filling from raid. Weird.", name)
-            end
-        end
-    end
-    if #missingProfiles > 0 then
-        LOG:Message(CLM.L["Adding missing %s players to current roster"], #missingProfiles)
-        self:AddProfilesToRoster(roster, missingProfiles)
-    end
-end
-
----@param roster Roster
 ---@param loot Loot
 ---@param profile Profile
 function RosterManager:AddLootToRoster(roster, loot, profile)

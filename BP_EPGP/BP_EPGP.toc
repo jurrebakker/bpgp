@@ -4,8 +4,8 @@
 ## Author: Jurre Bakker
 ## Category-enUS: Loot
 ## Group: BP_EPGP
-## IconTexture: Interface/AddOns/BP_EPGP/Media/Icons/clm-dark-32.png
-## AddonCompartmentFunc: BPEPGP_Binding_ToggleGUI_UnifiedGUI
+## IconTexture: Interface/AddOns/BP_EPGP/Media/Icons/bp-epgp-32.png
+## AddonCompartmentFunc: BPEPGP_ToggleMainWindow
 ## Version: @project-version@
 ## OptionalDeps: ElvUI
 ## X-License: Apache-2.0

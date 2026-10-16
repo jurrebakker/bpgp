@@ -7,7 +7,7 @@ local  _, CLM = ...
 -- local UTILS     = CLM.UTILS
 -- ------------------------------- --
 
-local CLM_ICON_DARK = CLM.MEDIA_PATH .. "Icons\\clm-dark-32.png"
+local CLM_ICON_DARK = CLM.MEDIA_PATH .. "Icons\\bp-epgp-32.png"
 local CLM_TEXTURE = string.format("|T%s:0|t", CLM_ICON_DARK)
 
 local InLockdown

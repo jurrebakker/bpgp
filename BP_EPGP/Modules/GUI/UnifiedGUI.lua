@@ -156,10 +156,10 @@ local function UpdateLoadingBanner(self)
         type = "group",
         args = {
             top = {
-                name = "|cffdcb749CLM is processing|r",
+                name = "|cffdcb749BP EPGP is processing|r",
                 type = "description",
                 fontSize = "large",
-                image = CLM.MEDIA_PATH .. "Icons\\clm-dark-64.png",
+                image = CLM.MEDIA_PATH .. "Icons\\bp-epgp-32.png",
                 order = 1
             },
             middle = {
@@ -281,7 +281,7 @@ function UnifiedGUI:CreateAceGUIStructure()
     f:SetTitle(CLM.L["BP EPGP"])
     f:SetLayout("Fill")
     f:EnableResize(false)
-    f:SetWidth(700)
+    f:SetWidth(800)
     f:SetHeight(572)
     self.aceObjects = {
       top = f
@@ -464,3 +464,8 @@ function UnifiedGUI:Reset()
 end
 
 CLM.GUI.Unified = UnifiedGUI
+
+-- Addon compartment (BP_EPGP.toc AddonCompartmentFunc)
+function BPEPGP_ToggleMainWindow()
+    CLM.GUI.Unified:Toggle()
+end

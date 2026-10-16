@@ -8,7 +8,7 @@ local CONSTANTS = CLM.CONSTANTS
 ---@field ParseVersionString fun(versionString:string): table
 local UTILS = CLM.UTILS
 
-local CLM_ICON_DARK = CLM.MEDIA_PATH .. "Icons\\clm-dark-32.png"
+local CLM_ICON_DARK = CLM.MEDIA_PATH .. "Icons\\bp-epgp-32.png"
 
 local LibDD = LibStub:GetLibrary("LibUIDropDownMenu-4.0")
 UTILS.LibDD = LibDD

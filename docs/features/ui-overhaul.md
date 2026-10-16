@@ -31,7 +31,7 @@ Remove the Options → AddOns pages **completely** (no stub page). Move whatever
 
 ### Proposed tab bar
 
-| Standings | History | Raids | Profiles | Audit | **Settings** | **Guild settings** | **Gear values** | **Advanced** |
+| Standings | History | Raids | Manage roster | Audit | **Settings** | **Guild settings** | **Gear values** | **Advanced** |
 |---|---|---|---|---|---|---|---|---|
 | existing | existing | existing | existing | existing | new: *My settings* (Part 2) | new: Part 3 except gear values | new: default slot values + item overrides | new: logging; *Remove roster* (officers only) |
 
@@ -61,7 +61,7 @@ Knowing this explains the decisions below:
 | D3 | Who sees the Guild settings / Gear values tabs? | a) everyone; read-only unless officer · b) officers only | a | **a: everyone, read-only** ✅ |
 | D4 | Where do settings go? | a) one Configuration tab with sub-tabs · b) separate top-level tabs in a wider window | a | **b: top-level tabs** |
 | D5 | How to build the settings pages | a) render existing AceConfig tables · b) hand-build widgets | a | **b: hand-build** |
-| D6 | Minimap right-click "Configuration" | a) open the Settings tab · b) remove the menu item | a | **b: remove** (`/bpepgp config` still opens the Settings tab) |
+| D6 | Minimap right-click "Configuration" | a) open the Settings tab · b) remove the menu item | a | **b: remove**. After the Phase 3 smoke test the whole right-click menu went: any click opens the main window. The other windows open with `/bpepgp` commands. |
 | D7 | Roster creation (single roster) | a) "Set up BP EPGP" button for officers when no roster exists · b) "Create roster" button in Guild settings | a | **a: setup button** ✅ |
 | D8 | "Advanced" items (logging, remove roster) | a) bottom of Settings tab · b) own *Advanced* tab | a | **b: own Advanced tab** (9 tabs) |
 | D9 | Window size | a) fixed, wider · b) resizable with minimum size, remembered per character | b | **b: resizable** ✅ |
@@ -77,7 +77,7 @@ Legend for **Your call**: **K** = keep (move to a settings tab) · **F** = fix: 
 | Setting | What it does | Recommendation | Your call |
 |---|---|---|---|
 | UI scale | Rescales all windows except the bidding window | K | ✅ |
-| Bindings (button) | Opens the WoW keybinding screen | D. Keybinds still appear under the addon in WoW's own Keybindings menu | ✅ |
+| Bindings (button) | Opens the WoW keybinding screen | D. Keybindings are removed completely (Phase 3 smoke test) | ✅ |
 | Addon sounds | Plays sounds on auction start/end | K | ✅ |
 | Toggle minimap icon | Shows/hides the minimap button | K, plus a slash command to bring it back | ✅ |
 | Wipe events | Deletes the local ledger and resyncs from others | K, under *Advanced* | **D** |
@@ -202,7 +202,7 @@ These settings disappear with features the release plan already removes. **Confi
 ## Other consequences
 
 - **Raids tab sidebar** (`UnifiedGUI_Raids.lua:80-137`) shows the bonus settings when creating a raid. After the change it only needs the on-time bonus, and it can link to the Guild settings tab instead of duplicating it.
-- **Profiles tab** loses the alt-main linking button (already planned).
+- **Profiles tab** is now **Manage roster** (Phase 3 smoke test): max level guild members with an "In roster" column; officers add/remove them. Guild members only; raids never add players themselves. Standings has no filters, search or award reason.
 - **Slash commands** registered via `ConfigManager:RegisterSlash` are commands, not settings, so they're unaffected. Only the `/bpepgp` root needs a `config` subcommand that opens the Settings tab.
 - **`ConfigManager`** shrinks: no `AddToBlizOptions` at all, and no `AddGroup` for the Integrations/Tracker/Cross-guild pages.
 - **Settings changes while an auction runs:** guild settings are ledger entries and apply after sync. That's the same as today.

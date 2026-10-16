@@ -297,9 +297,6 @@ function RaidManager:StartRaid(raid)
         return
     end
 
-    -- Lazy fill raid roster
-    CLM.MODULES.RosterManager:AddFromRaidToRoster(raid:Roster())
-
     local players = {}
     local joining_players_guids = {}
     for i=1,MAX_RAID_MEMBERS do
@@ -453,9 +450,6 @@ function RaidManager:UpdateRaiderList()
     -- Dont execute this more often than every 1s
     -- if GetServerTime() - self.lastRosterUpdateTime < 1 then return end
     -- self.lastRosterUpdateTime = GetServerTime()
-
-    -- Fill missing profiles from roster as in this raid
-    CLM.MODULES.RosterManager:AddFromRaidToRoster(self:GetRaid():Roster())
 
     local current, joiners, leavers = {}, {}, {}
     -- Detect leavers; build current set

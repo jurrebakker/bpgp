@@ -242,6 +242,18 @@ function Filters:SetFilterValue(filterId, valueToSet)
     HandleMutualExclusiveOptions(self, filterId, valueToSet)
 end
 
+-- Guild ranks ticked in the filter, keyed by rank index (1 = Guild Master)
+---@return table<number, boolean>
+function Filters:GetSelectedRanks()
+    local selected = {}
+    for index in pairs(CLM.MODULES.TrustInfoProvider:GetRanks()) do
+        if self.filters[1000 + index] then
+            selected[index] = true
+        end
+    end
+    return selected
+end
+
 ---@param playerName string
 ---@param playerClass string
 ---@param searchFieldsList table

@@ -7,30 +7,6 @@ local CONSTANTS = CLM.CONSTANTS
 local UTILS     = CLM.UTILS
 -- ------------------------------- --
 
-local OpenToCategory = InterfaceOptionsFrame_OpenToCategory or Settings.OpenToCategory
-
-
-local function OpenOldUIKeybinds()
-    local category = "AddOns"
-    category = _G[category] or category
-    KeyBindingFrame_LoadUI()
-    KeyBindingFrame.mode = 1
-    for _,buttons in pairs(KeyBindingFrame.categoryList.buttons) do
-        if buttons.element then
-            if buttons.element.name == category then
-                HideUIPanel(InterfaceOptionsFrame)
-                ShowUIPanel(KeyBindingFrame)
-                KeyBindingFrame.cntCategory = buttons.element.category
-                buttons:Click()
-            end
-        end
-    end
-end
-local function OpenNewUIKeybinds()
-    OpenToCategory(Settings.KEYBINDINGS_CATEGORY_ID)
-end
-
-
 ---@class GlobalConfigs
 ---@field db table
 ---@field deList table?
@@ -75,56 +51,17 @@ function GlobalConfigs:Initialize()
         clm_logo = {
             name = "",
             type = "description",
-            image = CLM.MEDIA_PATH .. "Icons\\clm-dark-64.png",
+            image = CLM.MEDIA_PATH .. "Icons\\bp-epgp-32.png",
             width = 0.25,
             order = 0
         },
-        author = {
+        title = {
             type = "description",
-            name = [=[Created by |cffe6cc80Lantis|r Annalina-Mirage Raceway]=],
+            name = (function() return "|cffe6cc80BP EPGP|r " .. CLM.MODULES.Version:GetString() end),
             fontSize = "large",
             descStyle = "inline",
             width = 3,
             order = 0.1
-        },
-        spacing1 = {
-            type = "description",
-            fontSize = "large",
-            name = "",
-            width = 0.25,
-            order = 0.2
-        },
-        patron_kudos = {
-            type = "description",
-            name = [=[
-Thank you patrons!
-]=],
-            fontSize = "medium",
-            descStyle = "inline",
-            width = 3,
-            order = 0.3
-        },
-        spacing2 = {
-            type = "description",
-            fontSize = "large",
-            name = "",
-            width = 0.25,
-            order = 0.7
-        },
-        discord = {
-            type = "description",
-            name = CLM.L["Join our discord for more info: "],
-            fontSize = "medium",
-            width = 1.1,
-            order = 0.8
-        },
-        discord_link = {
-            type = "input",
-            name = "",
-            get = (function(i) return "|cff44ee44https://tiny.one/clm-discord|r" end),
-            set = (function(i,v) end),
-            width = 1,
-            order = 0.9
         },
         global_header = {
             type = "header",
@@ -151,20 +88,6 @@ Thank you patrons!
             get = function(i) return self.db.uiscale end,
             order = 2.1,
             width = 1
-        },
-        global_bindings = {
-            name = CLM.L["Bindings"],
-            desc = CLM.L["Open Key Bindings UI for AddOns"],
-            type = "execute",
-            func = (function()
-                if KeyBindingFrame then
-                    OpenOldUIKeybinds()
-                else
-                    OpenNewUIKeybinds()
-                end
-            end),
-            width = 1,
-            order = 2.2
         },
         global_sounds = {
             name = CLM.L["Addon sounds"],
