@@ -6,5 +6,4 @@
 	<Script file="Utils.lua"/>
 	<Include file="Modules\_filelist.xml"/>
 	<Script file="MinimapIcon.lua"/>
-	<Script file="Tooltips.lua"/>
 </Ui>

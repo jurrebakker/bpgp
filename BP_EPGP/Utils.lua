@@ -34,19 +34,10 @@ local numberToClass = {
     [12] = "Demon Hunter",
     [13] = "Evoker"
 }
-local classOrdered = { "Druid", "Hunter", "Mage", "Priest", "Rogue", "Shaman", "Paladin", "Warlock", "Warrior" }
-if CLM.GetExpansion() >= LE_EXPANSION_WRATH_OF_THE_LICH_KING then
-    table.insert(classOrdered, 1, "Death Knight")
-end
-if CLM.GetExpansion() >= LE_EXPANSION_MISTS_OF_PANDARIA then
-    table.insert(classOrdered, 5, "Monk")
-end
-if CLM.GetExpansion() >= LE_EXPANSION_LEGION then
-    table.insert(classOrdered, 2, "Demon Hunter")
-end
-if CLM.GetExpansion() >= LE_EXPANSION_DRAGONFLIGHT then
-    table.insert(classOrdered, 4, "Evoker")
-end
+local classOrdered = {
+    "Death Knight", "Demon Hunter", "Druid", "Evoker", "Hunter", "Mage", "Monk",
+    "Priest", "Rogue", "Shaman", "Paladin", "Warlock", "Warrior"
+}
 
 ---@return number
 function UTILS.GetNumClasses()
@@ -1222,40 +1213,40 @@ function UTILS.SendChatMessage(message, channel, _, target)
     SendChatMessage("[BP EPGP] " .. tostring(message), channel, nil, target)
 end
 
----------------------------------
---- Cross-flavor DEPRECATIONS ---
----------------------------------
-local GetItemInfo = GetItemInfo or C_Item.GetItemInfo
+------------------------
+--- Retail API wrappers ---
+------------------------
+local GetItemInfo = C_Item.GetItemInfo
 function UTILS.GetItemInfo(...)
     return GetItemInfo(...)
 end
 
-local GetItemInfoInstant = GetItemInfoInstant or C_Item.GetItemInfoInstant
+local GetItemInfoInstant = C_Item.GetItemInfoInstant
 function UTILS.GetItemInfoInstant(...)
     return GetItemInfoInstant(...)
 end
 
-local GetItemQualityByID = C_Item.GetItemQualityByID or (function() return 0 end)
+local GetItemQualityByID = C_Item.GetItemQualityByID
 function UTILS.GetItemQualityByID(...)
     return (GetItemQualityByID(...) or 0)
 end
 
-local GetAddOnInfo = GetAddOnInfo or C_AddOns.GetAddOnInfo
+local GetAddOnInfo = C_AddOns.GetAddOnInfo
 function UTILS.GetAddOnInfo(...)
     return GetAddOnInfo(...)
 end
 
-local GetContainerNumSlots = GetContainerNumSlots or C_Container.GetContainerNumSlots
+local GetContainerNumSlots = C_Container.GetContainerNumSlots
 function UTILS.GetContainerNumSlots(...)
     return GetContainerNumSlots(...)
 end
 
-local UseContainerItem = UseContainerItem or C_Container.UseContainerItem
+local UseContainerItem = C_Container.UseContainerItem
 function UTILS.UseContainerItem(...)
     return UseContainerItem(...)
 end
 
-local GetLootMethod = GetLootMethod or C_PartyInfo.GetLootMethod
+local GetLootMethod = C_PartyInfo.GetLootMethod
 function UTILS.GetLootMethod()
     return GetLootMethod()
 end
@@ -1297,11 +1288,8 @@ CONSTANTS.ROLL_TYPE = {
     [LOOT_ROLL_TYPE_NEED]               = ColorCodeText(NEED, "1eff00"),
     [LOOT_ROLL_TYPE_GREED]              = ColorCodeText(GREED , "ffd100"),
 }
-if CLM.GetExpansion() >= LE_EXPANSION_CATACLYSM then
-    CONSTANTS.ROLL_TYPE[LOOT_ROLL_TYPE_DISENCHANT] = ColorCodeText(ROLL_DISENCHANT, "0070dd")
-    local TRANSMOGRIFICATION = TRANSMOGRIFICATION or "Transmogrification"
-    CONSTANTS.ROLL_TYPE[CONSTANTS.LOOT_ROLL_TYPE_TRANSMOG] = ColorCodeText(TRANSMOGRIFICATION, "a335ee")
-end
+CONSTANTS.ROLL_TYPE[LOOT_ROLL_TYPE_DISENCHANT] = ColorCodeText(ROLL_DISENCHANT, "0070dd")
+CONSTANTS.ROLL_TYPE[CONSTANTS.LOOT_ROLL_TYPE_TRANSMOG] = ColorCodeText(TRANSMOGRIFICATION or "Transmogrification", "a335ee")
 
 CONSTANTS.REGEXP_FLOAT = "^-?%d+%.?%d*$"
 CONSTANTS.REGEXP_FLOAT_POSITIVE = "^%d+%.?%d*$"

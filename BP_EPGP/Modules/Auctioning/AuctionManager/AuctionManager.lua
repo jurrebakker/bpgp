@@ -280,32 +280,6 @@ local function Joke()
     end)
 end
 
-local function AprilFools()
-    if CLM.AF then
-        local _, instanceType = IsInInstance()
-        if instanceType ~= "raid" then return end
-        if math.random(1,100) > 95 then
-            local L, C, D = nil, nil, 0
-            local R = math.random(1,4)
-            if R == 1 then
-                local _, itemLink= UTILS.GetItemInfo(19019)
-                if itemLink then
-                    L, C, D = ("Did someone say " .. itemLink .. "?"), "RAID", 2
-                end
-            elseif R == 2 then
-                L, C, D = "[The Unclickable] just dropped!", "GUILD", 1
-            elseif R == 3 then
-                L, C, D = "mrrglrlrlrmgrrr", "YELL", 1
-            elseif R > 3 then
-                D = 0
-                Joke()
-            end
-            if D > 0 then C_Timer.After(D, function() UTILS.SendChatMessage(L, C) end) end
-            C_Timer.After(2, function() LOG:Message("Happy |cff44ee44April Fools'|r raid week!") end)
-        end
-    end
-end
-
 local alreadyPostedLoot = {}
 local function PostLootToRaidChat()
     if not IsInRaid() then return end
@@ -625,8 +599,6 @@ function AuctionManager:Initialize()
         if CONSTANTS.BIDDING_COMM.TYPES[message:Type()] == nil then return end
         self:HandleIncomingMessage(message, distribution, sender)
     end), CONSTANTS.ACL.LEVEL.PLEBS, true)
-
-    CLM.MODULES.EventManager:RegisterWoWEvent({"LOOT_OPENED"}, AprilFools)
 
     if not CLM.MODULES.ACL:IsTrusted() then return end
 

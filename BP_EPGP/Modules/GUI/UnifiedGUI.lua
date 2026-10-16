@@ -233,13 +233,8 @@ function UnifiedGUI:Initialize()
 
     CLM.MODULES.LedgerManager:RegisterOnUpdate(function(lag, uncommitted)
         if lag ~= 0 or uncommitted ~= 0 then
-            local percentage
-            if CLM.MODULES.LedgerManager:IsTimeTraveling() then
-                percentage = CLM.MODULES.LedgerManager:TimeTravelProgress()
-            else
-                local count = CLM.MODULES.LedgerManager:Length() + uncommitted
-                percentage = UTILS.round(((count - lag) / count), 2)
-            end
+            local count = CLM.MODULES.LedgerManager:Length() + uncommitted
+            local percentage = UTILS.round(((count - lag) / count), 2)
             if percentage < 0.01 then
                 percentage = 0.01
             elseif percentage > 1 then

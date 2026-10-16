@@ -1,4 +1,3 @@
-local _, LibEventSourcing = ...
 
 local LedgerFactory, _ = LibStub:NewLibrary("BPEPGP-EventSourcing/LedgerFactory", 3)
 if not LedgerFactory then
@@ -30,7 +29,6 @@ Notes
 
 
 ]]--
-local stateManagers = LibEventSourcing.stateManagers
 LedgerFactory.createLedger = function(table, send, registerReceiveHandler, authorizationHandler, sendLargeMessage,
     updateInterval, batchSize, logger)
     Util.assertTable(table, 'table')
@@ -53,11 +51,6 @@ LedgerFactory.createLedger = function(table, send, registerReceiveHandler, autho
 
     stateManager:setUpdateInterval(updateInterval or 500)
     stateManager:setBatchSize(batchSize or 50)
-    local _, _, addon = string.find(debugstack(1, 0, 1), "@Interface\\AddOns\\(.-)\\")
-    stateManagers[#stateManagers+1] = {
-        stateManager = stateManager,
-        addon = addon
-    }
     return {
         getSortedList = function()
             return sortedList

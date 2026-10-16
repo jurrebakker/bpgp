@@ -2,8 +2,6 @@ local name, CLM = ...
 
 local GuildRoster = GuildRoster or C_GuildInfo.GuildRoster
 
-local GetActiveSeason = C_Seasons and C_Seasons.GetActiveSeason or (function() return nil end)
-
 -- Define missing expansion constants for older WoW versions
 if not LE_EXPANSION_MIDNIGHT then
     LE_EXPANSION_MIDNIGHT = 11
@@ -12,36 +10,16 @@ end
 _G["BPEPGP"] = CLM
 
 
----@return number, any
+-- BP EPGP is retail only. These stay until the boss-kill bonus code (Phase 3) is removed.
+---@return number
 function CLM.GetExpansion()
-    return floor(select(4, GetBuildInfo())/10000) - 1, GetActiveSeason()
+    return floor(select(4, GetBuildInfo())/10000) - 1
 end
 
----@return boolean
-function CLM.IsClassicEra()
-    local expansion, season = CLM.GetExpansion()
-    return (expansion == LE_EXPANSION_CLASSIC) and ((season == nil) or (season == Enum.SeasonID.NoSeason))
-end
-
----@return boolean
-function CLM.IsSoD()
-    local expansion, season = CLM.GetExpansion()
-    return (expansion == LE_EXPANSION_CLASSIC) and (season == Enum.SeasonID.SeasonOfDiscovery)
-end
-
----@return boolean
-function CLM.IsHardcore()
-    if C_GameRules and C_GameRules.IsHardcoreActive then
-        return C_GameRules.IsHardcoreActive()
-    end
-
-    return false
-end
-
----@return boolean
-function CLM.IsMainline()
-    return not CLM.IsClassicEra() and not CLM.IsSoD() and not CLM.IsHardcore()
-end
+function CLM.IsClassicEra() return false end
+function CLM.IsSoD() return false end
+function CLM.IsHardcore() return false end
+function CLM.IsMainline() return true end
 
 CLM.CORE = LibStub("AceAddon-3.0"):NewAddon(name, "AceEvent-3.0", "AceBucket-3.0")
 
@@ -114,19 +92,6 @@ local function Initialize_SavedVariables()
     if type(BPEPGP_Logs) ~= "table" then
         BPEPGP_Logs = {}
     end
-    CLM.AF = ((GetServerTime() >= 1774915200) and (GetServerTime() <= 1775692800)) and not BPEPGP_DB.DisableFun2026
-
-    StaticPopupDialogs["BPEPGPNoFunAllowedReload"] = {
-        text = "Are you sure? Will reload UI.",
-        button1 = "No fun allowed :(",
-        button2 = "I still want fun!",
-        OnAccept = function()
-            BPEPGP_DB.DisableFun2026 = true
-            ReloadUI()
-        end,
-        timeout = 0,
-        whileDead = 1
-    }
 end
 
 local function Initialize_Logger()
@@ -209,13 +174,10 @@ function CORE:_InitializeFeatures()
     MODULES.ProfileInfoManager:Initialize()
     MODULES.AutoAwardManager:Initialize()
     MODULES.AuctionHistoryManager:Initialize()
-    MODULES.SandboxManager:Initialize()
-    MODULES.CrossGuildSyncManager:Initialize()
     -- Globals
     CLM.GlobalConfigs:Initialize() -- Initialize global configs
     CLM.GlobalSlashCommands:Initialize() -- Initialize global slash handlers
     CLM.GlobalChatMessageHandlers:Initialize() -- Initialize global chat message handlers
-    CLM.GlobalUIHandlers:Initialize() -- Initialize various global misc UI handlers
     CLM.GlobalGuildChangeHandler:Initialize() -- Initialize guild change handler
 
     return true
@@ -312,10 +274,6 @@ end
 
 function CORE:_Initialize()
     LOG:Trace("CORE:_Initialize()")
-    -- Block direct lib timetravel
-    if SLASH_LibEventSourcing_TimeTravel1 then
-        SLASH_LibEventSourcing_TimeTravel1 = nil
-    end
     if not self._initialize_fired then
         CORE:_ExecuteInitialize()
         self:UnregisterEvent("GUILD_ROSTER_UPDATE")

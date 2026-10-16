@@ -642,62 +642,12 @@ local function GenerateUntrustedOptions(self)
     return self.filter:GetAceOptions()
 end
 
-local function GenerateOfficerOptions(self)
-    return {
-        toggle_sandbox = {
-            name = CLM.L["Enter sandbox"],
-            desc = CLM.L["In sandbox mode all communication is disabled and changes are local until applied. Click Apply changes to store changes and exit sandbox mode. Click Discard to undo changes and exit sandbox mode. /reload will discard changes. Entering sandbox mode will cancel time travel."],
-            type = "execute",
-            func = (function() CLM.MODULES.SandboxManager:EnterSandbox() end),
-            order = 11,
-            width = 0.75,
-            hidden  = (function() return CLM.MODULES.SandboxManager:IsSandbox() end)
-        },
-        apply_changes = {
-            name = CLM.L["Apply changes"],
-            desc = CLM.L["Applies all changes and exits sandbox mode"],
-            type = "execute",
-            func = (function() CLM.MODULES.SandboxManager:ApplyChanges() end),
-            order = 12,
-            width = 0.75,
-            confirm = true,
-            hidden  = (function() return not CLM.MODULES.SandboxManager:IsSandbox() end)
-        },
-        discard_changes = {
-            name = CLM.L["Discard changes"],
-            desc = CLM.L["Discards all changes and exits sandbox mode"],
-            type = "execute",
-            func = (function() CLM.MODULES.SandboxManager:DiscardChanges() end),
-            order = 13,
-            confirm = true,
-            width = 0.75,
-            hidden  = (function() return not CLM.MODULES.SandboxManager:IsSandbox() end)
-        },
-        sandbox_info = {
-            name = (function()
-                local info = ""
-                if CLM.MODULES.SandboxManager:IsSandbox() then
-                    info = UTILS.ColorCodeText(CLM.L["Sandbox"], "ff8000")
-                elseif CLM.MODULES.LedgerManager:IsTimeTraveling() then
-                    info = UTILS.ColorCodeText(CLM.L["Time Traveling"], "eeee00")
-                end
-                return info
-            end),
-            fontSize = "medium",
-            width = 0.75,
-            order = 14,
-            type = "description"
-        },
-    }
-end
-
 local function horizontalOptionsFeeder()
     local options = {
         type = "group",
         args = { }
     }
     UTILS.mergeDictsInline(options.args, GenerateUntrustedOptions(UnifiedGUI_Audit))
-    UTILS.mergeDictsInline(options.args, GenerateOfficerOptions(UnifiedGUI_Audit))
     return options
 end
 
@@ -765,26 +715,9 @@ local function tableDataFeeder()
         return CLM.MODULES.LedgerManager:GetData()
     end)
 
-    if CLM.IsHardcore() then
-        getData = (function()
-            return CLM.MODULES.LedgerManager:GetRecentData()
-        end)
-    end
-
-    if CLM.MODULES.LedgerManager:IsTimeTraveling() then
-        local timeTravelTarget = CLM.MODULES.LedgerManager:GetTimeTravelTarget()
-        for i,entry in ipairs(getData()) do
-            if entry:time() > timeTravelTarget then
-                break
-            end
-            data[#data+1] = buildEntryRow(entry, i)
-            fillIGNData(i, entry)
-        end
-    else
-        for i,entry in ipairs(getData()) do
-            data[#data+1] = buildEntryRow(entry, i)
-            fillIGNData(i, entry)
-        end
+    for i,entry in ipairs(getData()) do
+        data[#data+1] = buildEntryRow(entry, i)
+        fillIGNData(i, entry)
     end
     return data
 end
@@ -793,27 +726,6 @@ local function initializeHandler()
     LOG:Trace("UnifiedGUI_Audit initializeHandler()")
     UnifiedGUI_Audit.RightClickMenu = CLM.UTILS.GenerateDropDownMenu(
         {
-            {
-                title = CLM.L["Timetravel"],
-                func = (function()
-                    local row = UnifiedGUI_Audit:GetSelection()
-                    if row then
-                        CLM.MODULES.LedgerManager:TimeTravel(ST_GetEntry(row):time())
-                    end
-                end),
-                trustedOnly = true,
-                color = "eeee00"
-            },
-            {
-                title = CLM.L["End Timetravel"],
-                func = (function()
-                    if CLM.MODULES.LedgerManager:IsTimeTraveling() then
-                        CLM.MODULES.LedgerManager:EndTimeTravel()
-                    end
-                end),
-                trustedOnly = true,
-                color = "eeee00"
-            },
             {
                 title = CLM.L["Remove selected"],
                 func = (function()

@@ -11,12 +11,10 @@ local GuildRoster = GuildRoster or C_GuildInfo.GuildRoster
 ---@class TrustInfoProvider
 ---@field cache table
 ---@field cacheUpdateRequired boolean
----@field trustedExternal table
 local TrustInfoProvider = {}
 function TrustInfoProvider:Initialize()
     LOG:Trace("TrustInfoProvider:Initialize()")
     self:WipeAll()
-    self.trustedExternal = {}
     self:BuildCache()
     self.cacheUpdateRequired = true
     CLM.MODULES.EventManager:RegisterWoWEvent({"PLAYER_GUILD_UPDATE", "GUILD_ROSTER_UPDATE"}, (function(...)
@@ -28,35 +26,11 @@ function TrustInfoProvider:Initialize()
     end))
 end
 
----@param name string
-function TrustInfoProvider:AddExternalTrusted(name)
-    self.trustedExternal[name] = true
-    self.cacheUpdateRequired = true
-end
-
----@param name string
-function TrustInfoProvider:RemoveExternalTrusted(name)
-    self.trustedExternal[name] = nil
-    self.cacheUpdateRequired = true
-end
-
-function TrustInfoProvider:ClearExternalTrusted()
-    self.trustedExternal = {}
-    self.cacheUpdateRequired = true
-end
-
-local function ExtendCacheByExternal(self)
-    for name,_ in pairs(self.trustedExternal) do
-        self.cache.managers[name] = true
-    end
-end
-
 function TrustInfoProvider:BuildCache()
     if self.cacheUpdateRequired then
         self:WipeAll()
         self:BuildRankCache()
         self:BuildGuildCache()
-        ExtendCacheByExternal(self)
         self.cacheUpdateRequired = false
     end
 end

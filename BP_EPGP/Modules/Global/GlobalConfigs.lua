@@ -184,16 +184,6 @@ Thank you patrons!
             func = function() CLM.MODULES.LedgerManager:Wipe() end,
             order = 4
         },
-        nofunallowed = {
-            type = "execute",
-            name = "No fun allowed",
-            desc = "Disable April fools jokes",
-            func = (function()
-                StaticPopup_Show("BPEPGPNoFunAllowedReload")
-            end),
-            order = 4.5,
-            hidden = (function() return not CLM.AF end)
-        },
         global_loot_announcement_header = {
             type = "header",
             name = CLM.L["Announce loot"],
@@ -285,87 +275,6 @@ Thank you patrons!
             set = function(i, v) self:SetBidsWarning(v) end,
             get = function(i) return self:GetBidsWarning() end,
             order = 126
-        },
-        tooltip_display_header = {
-            type = "header",
-            name = CLM.L["Price Tooltips"] .. " - " .. CLM.L["Not in raid"],
-            order = 900
-        },
-        tooltip_display_toggle = {
-            name = CLM.L["Display price"],
-            desc = CLM.L["Enables displaying item price on tooltip."],
-            type = "toggle",
-            set = function(i, v) self:SetPriceTooltip(v) end,
-            get = function(i) return self:GetPriceTooltip() end,
-            order = 901
-        },
-        loot_roll_header = {
-            type = "header",
-            name = CLM.L["Loot Rolling"],
-            order = 1200
-        },
-        loot_roll_behavior = {
-            name = CLM.L["Roll on Loot"],
-            desc = CLM.L["Select default behavior whenever group loot rolling window gets opened. This will be active only during CLM Raid and while in Raid instance."],
-            type = "select",
-            values = CONSTANTS.ROLL_TYPE,
-            set = function(i, v) self:SetRollType(v) end,
-            get = function(i) return self:GetRollType() end,
-            order = 1201
-        },
-        loot_roll_padding = {
-            name = "",
-            type = "description",
-            order = 1202,
-            width = 2
-        },
-        loot_roll_include_legendary = {
-            name = CLM.L["Include"] .. " " .. UTILS.ColorCodeText(CLM.L["Legendary"], "ff8000"),
-            desc = CLM.L["Toggles auto-rolling on legendary items."],
-            type = "toggle",
-            set = function(i, v) self:SetLootRollIncludeLegendary(v) end,
-            get = function(i) return self:GetLootRollIncludeLegendary() end,
-            order = 1203
-        },
-        loot_roll_include_stacking = {
-            name = CLM.L["Include"] .. " " .. CLM.L["Stacking"],
-            desc = CLM.L["Toggles auto-rolling on stacking items."],
-            type = "toggle",
-            set = function(i, v) self:SetLootRollIncludeStacking(v) end,
-            get = function(i) return self:GetLootRollIncludeStacking() end,
-            order = 1204
-        },
-        loot_roll_include_patterns = {
-            name = CLM.L["Include"] .. " " .. CLM.L["Patterns"],
-            desc = CLM.L["Toggles auto-rolling on patterns."],
-            type = "toggle",
-            set = function(i, v) self:SetLootRollIncludePatterns(v) end,
-            get = function(i) return self:GetLootRollIncludePatterns() end,
-            order = 1205
-        },
-        loot_roll_include_mounts = {
-            name = CLM.L["Include"] .. " " .. CLM.L["Mounts"],
-            desc = CLM.L["Toggles auto-rolling on mounts."],
-            type = "toggle",
-            set = function(i, v) self:SetLootRollIncludeMounts(v) end,
-            get = function(i) return self:GetLootRollIncludeMounts() end,
-            order = 1206
-        },
-        loot_roll_include_toys = {
-            name = CLM.L["Include"] .. " " .. CLM.L["Toys"],
-            desc = CLM.L["Toggles auto-rolling on toys."],
-            type = "toggle",
-            set = function(i, v) self:SetLootRollIncludeToys(v) end,
-            get = function(i) return self:GetLootRollIncludeToys() end,
-            order = 1207
-        },
-        loot_roll_include_cosmetics = {
-            name = CLM.L["Include"] .. " " .. CLM.L["Cosmetics"],
-            desc = CLM.L["Toggles auto-rolling on cosmetics."],
-            type = "toggle",
-            set = function(i, v) self:SetLootRollIncludeCosmetics(v) end,
-            get = function(i) return self:GetLootRollIncludeCosmetics() end,
-            order = 1208
         },
         danger_zone_header = {
             type = "header",

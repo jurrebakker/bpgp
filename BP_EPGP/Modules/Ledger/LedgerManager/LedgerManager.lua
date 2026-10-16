@@ -16,21 +16,9 @@ local STATUS_OUT_OF_SYNC = "out_of_sync"
 -- local STATUS_UNKNOWN = "unknown"
 local STATUS_UNKNOWN_TYPE = "unknown_type"
 
-local previousCallback = nil
 local function registerReceiveCallback(callback)
-    if not previousCallback then
-        previousCallback = callback
-    end
-
     CLM.MODULES.Comms:Register(CLM.COMM_CHANNEL.LEDGER.SYNC, callback, CONSTANTS.ACL.LEVEL.PLEBS)
     CLM.MODULES.Comms:Register(CLM.COMM_CHANNEL.LEDGER.DATA, callback, CONSTANTS.ACL.LEVEL.ASSISTANT)
-end
-
-local function restoreReceiveCallback()
-    if previousCallback then
-        registerReceiveCallback(previousCallback)
-        previousCallback = nil
-    end
 end
 
 local function createLedger(self, database)
@@ -60,27 +48,6 @@ local function createLedger(self, database)
         return ledger
 end
 
-local function createLedgerAndRegisterCallbacks(self, database)
-    local ledger = createLedger(self, database)
-
-    -- Mutators
-    for class, mutatorFn in pairs(self.mutatorCallbacks) do
-        ledger.registerMutator(class, mutatorFn)
-    end
-
-    -- Update Handlers
-    for _, callback in ipairs(self.onUpdateCallbacks) do
-        ledger.addStateChangedListener(callback)
-    end
-
-    -- Restart Handlers
-    for _,callback in ipairs(self.onRestartCallbacks) do
-        ledger.addStateRestartListener(callback)
-    end
-
-    return ledger
-end
-
 ---@class LedgerManager
 ---@field _initialized boolean
 ---@field activeDatabase table
@@ -88,15 +55,11 @@ end
 ---@field disabled boolean
 ---@field incoherentState boolean
 ---@field inSync boolean
----@field isSandbox boolean
 ---@field lastEntry any
 ---@field mutatorCallbacks table
 ---@field onRestartCallbacks table
 ---@field onUpdateCallbacks table
----@field _originalDatabase table
----@field _originalLedger table
 ---@field syncOngoing boolean
----@field timeTravelTarget number
 ---@field recentDataCache table?
 ---@field recentDataCacheSeconds number?
 local LedgerManager = { _initialized = false}
@@ -128,24 +91,6 @@ function LedgerManager:Enable()
     end
 end
 
----@param playerName string
-function LedgerManager:AddP2PTarget(playerName)
-    self.activeLedger.getListSync():addP2PSyncTarget(playerName)
-end
-
-function LedgerManager:ClearP2PTargets()
-    self.activeLedger.getListSync():clearP2PSyncTargets()
-end
-
----@param playerName string
-function LedgerManager:AddP2PSource(playerName)
-    self.activeLedger.getListSync():addP2PSyncSource(playerName)
-end
-
-function LedgerManager:ClearP2PSources()
-    self.activeLedger.getListSync():clearP2PSyncSources()
-end
-
 -- This is not reversible until reload
 function LedgerManager:Cutoff()
     self.activeLedger.disableSending()
@@ -156,98 +101,6 @@ end
 
 function LedgerManager:DisableAdvertising()
     self.activeLedger.disableSending()
-end
-
----@param timestamp number
-function LedgerManager:TimeTravel(timestamp)
-    self.timeTravelTarget = timestamp
-    self.activeLedger.getStateManager():travelToTime(timestamp)
-    self.recentDataCache = nil
-    self:UpdateSyncState()
-end
-
-function LedgerManager:EndTimeTravel()
-    self.activeLedger.getStateManager():stopTimeTravel()
-    self.recentDataCache = nil
-    self:UpdateSyncState()
-end
-
----@return boolean
-function LedgerManager:IsTimeTraveling()
-    if not self._initialized then return false end
-    return self.activeLedger.getStateManager():isTimeTraveling()
-end
-
----@return number
-function LedgerManager:TimeTravelProgress()
-    local firstEntry = self:GetData()[1]
-    if not firstEntry then return 1 end
-
-    local sm = self.activeLedger.getStateManager()
-    local currentEntry = sm.list:entries()[sm.lastAppliedIndex]
-    if not currentEntry then return 1 end
-
-    local startTime = firstEntry:time()
-    local currentTime = currentEntry:time() - startTime
-    local endTime = self.timeTravelTarget - startTime
-
-    return UTILS.round(currentTime/endTime, 2)
-end
-
----@return number
-function LedgerManager:GetTimeTravelTarget()
-    return self.timeTravelTarget
-end
-
-function LedgerManager:EnterSandbox()
-    LOG:Trace("LedgerManager:EnterSandbox()")
-    -- Finalize everything on current ledger
-    if self:IsTimeTraveling() then
-        self:EndTimeTravel()
-    end
-    self.activeLedger.catchup()
-    -- Backup database reference
-    self._originalDatabase = self.activeDatabase
-    -- Copy ledger database
-    self.activeDatabase = UTILS.DeepCopy(self._originalDatabase)
-    -- Backup ledger
-    self._originalLedger = self.activeLedger
-    -- Create new ledger and substitute
-    self.activeLedger = createLedgerAndRegisterCallbacks(self, self.activeDatabase)
-    -- Mark as sandbox mode
-    self.isSandbox = true
-    -- Restarts
-    for _,callback in ipairs(self.onRestartCallbacks) do
-        callback()
-    end
-    -- Enable
-    self:Enable()
-    -- Update status
-    self:UpdateSyncState()
-end
-
----@param apply boolean
-function LedgerManager:ExitSandbox(apply)
-    LOG:Trace("LedgerManager:ExitSandbox()")
-    if apply then
-        -- If we apply we simply keep the new ledger and discard old one
-        -- We only update the database storage
-        CLM.MODULES.Database:UpdateLedger(self.activeDatabase)
-        self._originalDatabase = nil
-        self._originalLedger = nil
-    else
-        -- Return the active from original ones
-        self.activeDatabase = self._originalDatabase
-        self.activeLedger = self._originalLedger
-        -- Restore comm callbacks to the original
-        restoreReceiveCallback()
-    end
-    -- Mark as active mode
-    self.isSandbox = false
-    -- Update status
-    self:UpdateSyncState()
-    -- restart
-    self.activeLedger.getStateManager():restart()
 end
 
 ---@param class any
@@ -346,7 +199,7 @@ function LedgerManager:GetRecentData(seconds)
     if self.recentDataCache and self.recentDataCacheSeconds == seconds then
         return self.recentDataCache
     end
-    local now = self:IsTimeTraveling() and self.timeTravelTarget or time()
+    local now = time()
     local cutoff = now - seconds
     local result = {}
     for _, entry in ipairs(self:GetData()) do

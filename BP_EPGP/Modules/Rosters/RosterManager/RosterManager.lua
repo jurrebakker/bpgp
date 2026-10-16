@@ -449,31 +449,10 @@ function RosterManager:Initialize()
             get = function(i) return self.db.attendanceWeeksWindow end,
             order = 22
           },
-          export_rosters = {
-            name = CLM.L["Select Rosters to display"],
-            type = "multiselect",
-            set = function(i, k, v)
-                self.db.displayTooltipConfig[tonumber(k) or 0] = v
-            end,
-            get = function(i, k) return self.db.displayTooltipConfig[k] end,
-            values = function()
-                local roster_list = {}
-                for uid, name in pairs(CLM.MODULES.RosterManager:GetRostersUidMap()) do
-                    roster_list[uid] = name
-                end
-                return roster_list
-            end,
-            order = 902
-        }
     }
     CLM.MODULES.ConfigManager:Register(CLM.CONSTANTS.CONFIGS.GROUP.GLOBAL, options)
 end
 
----@param rosterUid string|number
----@return boolean
-function RosterManager:GetDisplayTooltip(rosterUid)
-    return self.db.displayTooltipConfig[tonumber(rosterUid) or 0]
-end
 
 ---@return table
 function RosterManager:GetRosters()

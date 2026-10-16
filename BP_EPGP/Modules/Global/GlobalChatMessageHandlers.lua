@@ -33,12 +33,6 @@ end
 local CHAT_MESSAGE_CHANNELS = {"CHAT_MSG_GUILD", "CHAT_MSG_OFFICER", "CHAT_MSG_PARTY", "CHAT_MSG_PARTY_LEADER", "CHAT_MSG_PARTY_GUIDE", "CHAT_MSG_RAID", "CHAT_MSG_RAID_LEADER", "CHAT_MSG_RAID_WARNING",
 "CHAT_MSG_SAY", "CHAT_MSG_YELL", "CHAT_MSG_WHISPER", "CHAT_MSG_WHISPER_INFORM", "CHAT_MSG_CHANNEL", "CHAT_MSG_BN_WHISPER", "CHAT_MSG_BN_WHISPER_INFORM", "CHAT_MSG_BN_CONVERSATION", "CHAT_MSG_INSTANCE_CHAT", "CHAT_MSG_INSTANCE_CHAT_LEADER"}
 
-local function classicRaidWarningFrameOnEvent(self, event, message)
-    if ( event == "CHAT_MSG_RAID_WARNING" ) then
-        message = subsituteWithIcon(message)
-        RaidWarningFrame_OnEvent(self, event, message)
-    end
-end
 
 ---@class GlobalChatMessageHandlers
 local GlobalChatMessageHandlers = {}
@@ -46,9 +40,6 @@ function GlobalChatMessageHandlers:Initialize()
     -- Substitute [CLM] with an icon
     for _, channel in ipairs(CHAT_MESSAGE_CHANNELS) do
         ChatFrame_AddMessageEventFilter(channel, filterSubsituteWithIcon)
-    end
-    if not CLM.IsMainline() then
-        RaidWarningFrame:SetScript("OnEvent", classicRaidWarningFrameOnEvent)
     end
 end
 

@@ -122,8 +122,7 @@ function ProfileInfoManager:Initialize()
     CLM.MODULES.LedgerManager:RegisterOnUpdate(function(lag, uncommitted)
         if lag ~= 0 or uncommitted ~= 0 then return end
         if not self._initialized then
-            LOG:Message(CLM.L["Core Loot Manager %s initialization complete. %s"], UTILS.ColorCodeText(CLM.MODULES.Version:GetString(), "00cc00"), "Created by |cffe6cc80Lantis|r Annalina-Mirage Raceway")
-            if CLM.AF then LOG:Message("Happy |cff44ee44April Fools'|r raid week!") end
+            LOG:Message(CLM.L["BP EPGP %s initialization complete."], UTILS.ColorCodeText(CLM.MODULES.Version:GetString(), "00cc00"))
             C_Timer.After(1, function()
                 RestoreVersions(self)
             end)

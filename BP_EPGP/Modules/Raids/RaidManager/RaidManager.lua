@@ -340,10 +340,6 @@ function RaidManager:CreateRaid(roster, name, config)
         LOG:Message(CLM.L["You are already in an active raid. Leave or finish it before creating new one."])
         return
     end
-    if CLM.MODULES.LedgerManager:IsTimeTraveling() then
-        LOG:Message(CLM.L["Raid management is disabled during time traveling."])
-        return
-    end
     CLM.MODULES.LedgerManager:Submit(CLM.MODELS.LEDGER.RAID.Create:new(roster:UID(), name, config))
 end
 
@@ -360,10 +356,6 @@ function RaidManager:StartRaid(raid)
     end
     if raid:Status() ~= CONSTANTS.RAID_STATUS.CREATED then
         LOG:Message(CLM.L["You can only start a freshly created raid."])
-        return
-    end
-    if CLM.MODULES.LedgerManager:IsTimeTraveling() then
-        LOG:Message(CLM.L["Raid management is disabled during time traveling."])
         return
     end
     if (self:GetRaid() ~= raid) or not IsInRaid() then
@@ -433,10 +425,6 @@ function RaidManager:EndRaid(raid)
         LOG:Message(CLM.L["You can only end an active raid."])
         return
     end
-    if CLM.MODULES.LedgerManager:IsTimeTraveling() then
-        LOG:Message(CLM.L["Raid management is disabled during time traveling."])
-        return
-    end
     self:HandleRosterUpdateEvent()
     -- Raid completion bonus
     local config = raid:Configuration()
@@ -477,10 +465,6 @@ function RaidManager:JoinRaid(raid)
         LOG:Message(CLM.L["You can only join different raid than your current one."])
         return
     end
-    if CLM.MODULES.LedgerManager:IsTimeTraveling() then
-        LOG:Message(CLM.L["Raid management is disabled during time traveling."])
-        return
-    end
     local myProfile = CLM.MODULES.ProfileManager:GetMyProfile()
     if myProfile == nil then
         error("My profile is nil")
@@ -502,10 +486,6 @@ function RaidManager:AddToStandby(raid, standby)
     end
     if raid:Status() ~= CONSTANTS.RAID_STATUS.IN_PROGRESS then
         LOG:Message(CLM.L["You can only add players to standby of a progressing raid."])
-        return
-    end
-    if CLM.MODULES.LedgerManager:IsTimeTraveling() then
-        LOG:Message(CLM.L["Raid management is disabled during time traveling."])
         return
     end
     -- Filter out players currently in standby or in raid
@@ -538,10 +518,6 @@ function RaidManager:RemoveFromStandby(raid, removed)
     end
     if raid:Status() ~= CONSTANTS.RAID_STATUS.IN_PROGRESS then
         LOG:Message(CLM.L["You can only add players to standby of a progressing raid."])
-        return
-    end
-    if CLM.MODULES.LedgerManager:IsTimeTraveling() then
-        LOG:Message(CLM.L["Raid management is disabled during time traveling."])
         return
     end
     -- Filter out players currently not on standby
@@ -639,7 +615,6 @@ function RaidManager:HandleRosterUpdateEvent()
     LOG:Trace("RaidManager:HandleRosterUpdateEvent()")
     if reentrance then LOG:Debug("Reentrance!") return end
     if not IsInRaid() then return end
-    if CLM.MODULES.LedgerManager:IsTimeTraveling() then return end
     reentrance = true
     -- Update wow raid information
     self:UpdateGameRaidInformation()

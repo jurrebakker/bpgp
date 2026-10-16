@@ -367,13 +367,8 @@ local function tableDataFeeder()
             lootList = roster:GetProfileLootByGUID(profile:GUID())
             disenchantedList = {}
         else -- raid loot
-            if CLM.IsHardcore() then
-                lootList = roster:GetRecentRaidLoot()
-                disenchantedList = {}
-            else
-                lootList = roster:GetRaidLoot()
-                disenchantedList = roster:GetDisenchantedLoot()
-            end
+            lootList = roster:GetRaidLoot()
+            disenchantedList = roster:GetDisenchantedLoot()
         end
 
         local displayedLoot, displayedDe = {}, {}
@@ -436,11 +431,7 @@ local function tableDataFeeder()
         if isProfileHistory then
             pointList = roster:GetProfilePointHistoryByGUID(profile:GUID())
         else -- raid loot
-            if CLM.IsHardcore() then
-                pointList = roster:GetRecentRaidPointHistory()
-            else
-                pointList = roster:GetRaidPointHistory()
-            end
+            pointList = roster:GetRaidPointHistory()
         end
         local player
         for _,history in ipairs(pointList) do

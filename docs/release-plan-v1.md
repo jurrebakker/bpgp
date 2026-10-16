@@ -259,10 +259,10 @@ Each phase ends with: luacheck clean, `/reload` without Lua errors, and the rele
 
 ### Phase 2 — Remove the big unused blocks
 - [x] Delete non-English locales *(done in Phase 1)*.
-- [ ] Delete Changelog module, `_annotations`, April Fools. (Unused scripts: already removed.)
-- [ ] Delete CrossGuildSyncManager, SandboxManager + time travel + ChatOps (move `stateManagers` init out of `SlashCommands.lua` first).
-- [ ] Delete all classic code: `IsClassicEra`/`IsSoD`/`IsHardcore`, expansion branches in `Utils.lua`, classic item ID lists, IndirectSlotMap data, master-loot paths, classic tooltip fallbacks.
-- [ ] Delete GlobalUIHandlers (auto-roll), Tooltips.lua.
+- [x] Delete Changelog module, `_annotations`, April Fools (incl. joke sounds). CHANGELOG.md replaced with our own. (Unused scripts: already removed.)
+- [x] Delete CrossGuildSyncManager, SandboxManager + time travel + ChatOps (move `stateManagers` init out of `SlashCommands.lua` first).
+- [x] Delete all classic code *(expansion checks now return fixed retail answers until Phase 3 removes the boss-kill code; encounter tables go with it; master-loot paths go in Phase 5)*: `IsClassicEra`/`IsSoD`/`IsHardcore`, expansion branches in `Utils.lua`, classic item ID lists, IndirectSlotMap data, master-loot paths, classic tooltip fallbacks.
+- [x] Delete GlobalUIHandlers (auto-roll), Tooltips.lua.
 
 ### Phase 3 — EPGP only
 - [ ] Remove DKP point type: collapse every `POINT_TYPE` branch to the EPGP path; remove zero-sum bank, caps, weekly caps, tax, allow-below-min.

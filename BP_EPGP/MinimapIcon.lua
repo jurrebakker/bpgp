@@ -57,14 +57,6 @@ local function CreateMinimapDBI(self, dropdown)
             tooltip:AddLine(CLM.L["Unknown sync state"], 0.4, 0.6, 1) -- BLUE
         end
         tooltip:AddLine(info)
-
-        if CLM.MODULES.SandboxManager:IsSandbox() then
-            tooltip:AddLine(CLM.L["Sandbox mode"], 1, 1, 1)
-        end
-
-        if CLM.MODULES.LedgerManager:IsTimeTraveling() then
-            tooltip:AddLine(CLM.L["Time Traveling"], 1, 1, 1)
-        end
     end
 
     icon:Register(addonName, CLM.MinimapDBI, BPEPGP_Minimap)
@@ -109,8 +101,6 @@ local function updateIcon()
         ic = "green"
     elseif CLM.MODULES.LedgerManager:IsSyncOngoing() then
         ic = "yellow"
-    elseif CLM.MODULES.SandboxManager:IsSandbox() or CLM.MODULES.LedgerManager:IsTimeTraveling() then
-        ic = "white"
     else -- Unknown state
         ic = "blue"
     end
