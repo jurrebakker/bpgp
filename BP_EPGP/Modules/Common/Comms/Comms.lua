@@ -29,6 +29,19 @@ local Comms = CLM.CORE:NewModule("Comms", {}, "AceComm-3.0")
 
 local COMMS_VERSION = 1
 
+-- Messages sent during an addon-message lockdown wait here (Midnight blocks them during encounters)
+local MAX_QUEUED = 500
+local sendQueue = {}
+local startSendQueue = UTILS.NewRetryQueue(function()
+    if UTILS.InAddonMessageLockdown() then return false end
+    local queued = sendQueue
+    sendQueue = {}
+    for _, args in ipairs(queued) do
+        Comms:Send(unpack(args, 1, 5))
+    end
+    return true
+end)
+
 function Comms:Initialize()
     LOG:Trace("Comms:Initialize()")
     self.callbacks = {}
@@ -136,6 +149,15 @@ function Comms:Send(prefix, message, distribution, target, priority)
         elseif distribution == CONSTANTS.COMMS.DISTRIBUTION.WHISPER and CLM.MODULES.TestMode:IsSimulatedPlayer(UTILS.Disambiguate(target or "")) then
             return true
         end
+    end
+    if UTILS.InAddonMessageLockdown() then
+        if #sendQueue < MAX_QUEUED then
+            tinsert(sendQueue, { prefix, message, distribution, target, priority })
+            startSendQueue()
+        else
+            LOG:Debug("Comms:Send(): lockdown queue full, dropping %s", prefix)
+        end
+        return true
     end
     -- Prefix
     prefix = _prefix(prefix)

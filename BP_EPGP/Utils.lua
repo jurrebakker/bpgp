@@ -1193,15 +1193,78 @@ function UTILS.DecodePointTypeChangeName(changeType)
     return CLM.L["EP/GP"]
 end
 
+--------------------------
+--- Midnight restrictions ---
+--------------------------
+-- Secret values (12.x): opaque values the addon may not compare, index or parse
+---@param value any
+---@return boolean
+function UTILS.IsSecret(value)
+    return (issecretvalue ~= nil) and issecretvalue(value) and true or false
+end
+
+-- Chat lockdown (12.x): chat can't be sent, e.g. during encounters
+---@return boolean
+function UTILS.InChatLockdown()
+    return (C_ChatInfo and C_ChatInfo.InChatMessagingLockdown and C_ChatInfo.InChatMessagingLockdown()) and true or false
+end
+
+-- Addon messages are blocked during encounters too; queue instead of losing them
+---@return boolean
+function UTILS.InAddonMessageLockdown()
+    return UTILS.InChatLockdown() or (IsEncounterInProgress and IsEncounterInProgress()) or false
+end
+
+-- Runs flushFn every second until it returns true (queue empty)
+---@param flushFn function
+---@return function start
+function UTILS.NewRetryQueue(flushFn)
+    local ticker
+    return function()
+        if ticker then return end
+        ticker = C_Timer.NewTicker(1, function()
+            if flushFn() then
+                ticker:Cancel()
+                ticker = nil
+            end
+        end)
+    end
+end
+
+local SendChat = (C_ChatInfo and C_ChatInfo.SendChatMessage) or SendChatMessage
+local CHAT_QUEUE_MAX_AGE = 30 -- seconds; older messages (e.g. countdowns) are no longer useful
 local raidChannels = UTILS.Set({"RAID", "RAID_WARNING"})
+local chatQueue = {}
+
+local function SendChatNow(message, channel, target)
+    if raidChannels[channel] and not IsInRaid() then return end
+    SendChat("[BP EPGP] " .. tostring(message), channel, nil, target)
+end
+
+local startChatQueue = UTILS.NewRetryQueue(function()
+    if UTILS.InChatLockdown() then return false end
+    local now = GetTime()
+    for _, queued in ipairs(chatQueue) do
+        if now - queued.time <= CHAT_QUEUE_MAX_AGE then
+            SendChatNow(queued.message, queued.channel, queued.target)
+        end
+    end
+    wipe(chatQueue)
+    return true
+end)
+
 function UTILS.SendChatMessage(message, channel, _, target)
     if CLM.MODULES.Database:IsTestMode() then
         -- Test mode never sends chat; show what would have been sent
         CLM.LOG:Message("|cffff8000[TEST]|r %s%s: %s", tostring(channel), target and (" " .. tostring(target)) or "", tostring(message))
         return
     end
-    if raidChannels[channel] and not IsInRaid() then return end
-    SendChatMessage("[BP EPGP] " .. tostring(message), channel, nil, target)
+    if UTILS.InChatLockdown() then
+        tinsert(chatQueue, { message = message, channel = channel, target = target, time = GetTime() })
+        startChatQueue()
+        return
+    end
+    SendChatNow(message, channel, target)
 end
 
 ------------------------

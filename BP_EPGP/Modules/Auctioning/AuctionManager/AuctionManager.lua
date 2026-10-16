@@ -216,6 +216,7 @@ end
 
 local function HandleLootMessage(addon, event, message, _, _, _, playerName, ...)
     local self = AuctionManager
+    if UTILS.IsSecret(message) or UTILS.IsSecret(playerName) then return end
     if playerName ~= UTILS.whoami() then return end
     if not message then return end
     if not CLM.MODULES.RaidManager:IsInActiveRaid() then return end
@@ -251,6 +252,7 @@ local function PostLootToRaidChat()
         if not CLM.MODULES.RaidManager:IsRaidOwner(UTILS.whoami()) then return end
     end
     local targetGuid = UnitGUID("target")
+    if UTILS.IsSecret(targetGuid) then targetGuid = nil end
     if targetGuid then
         if alreadyPostedLoot[targetGuid] then return end
         alreadyPostedLoot[targetGuid] = true
@@ -280,6 +282,7 @@ local function FillLootFromCorpse()
     if not GetFillAuctionListFromCorpse(AuctionManager) then return end
 
     local targetGuid = UnitGUID("target")
+    if UTILS.IsSecret(targetGuid) then targetGuid = nil end
     if targetGuid then
         if alreadyAddedLoot[targetGuid] then return end
         alreadyAddedLoot[targetGuid] = true
@@ -773,6 +776,7 @@ function AuctionManager:StartAuction()
 end
 
 local function handleIncomingRoll(_, _, message, ...)
+    if UTILS.IsSecret(message) then return end
     local auction = CLM.MODULES.AuctionManager:GetCurrentAuctionInfo()
     if not auction:IsAcceptingRolls() then return end
 

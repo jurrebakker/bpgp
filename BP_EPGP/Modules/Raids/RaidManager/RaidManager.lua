@@ -39,6 +39,16 @@ local function GroupMemberInfo(index)
     return name, rank
 end
 
+-- In combat on 12.x roster names can be secret values; then the roster can't be read right now
+---@return boolean
+local function GroupHasSecrets()
+    for i=1,MAX_RAID_MEMBERS do
+        local name, rank = GroupMemberInfo(i)
+        if UTILS.IsSecret(name) or UTILS.IsSecret(rank) then return true end
+    end
+    return false
+end
+
 ---@class RaidManager
 ---@field RaidLeader string
 ---@field MasterLooter string
@@ -48,6 +58,7 @@ end
 ---@field _initialized boolean
 ---@field cache table
 ---@field isEventHandlingRegistered boolean
+---@field rosterUpdatePending boolean?
 local RaidManager = {}
 function RaidManager:Initialize()
     LOG:Trace("RaidManager:Initialize()")
@@ -316,6 +327,10 @@ function RaidManager:StartRaid(raid)
         LOG:Message(CLM.L["You are not in the raid."])
         return
     end
+    if GroupHasSecrets() then
+        LOG:Message(CLM.L["The raid roster can't be read right now (combat). Try again after combat."])
+        return
+    end
 
     local players = {}
     local joining_players_guids = {}
@@ -402,7 +417,7 @@ end
 
 function RaidManager:RegisterEventHandling()
     if self.isEventHandlingRegistered then return end
-    CLM.MODULES.EventManager:RegisterWoWBucketEvent({"RAID_ROSTER_UPDATE", "GROUP_ROSTER_UPDATE", "READY_CHECK"}, 3, (function(...)
+    CLM.MODULES.EventManager:RegisterWoWBucketEvent({"GROUP_ROSTER_UPDATE", "READY_CHECK"}, 3, (function(...)
         self:HandleRosterUpdateEvent()
     end))
     CLM.MODULES.EventManager:RegisterWoWBucketEvent({"PARTY_LOOT_METHOD_CHANGED","PLAYER_ROLES_ASSIGNED"}, 3, (function(...)
@@ -416,6 +431,17 @@ function RaidManager:HandleRosterUpdateEvent()
     LOG:Trace("RaidManager:HandleRosterUpdateEvent()")
     if reentrance then LOG:Debug("Reentrance!") return end
     if not GroupIsInRaid() then return end
+    if GroupHasSecrets() then
+        -- Retry once the roster is readable again; otherwise everyone would look like a leaver
+        if not self.rosterUpdatePending then
+            self.rosterUpdatePending = true
+            C_Timer.After(5, function()
+                self.rosterUpdatePending = nil
+                self:HandleRosterUpdateEvent()
+            end)
+        end
+        return
+    end
     reentrance = true
     -- Update wow raid information
     self:UpdateGameRaidInformation()

@@ -26,7 +26,7 @@ end
 
 local function filterSubsituteWithIcon(_, _, message, ...)
     -- Never filter (hide) or touch messages during chat lockdown; they may be secret values
-    if InLockdown() then return false end
+    if InLockdown() or CLM.UTILS.IsSecret(message) then return false end
     return false, subsituteWithIcon(message), ...
 end
 

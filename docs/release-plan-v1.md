@@ -294,10 +294,10 @@ Each phase ends with: luacheck clean, `/reload` without Lua errors, and the rele
 - [x] Guard: when the roster already has point or loot history, the *Overwrite existing standings* checkbox must be ticked.
 
 ### Phase 7 — Midnight hardening
-- [ ] Chat lockdown: route all chat sends through one helper that checks `C_ChatInfo.InChatMessagingLockdown()` and queues messages.
-- [ ] Addon-message lockdown: queue ledger broadcasts and verify bidding works outside encounters (auctions happen after the boss, normally fine).
-- [ ] Secret-value guards in raid roster handling and chat parsing (§5.1 #13).
-- [ ] Re-test every event registration on 12.x.
+- [x] Chat lockdown: all chat goes through `UTILS.SendChatMessage`, which uses `C_ChatInfo.SendChatMessage` and queues messages during `C_ChatInfo.InChatMessagingLockdown()`; queued messages older than 30 s (e.g. countdowns) are dropped.
+- [x] Addon-message lockdown: `Comms:Send` queues every message (max 500) while in chat lockdown or `IsEncounterInProgress()`, and sends them afterwards. Still to verify in a real raid (Phase 10).
+- [x] Secret-value guards (`UTILS.IsSecret`): raid roster reads wait and retry while names are secret (otherwise everyone would look like a leaver), raid start refuses with a message; loot and /roll parsing, target GUIDs and the chat icon filter skip secret values.
+- [x] Event registrations reviewed: `RAID_ROSTER_UPDATE` removed (`GROUP_ROSTER_UPDATE` covers it); the rest are valid on retail. Still to watch in-game during Phase 10.
 
 ### Phase 8 — Sync hardening ([sync-and-security.md](sync-and-security.md))
 - [ ] **S3:** validate every incoming entry (types, ranges, referenced roster/profile) before inserting it. Wrap each mutator in `pcall`; skip and flag failures in the Audit tab instead of halting. Show a warning on `MutatorFailed`.
