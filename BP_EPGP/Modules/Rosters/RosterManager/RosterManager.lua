@@ -56,10 +56,7 @@ function RosterManager:Initialize()
                 return
             end
             if not (pointType and CONSTANTS.POINT_TYPES[pointType] ~= nil) then return end
-            local roster = CLM.MODELS.Roster:New(uid, pointType, self.db.raidsForFullAttendance, self.db.attendanceWeeksWindow)
-            if self.db.displayTooltipConfig[uid] == nil then
-                self.db.displayTooltipConfig[uid] = true
-            end
+            local roster = CLM.MODELS.Roster:New(uid, pointType)
             self.cache.rosters[name] = roster
             self.cache.rostersUidMap[uid] = name
         end))
@@ -365,56 +362,6 @@ function RosterManager:Initialize()
         self:WipeAll()
     end)
 
-    self.db = CLM.MODULES.Database:Personal('rosterManager', {
-        raidsForFullAttendance = 2,
-        attendanceWeeksWindow = 10,
-        displayTooltipConfig = {}
-    })
-
-    local options = {
-        attendance_header = {
-            type = "header",
-            name = CLM.L["Attendance"],
-            order = 20
-        },
-        attendance_max = {
-            name = CLM.L["Raids needed in reset"],
-            desc = CLM.L["Provide number of raids needed for 100% attendance in a weekly reset. Between 1 - 50 raids. Defaults to 2. Requires /reload."],
-            type = "range",
-            min = 1,
-            max = 50,
-            softMin = 1,
-            softMax = 10,
-            step = 1,
-            set = function(i, v)
-                v = tonumber(v) or 1
-                if v < 1 then v = 1 end
-                if v > 50 then v = 50 end
-                self.db.raidsForFullAttendance = v
-            end,
-            get = function(i) return self.db.raidsForFullAttendance end,
-            order = 21
-          },
-          attendance_window = {
-            name = CLM.L["Average weeks"],
-            desc = CLM.L["Provide number of weeks that will be accounted for attendance. Between 1 - 1000 weeks. Defaults to 10. Requires /reload."],
-            type = "range",
-            min = 1,
-            max = 1000,
-            softMin = 1,
-            softMax = 54,
-            step = 1,
-            set = function(i, v)
-                v = tonumber(v) or 1
-                if v < 1 then v = 1 end
-                if v > 1000 then v = 1000 end
-                self.db.attendanceWeeksWindow = v
-            end,
-            get = function(i) return self.db.attendanceWeeksWindow end,
-            order = 22
-          },
-    }
-    CLM.MODULES.ConfigManager:Register(CLM.CONSTANTS.CONFIGS.GROUP.GLOBAL, options)
 end
 
 

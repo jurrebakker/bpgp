@@ -85,7 +85,6 @@ function RaidManager:Initialize()
                 local profile = CLM.MODULES.ProfileManager:GetProfileByGUID(GUID)
                 if profile then
                     self:UpdateProfileCurentRaid(GUID, raid)
-                    raid:Roster():UpdateAttendance(GUID, raidUid, entry:time())
                 end
             end
             -- Remove leavers
@@ -124,7 +123,6 @@ function RaidManager:Initialize()
                 local profile = CLM.MODULES.ProfileManager:GetProfileByGUID(GUID)
                 if profile then
                     self:UpdateProfileCurentRaid(GUID, raid)
-                    raid:Roster():UpdateAttendance(GUID, raidUid, entry:time())
                 else
                     LOG:Debug("RaidManager mutator(): Missing profile for: %s", GUID)
                 end

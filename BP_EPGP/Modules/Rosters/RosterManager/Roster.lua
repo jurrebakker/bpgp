@@ -54,16 +54,13 @@ end
 ---@field recentRaidPointHistoryCache table?
 ---@field recentRaidPointHistoryCacheSeconds number?
 ---@field standings table
----@field attendanceTracker AttendanceTracker
 ---@field weeklyGains table
 ---@field calculator ItemValueCalculator
 local Roster = {}
 ---@param uid integer
 ---@param pointType any
----@param raidsForFullAttendance integer
----@param attendanceWeeksWindow integer
 ---@return Roster
-function Roster:New(uid, pointType, raidsForFullAttendance, attendanceWeeksWindow)
+function Roster:New(uid, pointType)
     local o = {}
 
     setmetatable(o, self)
@@ -89,8 +86,6 @@ function Roster:New(uid, pointType, raidsForFullAttendance, attendanceWeeksWindo
     o.inRoster = {}             -- Profile is at all in roster
     o.standings = {}            -- Profile standing in roster (dict)
     o.pointInfo = {}            -- Profile point info
-    o.attendanceTracker = CLM.MODELS.AttendanceTracker:New(
-       raidsForFullAttendance, attendanceWeeksWindow) -- Profile attendance in roster (dict)
     o.pointHistory = {}         -- Point changes in  roster (list)
     o.profilePointHistory = {}  -- Point changes in to players in roster (dict of lists)
     o.raidLoot = {}             -- Loot received in the roster (list). Time descending
@@ -535,9 +530,6 @@ function Roster:GetConfiguration(option)
 end
 
 local configurationCallbacks = {
-    weeklyReset = function(self, value)
-        self.attendanceTracker:UpdateWeeklyReset(value)
-    end,
     minGP = function(self, value)
         for _, pointInfo in pairs(self.pointInfo) do
             pointInfo.spent = math.max(pointInfo.spent, self.configuration._.minGP)
@@ -753,25 +745,6 @@ function Roster:CopyProfiles(s)
             self:AddProfileByGUID(GUID)
         end
     end
-end
-
---[[
- **************
- * Attendance *
- **************
-]]--
-
----@param GUID string
----@param raidId any
----@param timestamp? number
-function Roster:UpdateAttendance(GUID, raidId, timestamp)
-    self.attendanceTracker:Update(GUID, raidId, timestamp)
-end
-
----@param GUID string
----@return number
-function Roster:GetAttendance(GUID)
-    return self.attendanceTracker:Get(GUID)
 end
 
 CLM.MODELS.Roster = Roster

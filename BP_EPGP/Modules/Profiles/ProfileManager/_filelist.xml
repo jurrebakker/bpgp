@@ -3,5 +3,4 @@
 	<Script file="Profile.lua"/>
 	<Script file="ProfileManager.lua"/>
 	<Script file="LedgerEntries.lua"/>
-	<Script file="PruneLog.lua"/>
 </Ui>

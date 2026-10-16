@@ -582,7 +582,6 @@ local function tableDataFeeder()
     local isEPGP = (roster:GetPointType() == CONSTANTS.POINT_TYPE.EPGP)
     for GUID,value in pairs(roster:Standings()) do
         local profile = CLM.MODULES.ProfileManager:GetProfileByGUID(GUID)
-        local attendance = UTILS.round(roster:GetAttendance(GUID) or 0, 0)
         local pointInfo = roster:GetPointInfoForPlayer(GUID)
         local numColumnValue
         local primary
@@ -608,7 +607,7 @@ local function tableDataFeeder()
         --[[3]]  {value = numColumnValue, color = (value > 0 and colorGreen or colorRed)},
         --[[4]]  {value = primary},
         --[[5]]  {value = secondary},
-        --[[6]]  {value = UTILS.ColorCodeByPercentage(attendance)},
+        --[[6]]  {value = ""},
             -- not displayed
         --[[7]]  {value = roster:GetCurrentGainsForPlayer(GUID)},                            -- 7
         --[[8]]  {value = weeklyCap},

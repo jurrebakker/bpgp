@@ -90,26 +90,6 @@ function GlobalSlashCommands:Initialize()
         }
     end
     if CLM.MODULES.ACL:IsTrusted() then
-        options.prune = {
-            type = "input",
-            name = CLM.L["Prune profiles"],
-            set = (function(i, input)
-                local command, parameter, nop = strsplit("/", input)
-                command = strlower(command or "")
-                nop = nop and true or false
-                if command == CLM.L["level"] then
-                    parameter = tonumber(parameter) or 0
-                    CLM.MODULES.ProfileManager:PruneBelowLevel(parameter, nop)
-                elseif command == CLM.L["rank"] then
-                    parameter = parameter or ""
-                    parameter = tonumber(parameter) or parameter
-                    CLM.MODULES.ProfileManager:PruneRank(parameter, nop)
-                elseif command == CLM.L["unguilded"] then
-                    CLM.MODULES.ProfileManager:PruneUnguilded(nop)
-                end
-            end),
-            confirm = true
-        }
     end
     if CLM.MODULES.ACL:IsTrusted() then
         options.version = {

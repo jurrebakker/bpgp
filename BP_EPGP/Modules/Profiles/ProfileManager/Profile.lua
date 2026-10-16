@@ -102,10 +102,4 @@ function Profile:Entry()
     return self.entry
 end
 
-CONSTANTS.PROFILE_ROLES_GUI = {
-    ["TANK"] = CLM.L["Tank"],
-    ["HEALER"] = CLM.L["Healer"],
-    ["DAMAGER"] = CLM.L["DPS"],
-}
-
 CLM.MODELS.Profile = Profile
