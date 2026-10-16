@@ -17,8 +17,7 @@ local UTILS     = CLM.UTILS
 ---@field startTime number
 ---@field endTime number
 ---@field players table<string, boolean>
----@field standby table<string, boolean>
----@field participated { inRaid: table<string, boolean>, standby: table<string, boolean> }
+---@field participated { inRaid: table<string, boolean> }
 local Raid = {} -- Raid information
 
 Raid.__index = Raid
@@ -52,12 +51,10 @@ function Raid:New(uid, name, roster, config, creator, entry)
     -- GUID dict
     -- Dynamic status of the raid
     o.players = { [creator] = true } -- for raid management we check sometimes if creator is part of raid
-    o.standby = { }
 
     -- Historical storage of the raid
     o.participated = {
-        inRaid = {},
-        standby = {}
+        inRaid = {}
     }
 
     return o
@@ -134,31 +131,6 @@ function Raid:RemovePlayers(players)
     end
 end
 
----@param guid string
-function Raid:StandbyPlayer(guid)
-    self.standby[guid] = true
-    self.participated.standby[guid] = true
-end
-
----@param players string[]
-function Raid:StandbyPlayers(players)
-    for _, guid in ipairs(players) do
-        self:StandbyPlayer(guid)
-    end
-end
-
----@param guid string
-function Raid:RemoveFromStandbyPlayer(guid)
-    self.standby[guid] = nil
-end
-
----@param players string[]
-function Raid:RemoveFromStandbyPlayers(players)
-    for _, guid in ipairs(players) do
-        self:RemoveFromStandbyPlayer(guid)
-    end
-end
-
 ---@param GUID string
 ---@return boolean
 function Raid:IsPlayerInRaid(GUID)
@@ -190,22 +162,6 @@ function Raid:Players()
     return UTILS.keys(self.players)
 end
 
----@return string[]
-function Raid:PlayersOnStandby()
-    return UTILS.keys(self.standby)
-end
-
----@return string[]
-function Raid:AllPlayers()
-    return UTILS.mergeLists(self:Players(), self:PlayersOnStandby())
-end
-
----@param GUID string
----@return boolean
-function Raid:IsPlayerOnStandby(GUID)
-    return self.standby[GUID] and true or false
-end
-
 ---@param historical boolean?
 ---@return Profile[]
 function Raid:Profiles(historical)
@@ -215,29 +171,6 @@ function Raid:Profiles(historical)
         players = self.participated.inRaid
     end
     for player,_ in pairs(players) do
-        -- The code below breaks Model-View-Controller rule as it accessess Managers
-        -- Maybe the caching should be done in GUI module?
-        -- TODO: resolve this
-        local profile = CLM.MODULES.ProfileManager:GetProfileByGUID(player)
-        if profile then
-            result[#result + 1] = profile
-        end
-    end
-    table.sort(result, (function(first, second)
-        return first:Name() < second:Name()
-    end))
-    return result
-end
-
----@param historical boolean?
----@return Profile[]
-function Raid:Standby(historical)
-    local result = {}
-    local standby = self.standby
-    if historical then
-        standby = self.participated.standby
-    end
-    for player,_ in pairs(standby) do
         -- The code below breaks Model-View-Controller rule as it accessess Managers
         -- Maybe the caching should be done in GUI module?
         -- TODO: resolve this

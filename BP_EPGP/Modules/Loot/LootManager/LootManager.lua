@@ -50,12 +50,7 @@ local function mutateLootAward(entry, roster)
             return
         end
         if raid:Configuration():Get("zeroSumBank") then
-            local players
-            if raid:Configuration():Get("autoAwardIncludeBench") then
-                players = CLM.MODULES.RaidManager:GetUniquePlayersListInRaid(raid)
-            else
-                players = raid:Players()
-            end
+            local players = raid:Players()
             local num_players = #players
             if num_players > 0 then
                 local value = (loot:Value()/num_players) + roster:GetConfiguration("zeroSumBankInflation")

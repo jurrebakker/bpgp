@@ -16,7 +16,6 @@ local filterInstanceId = 1
 local supportedFilters = {
     "class",
     "inRaid",
-    "inStandby",
     "inGuild",
     "external",
     "main",
@@ -42,7 +41,6 @@ local supportedOptions = {
 ---@field searchFunction function?
 ---@field class boolean
 ---@field inRaid boolean
----@field inStandby boolean
 ---@field inGuild boolean
 ---@field external boolean
 ---@field main boolean
@@ -92,7 +90,6 @@ end
 CONSTANTS.FILTER = {
     IN_RAID      = 100,
     ONLINE       = 101,
-    STANDBY      = 102,
     IN_GUILD     = 103,
     NOT_IN_GUILD = 104,
     MAINS_ONLY   = 105,
@@ -102,7 +99,6 @@ CONSTANTS.FILTER = {
 CONSTANTS.FILTERS_GUI = {
     [CONSTANTS.FILTER.IN_RAID] = CLM.L["In Raid"],
     [CONSTANTS.FILTER.ONLINE] = CLM.L["Online"],
-    [CONSTANTS.FILTER.STANDBY] = CLM.L["Standby"],
     [CONSTANTS.FILTER.IN_GUILD] = CLM.L["In Guild"],
     [CONSTANTS.FILTER.NOT_IN_GUILD] = CLM.L["External"],
     [CONSTANTS.FILTER.MAINS_ONLY] = CLM.L["Mains"],
@@ -112,7 +108,6 @@ CONSTANTS.FILTERS_GUI = {
 local color = "FFD100"
 local parameterToConstantMap = {
     inRaid = CONSTANTS.FILTER.IN_RAID,
-    inStandby = CONSTANTS.FILTER.STANDBY,
     inGuild = CONSTANTS.FILTER.IN_GUILD,
     external = CONSTANTS.FILTER.NOT_IN_GUILD,
     main = CONSTANTS.FILTER.MAINS_ONLY,
@@ -128,11 +123,6 @@ end
 
 local function HandleMutualExclusiveOptions(self, filterId, valueToSet)
     if not valueToSet then return end
-    if filterId == CONSTANTS.FILTER.IN_RAID then
-        self.filters[CONSTANTS.FILTER.STANDBY] = false
-    elseif filterId == CONSTANTS.FILTER.STANDBY then
-        self.filters[CONSTANTS.FILTER.IN_RAID] = false
-    end
     if filterId == CONSTANTS.FILTER.IN_GUILD then
         self.filters[CONSTANTS.FILTER.NOT_IN_GUILD] = false
     elseif filterId == CONSTANTS.FILTER.NOT_IN_GUILD then
@@ -291,20 +281,6 @@ function Filters:Filter(playerName, playerClass, searchFieldsList)
             local profile = CLM.MODULES.ProfileManager:GetProfileByName(playerName)
             if profile then
                 status = status and CLM.MODULES.RaidManager:GetRaid():IsPlayerInRaid(profile:GUID())
-            end
-        else
-            status = false
-        end
-    elseif self.inStandby and self.filters[CONSTANTS.FILTER.STANDBY] then
-        if CLM.MODULES.RaidManager:IsInProgressingRaid() then
-            local profile = CLM.MODULES.ProfileManager:GetProfileByName(playerName)
-            if profile then
-                status = status and CLM.MODULES.RaidManager:GetRaid():IsPlayerOnStandby(profile:GUID())
-            end
-        elseif CLM.MODULES.RaidManager:IsInCreatedRaid() then
-            local profile = CLM.MODULES.ProfileManager:GetProfileByName(playerName)
-            if profile then
-                status = status and CLM.MODULES.StandbyStagingManager:IsPlayerOnStandby(CLM.MODULES.RaidManager:GetRaid():UID(), profile:GUID())
             end
         else
             status = false

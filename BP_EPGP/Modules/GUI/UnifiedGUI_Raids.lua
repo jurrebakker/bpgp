@@ -97,30 +97,6 @@ local function GenerateAssistantOptions(self)
             pattern = CONSTANTS.REGEXP_FLOAT_POSITIVE,
             order = 33,
         },
-        auto_award_include_bench =  {
-            name = CLM.L["Include bench"],
-            desc = CLM.L["Include benched players in all auto-awards"],
-            type = "toggle",
-            set = (function(i, v) SetRaidConfigurationOption(self, "autoAwardIncludeBench", v) end),
-            get = (function() return GetRaidConfigurationOption(self, "autoAwardIncludeBench") end),
-            order = 39,
-        },
-        auto_bench_leavers =  {
-            name = CLM.L["Auto bench leavers"],
-            desc = CLM.L["Put players leaving raid on bench instead of removing them. To remove them completely they will need to be removed manually from the bench."],
-            type = "toggle",
-            set = (function(i, v) SetRaidConfigurationOption(self, "autoBenchLeavers", v) end),
-            get = (function() return GetRaidConfigurationOption(self, "autoBenchLeavers") end),
-            order = 40,
-        },
-        allow_self_bench_subscribe =  {
-            name = CLM.L["Allow subscription"],
-            desc = CLM.L["Allow players to subscribe to the bench through Raids menu"],
-            type = "toggle",
-            set = (function(i, v) SetRaidConfigurationOption(self, "selfBenchSubscribe", v) end),
-            get = (function() return GetRaidConfigurationOption(self, "selfBenchSubscribe") end),
-            order = 41,
-        },
         select_roster = {
             name = CLM.L["Select roster"],
             desc = CLM.L["Select roster to create raid for."],
@@ -244,14 +220,6 @@ local tableStructure = {
             else
                 UTILS.buildPlayerListForTooltip(profiles, tooltip)
             end
-            local standby = raid:Standby(finished)
-            local numStandby = #standby
-            tooltip:AddDoubleLine(CLM.L["Standby"] .. ":", tostring(numStandby))
-            if not standby or numStandby == 0 then
-                tooltip:AddLine(CLM.L["None"])
-            else
-                UTILS.buildPlayerListForTooltip(standby, tooltip)
-            end
 
             tooltip:AddLine(" ")
             tooltip:AddDoubleLine(CLM.L["Roster"], CLM.MODULES.RosterManager:GetRosterNameByUid(raid:Roster():UID()) or "")
@@ -303,36 +271,6 @@ local function initializeHandler()
     LOG:Trace("UnifiedGUI_Raids initializeHandler()")
     UnifiedGUI_Raids.RightClickMenu = CLM.UTILS.GenerateDropDownMenu(
         {
-            {
-                title = CLM.L["Request standby"],
-                func = (function(i)
-                    local raid = UnifiedGUI_Raids:GetSelection()
-                    if raid then
-                        CLM.MODULES.StandbyStagingManager:SignupToStandby(raid:UID())
-                    else
-                        LOG:Message(CLM.L["Please select a raid"])
-                    end
-                    refreshFn(true)
-                    CLM.GUI.Unified:ClearSelection()
-                end)
-            },
-            {
-                title = CLM.L["Revoke standby"],
-                func = (function(i)
-                    local raid = UnifiedGUI_Raids:GetSelection()
-                    if raid then
-                        CLM.MODULES.StandbyStagingManager:RevokeStandby(raid:UID())
-                    else
-                        LOG:Message(CLM.L["Please select a raid"])
-                    end
-                    refreshFn(true)
-                    CLM.GUI.Unified:ClearSelection()
-                end)
-            },
-            {
-                separator = true,
-                trustedOnly = true
-            },
             {
                 title = CLM.L["Start selected raid"],
                 func = (function(i)

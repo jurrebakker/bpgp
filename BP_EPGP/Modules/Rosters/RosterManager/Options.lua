@@ -87,42 +87,6 @@ function RosterManagerOptions:Initialize()
         general_weekly_reset_timezone_set = (function(name, value)
             SetRosterOption(name, "weeklyReset", value)
         end),
-        general_allow_self_bench_subscribe_get = (function(name)
-            return GetRosterOption(name, "selfBenchSubscribe")
-        end),
-        general_allow_self_bench_subscribe_set = (function(name, value)
-            SetRosterOption(name, "selfBenchSubscribe", value)
-        end),
-        general_auto_bench_leavers_get = (function(name)
-            return GetRosterOption(name, "autoBenchLeavers")
-        end),
-        general_auto_bench_leavers_set = (function(name, value)
-            SetRosterOption(name, "autoBenchLeavers", value)
-        end),
-        general_bench_multiplier_get = (function(name)
-            return tostring(GetRosterOption(name, "benchMultiplier"))
-        end),
-        general_bench_multiplier_set = (function(name, value)
-            SetRosterOption(name, "benchMultiplier", value)
-        end),
-        general_auto_award_include_bench_get = (function(name)
-            return GetRosterOption(name, "autoAwardIncludeBench")
-        end),
-        general_auto_award_include_bench_set = (function(name, value)
-            SetRosterOption(name, "autoAwardIncludeBench", value)
-        end),
-        general_auto_award_online_only_get = (function(name)
-            return GetRosterOption(name, "autoAwardOnlineOnly")
-        end),
-        general_auto_award_online_only_set = (function(name, value)
-            SetRosterOption(name, "autoAwardOnlineOnly", value)
-        end),
-        general_auto_award_same_zone_only_get = (function(name)
-            return GetRosterOption(name, "autoAwardSameZoneOnly")
-        end),
-        general_auto_award_same_zone_only_set = (function(name, value)
-            SetRosterOption(name, "autoAwardSameZoneOnly", value)
-        end),
         general_named_buttons_toggle_set = (function(name, value)
             SetRosterOption(name, "namedButtons", value)
         end),
@@ -794,32 +758,6 @@ function RosterManagerOptions:GenerateRosterOptions(name)
                         disabled = disableManage,
                         width = 1
                     },
-                    auto_award_include_bench =  {
-                        name = CLM.L["Include bench"],
-                        desc = CLM.L["Include benched players in all auto-awards"],
-                        type = "toggle",
-                        order = 14,
-                        disabled = disableManage,
-                        -- width = 2
-                    },
-                    auto_award_online_only =  {
-                        name = CLM.L["Online only"],
-                        desc = CLM.L["Award points only to online players"],
-                        type = "toggle",
-                        order = 15,
-                        -- disabled = disableManage,
-                        disabled = true,
-                        width = 1
-                    },
-                    auto_award_same_zone_only =  {
-                        name = CLM.L["Same zone only"],
-                        desc = CLM.L["Award points only to players in same zone"],
-                        type = "toggle",
-                        order = 16,
-                        -- disabled = disableManage,
-                        disabled = true,
-                        width = 1
-                    },
                     point_caps_header = {
                         name = CLM.L["Point caps"],
                         type = "header",
@@ -875,37 +813,6 @@ function RosterManagerOptions:GenerateRosterOptions(name)
                         order = 23,
                         hidden = not isEPGP,
                         pattern = CONSTANTS.REGEXP_FLOAT_POSITIVE,
-                    },
-                    bench_header = {
-                        name = CLM.L["Bench"],
-                        type = "header",
-                        order = 24,
-                        width = "full"
-                    },
-                    allow_self_bench_subscribe =  {
-                        name = CLM.L["Allow subscription"],
-                        desc = CLM.L["Allow players to subscribe to the bench through Raids menu"],
-                        type = "toggle",
-                        order = 25,
-                        disabled = disableManage,
-                        width = 1
-                    },
-                    auto_bench_leavers =  {
-                        name = CLM.L["Auto bench leavers"],
-                        desc = CLM.L["Put players leaving raid on bench instead of removing them. To remove them completely they will need to be removed manually from the bench."],
-                        type = "toggle",
-                        order = 26,
-                        disabled = disableManage,
-                        width = 1
-                    },
-                    bench_multiplier =  {
-                        name = CLM.L["Bench multiplier"],
-                        desc = CLM.L["Point award multiplier for players on bench."],
-                        type = "input",
-                        order = 27,
-                        disabled = disableManage,
-                        pattern = CONSTANTS.REGEXP_FLOAT_POSITIVE,
-                        width = 1
                     },
                     named_buttons_header = {
                         name = CLM.L["Button Names"],

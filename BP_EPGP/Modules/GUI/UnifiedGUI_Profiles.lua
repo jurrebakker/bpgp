@@ -35,7 +35,7 @@ local UnifiedGUI_Profiles = {
     name = "profiles",
     filter = CLM.MODELS.Filters:New(
     (function() CLM.GUI.Unified:FilterScrollingTable() end),
-    UTILS.Set({"class", "inRaid", "inStandby", "inGuild", "external", "rank", "locked"}),
+    UTILS.Set({"class", "inRaid", "inGuild", "external", "rank", "locked"}),
     UTILS.Set({"buttons", "search"}),
     nil, 1),
     tooltip = CreateFrame("GameTooltip", "BPEPGPUnifiedGUIProfilesDialogTooltip", UIParent, "GameTooltipTemplate"),

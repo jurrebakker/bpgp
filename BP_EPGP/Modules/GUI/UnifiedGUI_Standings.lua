@@ -86,7 +86,7 @@ local UnifiedGUI_Standings = {
     filter = CLM.MODELS.Filters:New(
     (function() CLM.GUI.Unified:FilterScrollingTable() end),
     UTILS.Set({
-        "class", "inRaid", "inStandby",
+        "class", "inRaid",
         "inGuild", "external", "main", "rank", "locked"
     }),
     UTILS.Set({
@@ -644,100 +644,6 @@ local function initializeHandler()
     LOG:Trace("UnifiedGUI_Standings initializeHandler()")
     UnifiedGUI_Standings.RightClickMenu = CLM.UTILS.GenerateDropDownMenu(
         {
-            {
-                title = CLM.L["Add to standby"],
-                func = (function()
-                    if not CLM.MODULES.RaidManager:IsInRaid() then
-                        LOG:Message(CLM.L["Not in raid"])
-                        return
-                    end
-                    local profiles = UnifiedGUI_Standings:GetSelection()
-                    local raid = CLM.MODULES.RaidManager:GetRaid()
-                    local roster = CLM.MODULES.RosterManager:GetRosterByUid(UnifiedGUI_Standings.roster)
-                    if roster ~= raid:Roster() then
-                        LOG:Message(string.format(
-                            CLM.L["You can only bench players from same roster as the raid (%s)."],
-                            CLM.MODULES.RosterManager:GetRosterNameByUid(raid:Roster():UID())
-                        ))
-                        return
-                    end
-
-                    if CLM.MODULES.RaidManager:IsInProgressingRaid() then
-                        if #profiles > 10 then
-                            LOG:Message(string.format(
-                                CLM.L["You can %s max %d players to standby at the same time to a %s raid."],
-                                CLM.L["add"], 10, CLM.L["progressing"]
-                            ))
-                            return
-                        end
-                        CLM.MODULES.RaidManager:AddToStandby(CLM.MODULES.RaidManager:GetRaid(), profiles)
-                    elseif CLM.MODULES.RaidManager:IsInCreatedRaid() then
-                        if #profiles > 25 then
-                            LOG:Message(string.format(
-                                CLM.L["You can %s max %d players to standby at the same time to a %s raid."],
-                                CLM.L["add"], 25, CLM.L["created"]
-                            ))
-                            return
-                        end
-                        for _, profile in ipairs(profiles) do
-                            CLM.MODULES.StandbyStagingManager:AddToStandby(CLM.MODULES.RaidManager:GetRaid():UID(), profile:GUID())
-                        end
-                    end
-                    refreshFn(true)
-                    CLM.GUI.Unified:ClearSelection()
-                end),
-                trustedOnly = true,
-                color = "eeee00"
-            },
-            {
-                title = CLM.L["Remove from standby"],
-                func = (function()
-                    if not CLM.MODULES.RaidManager:IsInRaid() then
-                        LOG:Message(CLM.L["Not in raid"])
-                        return
-                    end
-                    local profiles = UnifiedGUI_Standings:GetSelection()
-                    local raid = CLM.MODULES.RaidManager:GetRaid()
-                    local roster = CLM.MODULES.RosterManager:GetRosterByUid(UnifiedGUI_Standings.roster)
-                    if roster ~= raid:Roster() then
-                        LOG:Message(string.format(
-                            CLM.L["You can only remove from bench players from same roster as the raid (%s)."],
-                            CLM.MODULES.RosterManager:GetRosterNameByUid(raid:Roster():UID())
-                        ))
-                        return
-                    end
-
-                    if CLM.MODULES.RaidManager:IsInProgressingRaid() then
-                        if #profiles > 10 then
-                            LOG:Message(string.format(
-                                CLM.L["You can %s max %d players from standby at the same time to a %s raid."],
-                                CLM.L["remove"], 10, CLM.L["progressing"]
-                            ))
-                            return
-                        end
-                        CLM.MODULES.RaidManager:RemoveFromStandby(CLM.MODULES.RaidManager:GetRaid(), profiles)
-                    elseif CLM.MODULES.RaidManager:IsInCreatedRaid() then
-                        if #profiles > 25 then
-                            LOG:Message(string.format(
-                                CLM.L["You can %s max %d players from standby at the same time to a %s raid."],
-                                CLM.L["remove"], 25, CLM.L["created"]
-                            ))
-                            return
-                        end
-                        for _, profile in ipairs(profiles) do
-                            CLM.MODULES.StandbyStagingManager:RemoveFromStandby(CLM.MODULES.RaidManager:GetRaid():UID(), profile:GUID())
-                        end
-                    end
-                    refreshFn(true)
-                    CLM.GUI.Unified:ClearSelection()
-                end),
-                trustedOnly = true,
-                color = "eeee00"
-            },
-            {
-                separator = true,
-                trustedOnly = true
-            },
             {
                 title = CLM.L["Remove from roster"],
                 func = (function(i)

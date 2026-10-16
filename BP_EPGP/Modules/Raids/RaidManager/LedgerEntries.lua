@@ -20,7 +20,6 @@ local Create    = LogEntry:extend("AC")
 ---@class Start
 ---@field r string raidUid
 ---@field p table player GUID list
----@field s table standby GUID list
 local Start     = LogEntry:extend("AS")
 ---@class End
 ---@field r string raidUid
@@ -29,7 +28,6 @@ local End       = LogEntry:extend("AE")
 ---@field r string raidUid
 ---@field l table leavers GUID list
 ---@field j table joiners GUID list
----@field s table standby GUID list
 ---@field e table removed GUID list
 local Update    = LogEntry:extend("AU")
 
@@ -74,13 +72,11 @@ end
 
 ---@param raidUid string
 ---@param players table
----@param standby table
 ---@return Start
-function Start:new(raidUid, players, standby)
+function Start:new(raidUid, players)
     local o = LogEntry.new(self)
     o.r = raidUid
     o.p = CreateGUIDList(players)
-    o.s = CreateGUIDList(standby)
     return o
 end
 
@@ -94,12 +90,7 @@ function Start:players()
     return self.p
 end
 
----@return table
-function Start:standby()
-    return self.s or {}
-end
-
-local StartFields = mergeLists(LogEntry:fields(), {"r", "p","s"})
+local StartFields = mergeLists(LogEntry:fields(), {"r", "p"})
 function Start:fields()
     return StartFields
 end
@@ -125,17 +116,15 @@ end
 ---@param raidUid string
 ---@param leavers? table
 ---@param joiners? table
----@param standby? table
 ---@param removed? table
 ---@return Update
-function Update:new(raidUid, leavers, joiners, standby, removed)
+function Update:new(raidUid, leavers, joiners, removed)
     local o = LogEntry.new(self)
     o.r = raidUid or 0
     o.l = CreateGUIDList(leavers or {})
     o.j = CreateGUIDList(joiners or {})
-    o.s = CreateGUIDList(standby or {})
     o.e = CreateGUIDList(removed or {})
-    if #o.l + #o.j + #o.s + #o.e == 0 then
+    if #o.l + #o.j + #o.e == 0 then
         error("Must provide at least one profile in any of the categories")
     end
     return o
@@ -157,16 +146,11 @@ function Update:joiners()
 end
 
 ---@return table
-function Update:standby()
-    return self.s or {}
-end
-
----@return table
 function Update:removed()
     return self.e or {}
 end
 
-local updateFields = mergeLists(LogEntry:fields(), {"r", "l", "j", "s", "e"})
+local updateFields = mergeLists(LogEntry:fields(), {"r", "l", "j", "e"})
 function Update:fields()
     return updateFields
 end

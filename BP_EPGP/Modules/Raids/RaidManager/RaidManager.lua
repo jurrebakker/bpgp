@@ -73,24 +73,11 @@ function RaidManager:Initialize()
             local raidUid = entry:raid()
             local joiners = entry:joiners()
             local leavers = entry:leavers()
-            local standby = entry:standby()
             local removed = entry:removed()
             local raid = self:GetRaidByUid(raidUid)
             if not raid then
                 LOG:Debug("RaidManager mutator(): Unknown raid uid %s", raidUid)
                 return
-            end
-            -- Add standby
-            for _, iGUID in ipairs(standby) do
-                local GUID = getGuidFromInteger(iGUID)
-                local profile = CLM.MODULES.ProfileManager:GetProfileByGUID(GUID)
-                if profile then
-                    -- Do not do that if player is already in a raid
-                    if not raid:IsPlayerInRaid(GUID) then
-                        self:UpdateProfileCurentStandby(GUID, raid)
-                        raid:Roster():UpdateAttendance(GUID, raidUid, entry:time())
-                    end
-                end
             end
             -- Add Joiners
             for _, iGUID in ipairs(joiners) do
@@ -101,19 +88,12 @@ function RaidManager:Initialize()
                     raid:Roster():UpdateAttendance(GUID, raidUid, entry:time())
                 end
             end
-            -- Remove / bench leavers
-            local benchLeavers = raid:Configuration():Get("autoBenchLeavers")
+            -- Remove leavers
             for _, iGUID in ipairs(leavers) do
                 local GUID = getGuidFromInteger(iGUID)
                 local profile = CLM.MODULES.ProfileManager:GetProfileByGUID(GUID)
                 if profile then
-                    -- raid:RemovePlayer(GUID)
-                    if benchLeavers then
-                        -- Bench leavers
-                        self:UpdateProfileCurentStandby(GUID, raid)
-                    else
-                        self:UpdateProfileCurentRaid(GUID, nil)
-                    end
+                    self:UpdateProfileCurentRaid(GUID, nil)
                 end
             end
             -- Remove removed
@@ -122,7 +102,6 @@ function RaidManager:Initialize()
                 local profile = CLM.MODULES.ProfileManager:GetProfileByGUID(GUID)
                 if profile then
                     self:UpdateProfileCurentRaid(GUID, nil)
-                    self:UpdateProfileCurentStandby(GUID, nil)
                 end
             end
         end)
@@ -134,21 +113,10 @@ function RaidManager:Initialize()
             LOG:TraceAndCount("mutator(RaidStart)")
             local raidUid = entry:raid()
             local players = entry:players()
-            local standby = entry:standby()
             local raid = self:GetRaidByUid(raidUid)
             if not raid then
                 LOG:Debug("RaidManager mutator(): Unknown raid uid %s", raidUid)
                 return
-            end
-            -- order here is important just in case someone adds to standby a player in raid
-            -- Add standby
-            for _, iGUID in ipairs(standby) do
-                local GUID = getGuidFromInteger(iGUID)
-                local profile = CLM.MODULES.ProfileManager:GetProfileByGUID(GUID)
-                if profile then
-                    self:UpdateProfileCurentStandby(GUID, raid)
-                    raid:Roster():UpdateAttendance(GUID, raidUid, entry:time())
-                end
             end
             -- Add players
             for _,iGUID in ipairs(players) do
@@ -179,10 +147,9 @@ function RaidManager:Initialize()
 
             raid:End(entry:time())
 
-            local players = raid:AllPlayers()
+            local players = raid:Players()
             for _,GUID in ipairs(players) do
                 self:UpdateProfileCurentRaid(GUID, nil)
-                self:UpdateProfileCurentStandby(GUID, nil)
             end
         end)
     )
@@ -249,11 +216,6 @@ function RaidManager:IsInRaid()
 end
 
 ---@return boolean
-function RaidManager:IsOnStandby()
-    return self.cache.profileStandbyInfo[whoamiGUID] and true or false
-end
-
----@return boolean
 function RaidManager:IsInActiveRaid()
     return self:IsInRaid() and self:GetRaid():IsActive() or false
 end
@@ -281,28 +243,8 @@ function RaidManager:UpdateProfileCurentRaid(GUID, raid)
         if raid then
             self.cache.profileRaidInfo[GUID] = self.cache.raids[raid:UID()]
             raid:AddPlayer(GUID)
-            self:UpdateProfileCurentStandby(GUID, nil)
         else
             self.cache.profileRaidInfo[GUID] = nil
-        end
-    end
-end
-
----@param GUID string
----@param raid Raid?
-function RaidManager:UpdateProfileCurentStandby(GUID, raid)
-    LOG:Debug("RaidManager:UpdateProfileCurentStandby(%s)", GUID)
-    if CLM.MODULES.ProfileManager:GetProfileByGUID(GUID) then
-        local current = self.cache.profileStandbyInfo[GUID]
-        if current and current:IsActive() then
-            current:RemoveFromStandbyPlayer(GUID)
-        end
-        if raid then
-            self.cache.profileStandbyInfo[GUID] = self.cache.raids[raid:UID()]
-            raid:StandbyPlayer(GUID)
-            self:UpdateProfileCurentRaid(GUID, nil)
-        else
-            self.cache.profileStandbyInfo[GUID] = nil
         end
     end
 end
@@ -311,12 +253,6 @@ end
 ---@return Raid?
 function RaidManager:GetProfileRaid(GUID)
     return self.cache.profileRaidInfo[GUID]
-end
-
----@param GUID string
----@return Raid?
-function RaidManager:GetProfileStandby(GUID)
-    return self.cache.profileStandbyInfo[GUID]
 end
 
 ---@param roster Roster
@@ -379,19 +315,8 @@ function RaidManager:StartRaid(raid)
         end
     end
 
-    -- Fill Standby
-    local standby = {}
-    for GUID,_ in pairs(CLM.MODULES.StandbyStagingManager:GetStandby(raid:UID())) do
-        if not joining_players_guids[GUID] then
-            standby[#standby+1] = GUID
-        end
-    end
-    -- Lazy fill from standby
-    if #standby > 0 then
-        CLM.MODULES.RosterManager:AddProfilesToRoster(raid:Roster(), standby)
-    end
     -- Start Raid
-    CLM.MODULES.LedgerManager:Submit(CLM.MODELS.LEDGER.RAID.Start:new(raid:UID(), players, standby), true)
+    CLM.MODULES.LedgerManager:Submit(CLM.MODELS.LEDGER.RAID.Start:new(raid:UID(), players), true)
     if CLM.GlobalConfigs:GetRaidWarning() and IsInRaid() then
         UTILS.SendChatMessage(string.format(CLM.L["Raid [%s] started"], raid:Name()) , CHAT_MESSAGE_CHANNEL)
     end
@@ -458,118 +383,6 @@ function RaidManager:JoinRaid(raid)
         error("My profile is nil")
     end
     CLM.MODULES.LedgerManager:Submit(CLM.MODELS.LEDGER.RAID.Update:new(raid:UID(), {}, {CLM.MODULES.ProfileManager:GetMyProfile()}), true)
-end
-
----@param raid Raid
----@param standby table
-function RaidManager:AddToStandby(raid, standby)
-    LOG:Trace("RaidManager:AddToStandby()")
-    if not UTILS.typeof(raid, CLM.MODELS.Raid) then
-        LOG:Message(CLM.L["Missing valid raid"])
-        return
-    end
-    if not CLM.MODULES.ACL:CheckLevel(CONSTANTS.ACL.LEVEL.ASSISTANT) then
-        LOG:Message(CLM.L["You are not allowed to control raid."])
-        return
-    end
-    if raid:Status() ~= CONSTANTS.RAID_STATUS.IN_PROGRESS then
-        LOG:Message(CLM.L["You can only add players to standby of a progressing raid."])
-        return
-    end
-    -- Filter out players currently in standby or in raid
-    local standby_filtered = {}
-    for _,profile in ipairs(standby) do
-        local GUID = profile:GUID()
-        if not (raid.players[GUID] or raid.standby[GUID]) then
-            tinsert(standby_filtered, GUID)
-        end
-    end
-    if #standby_filtered == 0 then
-        LOG:Warning("Empty standby list")
-        return
-    end
-    local entry = CLM.MODELS.LEDGER.RAID.Update:new(raid:UID(), {}, {}, standby_filtered, {})
-    CLM.MODULES.LedgerManager:Submit(entry, true)
-end
-
----@param raid Raid
----@param removed table
-function RaidManager:RemoveFromStandby(raid, removed)
-    LOG:Trace("RaidManager:RemoveFromStandby()")
-    if not UTILS.typeof(raid, CLM.MODELS.Raid) then
-        LOG:Message(CLM.L["Missing valid raid"])
-        return
-    end
-    if not CLM.MODULES.ACL:CheckLevel(CONSTANTS.ACL.LEVEL.ASSISTANT) then
-        LOG:Message(CLM.L["You are not allowed to control raid."])
-        return
-    end
-    if raid:Status() ~= CONSTANTS.RAID_STATUS.IN_PROGRESS then
-        LOG:Message(CLM.L["You can only add players to standby of a progressing raid."])
-        return
-    end
-    -- Filter out players currently not on standby
-    local removed_filtered = {}
-    for _,profile in ipairs(removed) do
-        local GUID = profile:GUID()
-        if raid.standby[GUID] then
-            tinsert(removed_filtered, GUID)
-        end
-    end
-    if #removed_filtered == 0 then
-        LOG:Warning("Empty removed list")
-        return
-    end
-    local entry = CLM.MODELS.LEDGER.RAID.Update:new(raid:UID(), {}, {}, {}, removed_filtered)
-    CLM.MODULES.LedgerManager:Submit(entry, true)
-end
-
----@param raid Raid
----@return table
-function RaidManager:GetUniquePlayersListInRaid(raid)
-    -- Returns number of unique players - Linked alt/mains are counted as one
-    local mainsGuidsInRaid = {}
-    local uniquePlayerDict = {}
-    -- Loop through all players in raid. They always must be added
-    for GUID,_ in pairs(raid.players) do
-        local profile = CLM.MODULES.ProfileManager:GetProfileByGUID(GUID)
-        if profile then
-            uniquePlayerDict[profile:GUID()] = true
-            local main = CLM.MODULES.ProfileManager:GetProfileByGUID(profile:Main())
-            if profile:HasAlts() then
-                -- I am main but have alts
-                mainsGuidsInRaid[profile:GUID()] = true
-            elseif main then
-                -- I am an alt
-                mainsGuidsInRaid[main:GUID()] = true
-            end
-        end
-    end
-    -- Loop through standby
-    for GUID,_ in pairs(raid.standby) do
-        local profile = CLM.MODULES.ProfileManager:GetProfileByGUID(GUID)
-        if profile then
-            local main = CLM.MODULES.ProfileManager:GetProfileByGUID(profile:Main())
-            if profile:HasAlts() then
-                -- I am main but have alts
-                -- I am added only if there is no alt of mine already added
-                if not mainsGuidsInRaid[profile:GUID()] then
-                    uniquePlayerDict[profile:GUID()] = true
-                end
-            elseif main then
-                -- I am an alt
-                -- I am added only if my main isn't added
-                if not mainsGuidsInRaid[main:GUID()] then
-                    uniquePlayerDict[profile:GUID()] = true
-                end
-            else
-                -- I am main with no alts. I am added always
-                uniquePlayerDict[profile:GUID()] = true
-            end
-        end
-    end
-
-    return UTILS.keys(uniquePlayerDict)
 end
 
 ---@return string?
@@ -756,11 +569,6 @@ function RaidManager:GetRaid()
     return self.cache.profileRaidInfo[whoamiGUID]
 end
 
----@return Raid?
-function RaidManager:GetStandby()
-    return self.cache.profileStandbyInfo[whoamiGUID]
-end
-
 function RaidManager:WipeAll()
     self.cache = {
         current = {
@@ -770,7 +578,6 @@ function RaidManager:WipeAll()
         },
         raids = {},
         profileRaidInfo = {},
-        profileStandbyInfo = {}
     }
 end
 

@@ -51,16 +51,6 @@ function RosterConfiguration:New(i)
     o._.roundDecimals = 10
     -- Minimal bid increment for open auction
     o._.minimalIncrement = 1
-    -- Bench players leaving raid
-    o._.autoBenchLeavers = false
-    -- Include bench in auto-awards
-    o._.autoAwardIncludeBench = true
-    -- Include only online players in auto-awards
-    o._.autoAwardOnlineOnly = false
-    -- Include only players in same zone in auto-awards
-    o._.autoAwardSameZoneOnly = false
-    -- Enable self-subscribe
-    o._.selfBenchSubscribe = false
     -- Additional tax to pay
     o._.tax = 0
     -- Minimum points to be allowed to bid. >=0 covers Allow Negative Bidders
@@ -71,8 +61,6 @@ function RosterConfiguration:New(i)
     o._.namedButtons = false
     -- Dynamic item value
     o._.dynamicValue = false
-    -- Bench multiplier
-    o._.benchMultiplier = 1
     -- OS
     o._.useOS = true
     -- Always allow bidding base
@@ -122,17 +110,11 @@ function RosterConfiguration:fields()
         "weeklyReset",
         "roundDecimals",
         "minimalIncrement",
-        "autoBenchLeavers",
-        "autoAwardIncludeBench",
-        "autoAwardOnlineOnly",
-        "autoAwardSameZoneOnly",
-        "selfBenchSubscribe",
         "tax",
         "minimumPoints",
         "minGP",
         "namedButtons",
         "dynamicValue",
-        "benchMultiplier",
         "useOS",
         "roundPR",
         "baseAlways",
@@ -170,17 +152,11 @@ local TRANSFORMS = {
     weeklyReset = transform_number,
     roundDecimals = transform_number,
     minimalIncrement = transform_number,
-    autoBenchLeavers = transform_boolean,
-    autoAwardIncludeBench = transform_boolean,
-    autoAwardOnlineOnly = transform_boolean,
-    autoAwardSameZoneOnly = transform_boolean,
-    selfBenchSubscribe = transform_boolean,
     tax = transform_number,
     minimumPoints = transform_number,
     minGP = transform_number,
     namedButtons = transform_boolean,
     dynamicValue = transform_boolean,
-    benchMultiplier = transform_number,
     useOS = transform_boolean,
     baseAlways = transform_boolean,
     allInAlways = transform_boolean,
@@ -278,17 +254,11 @@ function RosterConfiguration._validate_weeklyCap(value) value = tonumber(value);
 function RosterConfiguration._validate_weeklyReset(value) return CONSTANTS.WEEKLY_RESETS[value] ~= nil end
 function RosterConfiguration._validate_roundDecimals(value) return CONSTANTS.ALLOWED_ROUNDINGS[value] ~= nil end
 function RosterConfiguration._validate_minimalIncrement(value) value = tonumber(value); return IsNumeric(value) and IsPositive(value) end
-function RosterConfiguration._validate_autoBenchLeavers(value) return IsBoolean(value) end
-function RosterConfiguration._validate_autoAwardIncludeBench(value) return IsBoolean(value) end
-function RosterConfiguration._validate_autoAwardOnlineOnly(value) return IsBoolean(value) end
-function RosterConfiguration._validate_autoAwardSameZoneOnly(value) return IsBoolean(value) end
-function RosterConfiguration._validate_selfBenchSubscribe(value) return IsBoolean(value) end
 function RosterConfiguration._validate_tax(value) value = tonumber(value); return IsNumeric(value) and IsPositive(value) end
 function RosterConfiguration._validate_minimumPoints(value) return IsNumeric(tonumber(value)) end
 function RosterConfiguration._validate_minGP(value) value = tonumber(value); return IsNumeric(value) and IsPositive(value) end
 function RosterConfiguration._validate_namedButtons(value) return IsBoolean(value) end
 function RosterConfiguration._validate_dynamicValue(value) return IsBoolean(value) end
-function RosterConfiguration._validate_benchMultiplier(value) value = tonumber(value); return IsNumeric(value) and IsPositive(value) end
 function RosterConfiguration._validate_useOS(value) return IsBoolean(value) end
 function RosterConfiguration._validate_baseAlways(value) return IsBoolean(value) end
 function RosterConfiguration._validate_allInAlways(value) return IsBoolean(value) end

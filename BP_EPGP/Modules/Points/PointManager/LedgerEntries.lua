@@ -25,7 +25,6 @@ local Modify        = LogEntry:extend("DM")
 ---@field v number value
 ---@field e number reason
 ---@field t string note
----@field s boolean includeStandby
 ---@field n boolean spent
 local ModifyRaid    = LogEntry:extend("DR")
 ---@class ModifyRoster
@@ -123,17 +122,15 @@ end
 ---@param value number
 ---@param reason number
 ---@param note? string
----@param includeStandby? boolean
 ---@param spent? boolean
 ---@return ModifyRaid
-function ModifyRaid:new(raidUid, value, reason, note, includeStandby, spent)
+function ModifyRaid:new(raidUid, value, reason, note, spent)
     local o = LogEntry.new(self);
     o.r = raidUid or ""
     o.v = tonumber(value) or 0
     o.e = tonumber(reason) or 0
     note = note or ""
     o.t = tostring(note)
-    o.s = includeStandby and true or false
     o.n = spent and true or false
     return o
 end
@@ -156,11 +153,6 @@ end
 ---@return string
 function ModifyRaid:note()
     return self.t or ""
-end
-
----@return boolean
-function ModifyRaid:standby()
-    return self.s
 end
 
 ---@return boolean

@@ -18,7 +18,6 @@ CLM.COMM_CHANNEL = {
         SYNC = "LedgerS3",
         DATA = "LedgerD3"
     },
-    STANDBY = "Standby2",
     GLOBAL = "Version2"
 }
 CLM.UTILS = {}
@@ -151,7 +150,6 @@ function CORE:_InitializeFeatures()
     MODULES.PointManager:Initialize()
     MODULES.LootManager:Initialize()
     MODULES.RaidManager:Initialize()
-    MODULES.StandbyStagingManager:Initialize()
     MODULES.AuctionManager:Initialize()
     MODULES.AutoAssign:Initialize()
     MODULES.BiddingManager:Initialize()

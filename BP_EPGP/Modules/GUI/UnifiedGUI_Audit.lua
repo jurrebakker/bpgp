@@ -97,21 +97,6 @@ local configDecodeFunctions = {
     minimalIncrement = (function(value)
         return CLM.L["Min bid increment"], safeToString(value)
     end),
-    autoBenchLeavers = (function(value)
-        return CLM.L["Auto bench leavers"], safeToString(value)
-    end),
-    autoAwardIncludeBench = (function(value)
-        return CLM.L["Include bench"], safeToString(value)
-    end),
-    autoAwardOnlineOnly = (function(value)
-        return CLM.L["Online only"], safeToString(value)
-    end),
-    autoAwardSameZoneOnly = (function(value)
-        return CLM.L["Same zone only"], safeToString(value)
-    end),
-    selfBenchSubscribe = (function(value)
-        return CLM.L["Allow subscription"], safeToString(value)
-    end),
     tax = (function(value)
         return CLM.L["Tax"], safeToString(value)
     end),
@@ -463,10 +448,10 @@ local describeFunctions  = {
     ["AU"] = (function(entry)
         local raid = CLM.MODULES.RaidManager:GetRaidByUid(entry:raid())
         return
-            string.format(CLM.L["Updated raid <%s> %s joined, %s left, %s benched, %s removed"],
+            string.format(CLM.L["Updated raid <%s> %s joined, %s left, %s removed"],
                 UTILS.ColorCodeText(raid and raid:Name() or entry:raid(), "d99212"),
                 safeToString(#entry:joiners()), safeToString(#entry:leavers()),
-                safeToString(#entry:standby()), safeToString(#entry:removed())
+                safeToString(#entry:removed())
             )
     end),
     ["AE"] = (function(entry)
@@ -515,7 +500,6 @@ local extendFunctions  = {
         local names = ""
         names = names .. concatenateNameFromList(entry:joiners())
         names = names .. concatenateNameFromList(entry:leavers())
-        names = names .. concatenateNameFromList(entry:standby())
         names = names .. concatenateNameFromList(entry:removed())
         return names
     end),

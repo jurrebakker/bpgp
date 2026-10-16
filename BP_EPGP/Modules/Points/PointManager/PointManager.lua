@@ -134,21 +134,7 @@ local function apply_raid_mutator(self, entry, mutate)
     local players = raid:Players()
     local pointHistoryEntry = CLM.MODELS.PointHistory:New(entry, players)
     self:AddPointHistory(roster, players, pointHistoryEntry)
-    local playersOnStandby = raid:PlayersOnStandby()
-    if entry:standby() and (#playersOnStandby > 0) then
-        local alreadyApplied = {}
-        -- Regular players
-        update_profile_standings(mutate, roster, players, entry:value(), entry:reason(), entry:type(), entry:time(), nil, true, alreadyApplied)
-        -- Standby players
-        local config = raid:Configuration()
-        local newValue = UTILS.round(config:Get("benchMultiplier") * entry:value(), config:Get("roundDecimals"))
-        pointHistoryEntry = CLM.MODELS.PointHistory:New(entry, playersOnStandby, nil, newValue, CONSTANTS.POINT_CHANGE_REASON.STANDBY_BONUS)
-        pointHistoryEntry.note = CONSTANTS.POINT_CHANGE_REASONS.ALL[entry:reason()] or ""
-        self:AddPointHistory(roster, playersOnStandby, pointHistoryEntry)
-        update_profile_standings(mutate, roster, playersOnStandby, newValue, entry:reason(), entry:type(), entry:time(), nil, true, alreadyApplied)
-    else
-        update_profile_standings(mutate, roster, raid:Players(), entry:value(), entry:reason(), entry:type(), entry:time(), nil, true)
-    end
+    update_profile_standings(mutate, roster, players, entry:value(), entry:reason(), entry:type(), entry:time(), nil, true)
 end
 
 local function mutate_update_standings(roster, GUID, value, timestamp)
@@ -452,11 +438,10 @@ function PointManager:UpdateRaidPoints(raid, value, reason, action, note, pointC
 
     note = strsub32(note)
     local uid = raid:UID()
-    local includeBench = raid:Configuration():Get("autoAwardIncludeBench") and true or false
     local entry
     if action == CONSTANTS.POINT_MANAGER_ACTION.MODIFY then
         local isSpent = (pointChangeType == CONSTANTS.POINT_CHANGE_TYPE.SPENT)
-        entry = CLM.MODELS.LEDGER.POINTS.ModifyRaid:new(uid, value, reason, note, includeBench, isSpent)
+        entry = CLM.MODELS.LEDGER.POINTS.ModifyRaid:new(uid, value, reason, note, isSpent)
     end
 
     CLM.MODULES.LedgerManager:Submit(entry, forceInstant)
