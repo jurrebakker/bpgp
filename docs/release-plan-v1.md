@@ -237,34 +237,45 @@ We don't yet know the exact startup error. **First step in Phase 1 is to capture
 
 Each phase ends with: luacheck clean, `/reload` without Lua errors, and the relevant part of the in-game checklist (§7) passing. Commit per phase.
 
-### Phase 0 — Project setup
+### Status (2026-10-16)
+
+| Phase | State |
+|---|---|
+| 0-7 | ✅ Done and tested in-game |
+| 8 Sync hardening | ✅ Built; in-game test postponed to Phase 10 (needs a second account) |
+| 9 UI redesign | 9a ✅ shared UI pieces (verified with `/bpepgp uitest`). **Next: 9b**, main window rebuilt on `Modules/UI` |
+| 10 Testing, 11 Release | Not started |
+
+Everything is on `master` (protected: changes go in through pull requests). Start each piece of work on a branch, e.g. `feat/phase-9b-main-window`.
+
+### Phase 0 — Project setup ✅
 - [x] Create `CLAUDE.md` (architecture summary, conventions, "never write state directly — submit ledger entries", how to test in-game).
 - [x] Vendor all libraries from `.pkgmeta` *(copied from the packaged CLM v5.8.0; license files still incomplete, see `Libs/README.md`)* into `Libs/` (latest Ace3 for Midnight, LibStub, CallbackHandler, lib-st, LibCandyBar, LibLogger, LibDBIcon, LibDeflate, LibSerialize, LibUIDropDownMenu, LibSharedMedia, AceGUI-SharedMediaWidgets) with their license files.
 - [x] Dev setup: symlink/junction *(junction created 2026-10-16)* the addon folder into `World of Warcraft\_retail_\Interface\AddOns\`; install BugSack + !BugGrabber.
 - [x] Keep `.luacheckrc` (update globals), add a GitHub Action for luacheck.
-- [x] Decide branch strategy *(feature branch per phase or two, e.g. `feat/v1-phase-0-1`)* (`main` for releases, feature branches per phase).
+- [x] Branch strategy: `master` is the main branch on GitHub (github.com/jurrebakker/bpgp), protected: no force pushes, changes through pull requests. One branch per phase or step.
 
-### Phase 1 — Rebrand & boot on Midnight
+### Phase 1 — Rebrand & boot on Midnight ✅
 - [x] Rename folder/TOC to `BP_EPGP`, Title "BP EPGP", Author, remove CLM Curse/Wago IDs and Patreon link.
 - [x] Rename SavedVariables, slash command `/bpepgp`, comm prefix `BPEP`, global `_G.BPEPGP`, frame/binding names, `[CLM]` chat prefix, minimap LDB name.
 - [x] Introduce `MEDIA_PATH` constant; replace all hard-coded `Interface\AddOns\ClassicLootManager\…` paths.
-- [ ] Replace CLM logo with our own icon.
+- [x] Replace CLM logo with our own icon (`Media/Icons/bp-epgp-32.png`). A 400×400 version is still needed for CurseForge (§10).
 - [x] Fix DB key to `retail <faction> <realm> <guild>`; version to 1.0.0-dev.
 - [x] Merge the Alerts addon into the main addon; delete Tracker and Integrations folders.
 - [x] Remove `--@do-not-package@` / `--@debug@` / `@non-debug@` dev blocks and dev fakes. Without this a git clone has **no security** ([sync-and-security.md](sync-and-security.md) C1).
 - [x] Add a CI/luacheck step *(`scripts/check_addon.py`)* that fails if any of those markers reappear.
-- [ ] Capture and fix the actual startup error(s) — §5.1 items 1-4. *(1: libs vendored; 2: MasterLooterFrame hook removed; 3: guarded; 4: chat filter no longer hides messages in lockdown; also ported 5.8.0's `C_Item.GetItemClassInfo` fix. Waiting for the first in-game run.)*
+- [x] Capture and fix the actual startup error(s) — §5.1 items 1-4. *(1: libs vendored; 2: MasterLooterFrame hook removed; 3: guarded; 4: chat filter no longer hides messages in lockdown; also ported 5.8.0's `C_Item.GetItemClassInfo` fix. Loads without errors.)*
 - [x] Isolation from CLM: unique LibStub names for our forked libs (`BPEPGP-EventSourcing/*`, `BPEPGP-EventDispatcher`), AceGUI widget types, AceConfig app names, keybinding names, alert templates. *(found while renaming)*
 - **Done when:** addon loads on Midnight with zero errors, shows the UI, two officers see each other as synced.
 
-### Phase 2 — Remove the big unused blocks
+### Phase 2 — Remove the big unused blocks ✅
 - [x] Delete non-English locales *(done in Phase 1)*.
 - [x] Delete Changelog module, `_annotations`, April Fools (incl. joke sounds). CHANGELOG.md replaced with our own. (Unused scripts: already removed.)
 - [x] Delete CrossGuildSyncManager, SandboxManager + time travel + ChatOps (move `stateManagers` init out of `SlashCommands.lua` first).
 - [x] Delete all classic code *(expansion checks now return fixed retail answers until Phase 3 removes the boss-kill code; encounter tables go with it; master-loot paths go in Phase 5)*: `IsClassicEra`/`IsSoD`/`IsHardcore`, expansion branches in `Utils.lua`, classic item ID lists, IndirectSlotMap data, master-loot paths, classic tooltip fallbacks.
 - [x] Delete GlobalUIHandlers (auto-roll), Tooltips.lua.
 
-### Phase 3 — EPGP only
+### Phase 3 — EPGP only ✅
 - [x] Remove DKP point type: collapse every `POINT_TYPE` branch to the EPGP path; remove zero-sum bank, caps, weekly caps, tax, allow-below-min.
 - [x] Remove dynamic item values (ItemValueCalculator + V* entries), class multipliers (RM).
 - [x] Remove AutoAwardManager and encounter tables; keep on-time bonus in RaidManager.
@@ -281,19 +292,19 @@ Each phase ends with: luacheck clean, `/reload` without Lua errors, and the rele
 - **Done when:** a full raid evening (raid start → EP → auction → award → decay → undo) can be run solo in test mode, and the live ledger is byte-identical before and after.
 - ✅ Verified in-game 2026-10-16: solo raid evening with simulated group and bidders; live event count and hash unchanged.
 
-### Phase 5 — Auctioning cleanup
+### Phase 5 — Auctioning cleanup ✅
 - [x] Remove Sealed / Vickrey / Anonymous Open, Ascending mode, All-In, auto-update bid, Joke/AF. Auctions are always Open + Tiered + named buttons; cancel/pass always allowed. The bidding window has only the named-button layout (tier buttons, OS, Pass, Cancel). Unnamed tiers show as Base/Small/Medium/Large/Max.
 - [x] Keep Tiered + named buttons, OS/Pass/Cancel, min EP, anti-snipe, `/roll`, upgrade info, history, item notes.
 - [x] AutoAssign → **TradeHelper**: keep trade tracking + TradeList GUI, drop `GiveMasterLoot` and the auto-assign setting.
 - [x] Fix the auction bugs in §5.2: anti-snipe countdown, `GetUseOS`, nil handlers for non-officers, auction/award modifiers must differ, ranged weapons → main hand, `/bpepgp ignore`, stale `!bid/!dkp` hint, defaults. "Raiders accept START/STOP from anyone" is S9 in Phase 8.
 
-### Phase 6 — New: standings import
+### Phase 6 — New: standings import ✅
 - [x] Officer-only window (`/bpepgp import`, or *Import standings* in the Standings sidebar): paste lines `Name,EP,GP`; comma, semicolon or tab separated (decimal comma allowed with tab/semicolon). A header line is skipped.
 - [x] Preview table (Update / Add to roster / Not in guild / Duplicate / Invalid) before applying. Only guild members can be imported.
 - [x] On confirm: create profiles for missing characters, add them to the roster, set EP and GP with the existing SET entry (`PointManager` SET supports GP), one entry per distinct value, reason *Import*.
 - [x] Guard: when the roster already has point or loot history, the *Overwrite existing standings* checkbox must be ticked.
 
-### Phase 7 — Midnight hardening
+### Phase 7 — Midnight hardening ✅
 - [x] Chat lockdown: all chat goes through `UTILS.SendChatMessage`, which uses `C_ChatInfo.SendChatMessage` and queues messages during `C_ChatInfo.InChatMessagingLockdown()`; queued messages older than 30 s (e.g. countdowns) are dropped.
 - [x] Addon-message lockdown: `Comms:Send` queues every message (max 500) while in chat lockdown or `IsEncounterInProgress()`, and sends them afterwards. Still to verify in a real raid (Phase 10).
 - [x] Secret-value guards (`UTILS.IsSecret`): raid roster reads wait and retry while names are secret (otherwise everyone would look like a leaver), raid start refuses with a message; loot and /roll parsing, target GUIDs and the chat icon filter skip secret values.
