@@ -5,6 +5,7 @@ Planning documents for BP EPGP. Code-level documentation stays next to the code 
 | Folder / file | What goes there |
 |---|---|
 | [release-plan-v1.md](release-plan-v1.md) | The v1.0 plan: scope, architecture, phases, test checklist, releasing |
+| [sync-and-security.md](sync-and-security.md) | How ledger sync works, security issues found, decisions S1-S9 |
 | [features/](features/) | Planned features: agreed on, scoped, ready to be built |
 | [ideas/](ideas/) | Loose ideas that may grow into features. Rough notes are fine |
 
@@ -43,7 +44,8 @@ How we'll verify it in-game.
 ## Index
 
 ### Features
-_None yet._
+- [UI overhaul: settings as tabs in the main window](features/ui-overhaul.md) (planned, v1.0)
+- [Test mode: isolated test ledger and simulation tools](features/test-mode.md) (planned, v1.0)
 
 ### Ideas
-- [UI overhaul](ideas/ui-overhaul.md)
+_None yet._

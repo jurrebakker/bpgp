@@ -78,7 +78,8 @@ Because we start a fresh ledger, we are **free to delete ledger entry types and 
 | Alert popups | `ClassicLootManager_Alerts` → merged into main addon |
 | Raid warnings (auction start/countdown/winner, raid start/end) | `Utils.lua:1220` `SendChatMessage` callers |
 | Version check between guild members | `Modules/Common/Version` |
-| Keybindings, `/bpepgp` slash commands, settings panel | `Bindings.xml`, `Modules/Global/*`, `ConfigManager` |
+| **Test mode** (new): isolated test ledger + comm prefix, simulated raid/bidders, add items by ID ([features/test-mode.md](features/test-mode.md)) | replaces `SandboxManager` and the dev fakes |
+| Keybindings, `/bpepgp` slash commands, settings (as tabs in the main window, Phase 9) | `Bindings.xml`, `Modules/Global/*`, `ConfigManager` |
 
 ### 3.2 Remove
 
@@ -105,10 +106,10 @@ Because we start a fresh ledger, we are **free to delete ledger entry types and 
 | Disenchant (button, ID/IE entries) | LootManager, AuctionManager GUI | ~120 |
 | Master-loot auto-assign (`GiveMasterLoot`, removed from retail in 8.0) | `AutoAssign.lua:259-276` | ~40 |
 | Cross-guild sync | `Modules/Ledger/CrossGuildSyncManager/` | 190 |
-| Sandbox / time travel / `/timetravel` / ChatOps | `SandboxManager/`, `LedgerManager.lua:161-251`, LibEventSourcing ChatOps | ~500 |
+| Time travel / `/timetravel` / ChatOps; sandbox → replaced by test mode | `SandboxManager/`, `LedgerManager.lua:161-251`, LibEventSourcing ChatOps | ~500 |
 | Classic shims, IndirectSlotMap (classic tier-token data), classic item ID lists, SSC/Wrath workarounds | `Utils.lua`, `ClassicLootManager.lua`, `IndirectSlotMap.lua`, etc. | ~700 |
 | April Fools (`CLM.AF`) + joke sounds | multiple, `Media/Audio` | ~80 |
-| Dev fakes (FakeBids/FakeAuction/FakeTrack) + `--@do-not-package@` blocks | AuctionManager, BiddingManager, AutoAssign, ACL, Comms | ~200 |
+| `--@do-not-package@` blocks; dev fakes (FakeBids/FakeAuction) → rebuilt as test-mode tools | AuctionManager, BiddingManager, AutoAssign, ACL, Comms | ~200 |
 | Auto-roll on loot (GlobalUIHandlers) | `Modules/Global/GlobalUIHandlers.lua` | 150 |
 | Unused libs (LibExpiringTimer, AceHook) | `Libs/` | small |
 | ~~Build/release scripts we don't need (l10n, changelog generators, itemlink decoder, vendored packager, CLM Discord/GitHub bots)~~ **done**, only `genxmls.py` and `verify-dependencies.sh` remain | `scripts/` | ~4,000 |
@@ -245,11 +246,12 @@ Each phase ends with: luacheck clean, `/reload` without Lua errors, and the rele
 
 ### Phase 1 — Rebrand & boot on Midnight
 - [ ] Rename folder/TOC to `BP_EPGP`, Title "BP EPGP", Author, remove CLM Curse/Wago IDs and Patreon link.
-- [ ] Rename SavedVariables, slash command `/bpepgp`, comm prefix `BPEP`, global `_G.BPEPGP`, frame/binding names, `[CLM]` chat prefix, settings panel name, minimap LDB name.
+- [ ] Rename SavedVariables, slash command `/bpepgp`, comm prefix `BPEP`, global `_G.BPEPGP`, frame/binding names, `[CLM]` chat prefix, minimap LDB name.
 - [ ] Introduce `MEDIA_PATH` constant; replace all hard-coded `Interface\AddOns\ClassicLootManager\…` paths. Replace CLM logo with our own icon.
 - [ ] Fix DB key to `retail <faction> <realm> <guild>`; version to 1.0.0-dev.
 - [ ] Merge the Alerts addon into the main addon; delete Tracker and Integrations folders.
-- [ ] Remove `--@do-not-package@` / `--@debug@` dev blocks and dev fakes.
+- [ ] Remove `--@do-not-package@` / `--@debug@` / `@non-debug@` dev blocks and dev fakes. Without this a git clone has **no security** ([sync-and-security.md](sync-and-security.md) C1).
+- [ ] Add a CI/luacheck step that fails if any of those markers reappear.
 - [ ] Capture and fix the actual startup error(s) — §5.1 items 1-4.
 - **Done when:** addon loads on Midnight with zero errors, shows the UI, two officers see each other as synced.
 
@@ -266,29 +268,52 @@ Each phase ends with: luacheck clean, `/reload` without Lua errors, and the rele
 - [ ] Remove bench/standby (StandbyStagingManager, standby lists in raids, bench multiplier, auto-bench leavers, STANDBY comm channel).
 - [ ] Remove alt-main linking (P2), profile locking (P3), spec/role tracking, pruning, attendance tracker, disenchant (ID/IE).
 - [ ] Trim `RosterConfiguration` fields and Options to what's left; set defaults: EPGP, Open, Tiered, named buttons on.
-- [ ] Single roster: auto-select the only roster everywhere; hide roster dropdowns; block creating a second roster.
+- [ ] Single roster: auto-select the only roster everywhere; hide roster dropdowns; block creating a second roster. First-time creation via a "Set up BP EPGP" button ([ui-overhaul](features/ui-overhaul.md) D7).
+- [ ] One officer level: collapse ASSISTANT/MANAGER checks into a single *officer* check ("Is Officer" rank, verified via rank flags 11/12 on 12.x). See [sync-and-security.md](sync-and-security.md) S1/S2.
 
-### Phase 4 — Auctioning cleanup
+### Phase 4 — Test mode ([features/test-mode.md](features/test-mode.md))
+- [ ] Test mode switch (Advanced tab + `/bpepgp test`): separate test ledger section, `BPEPT…` comm prefix, local `[TEST]` chat output, TEST MODE banner. No "apply" to live.
+- [ ] Live ledger refuses anything flagged as test data (automated check in the test checklist).
+- [ ] Simulation tools: simulated raid, add item by ID/link, auction without raid lead, simulated bidders, bidding-window preview, reset test data.
+- **Done when:** a full raid evening (raid start → EP → auction → award → decay → undo) can be run solo in test mode, and the live ledger is byte-identical before and after.
+
+### Phase 5 — Auctioning cleanup
 - [ ] Remove Sealed / Vickrey / Anonymous Open, Ascending mode, All-In, auto-update bid, Joke/AF.
 - [ ] Keep Tiered + named buttons, OS/Pass/Cancel, min EP, anti-snipe, `/roll`, upgrade info, history, item notes.
 - [ ] AutoAssign → **TradeHelper**: keep trade tracking + TradeList GUI, drop `GiveMasterLoot`.
 - [ ] Fix the auction bugs in §5.2.
 
-### Phase 5 — New: standings import
-- [ ] Officer-only (MANAGER) window: paste lines `Name,EP,GP` (also accept tab-separated from a spreadsheet).
+### Phase 6 — New: standings import
+- [ ] Officer-only window: paste lines `Name,EP,GP` (also accept tab-separated from a spreadsheet).
 - [ ] Preview table (unknown names, duplicates, invalid numbers highlighted) before applying.
 - [ ] On confirm: create profiles for missing characters, add them to the roster, set EP and GP via ledger entries (verify `PointManager` can *set* GP; add a GP-set entry if it can only set EP).
 - [ ] Guard: import only allowed while the roster has no point history yet (or with an explicit "overwrite" confirmation).
 
-### Phase 6 — Midnight hardening
+### Phase 7 — Midnight hardening
 - [ ] Chat lockdown: route all chat sends through one helper that checks `C_ChatInfo.InChatMessagingLockdown()` and queues messages.
 - [ ] Addon-message lockdown: queue ledger broadcasts and verify bidding works outside encounters (auctions happen after the boss, normally fine).
 - [ ] Secret-value guards in raid roster handling and chat parsing (§5.1 #13).
 - [ ] Re-test every event registration on 12.x.
 
-### Phase 7 — Testing (see §7)
+### Phase 8 — Sync hardening ([sync-and-security.md](sync-and-security.md))
+- [ ] **S3:** validate every incoming entry (types, ranges, referenced roster/profile) before inserting it. Wrap each mutator in `pcall`; skip and flag failures in the Audit tab instead of halting. Show a warning on `MutatorFailed`.
+- [ ] **S4:** include a digest of entry content in the week/state checksums (new hash format; free with the fresh ledger).
+- [ ] **S5:** handle `AdvertiseHash` only from officers via GUILD/WHISPER; ignore `State`/`RequestState` from outside the guild.
+- [ ] **S6:** reject entries > 10 min in the future; flag live entries with stale timestamps.
+- [ ] **S7:** live single-entry pushes require `creator == sender`; week data accepted only from officers.
+- [ ] **S9:** raiders accept auction control only from someone who is officer **and** raid leader/assistant (drop "relaxed" mode).
+- [ ] Re-evaluate "am I an officer?" on `GUILD_ROSTER_UPDATE` so promotions/demotions take effect without `/reload` (L2).
 
-### Phase 8 — Release 1.0
+### Phase 9 — Main window & settings tabs ([features/ui-overhaul.md](features/ui-overhaul.md))
+- [ ] Remove all Options → AddOns pages (`AddToBlizOptions`) and the minimap "Configuration" menu item; add `/bpepgp config`.
+- [ ] Resizable main window (min size fits 9 tabs on one row, ~1050 px), size remembered per character; tables reflow.
+- [ ] New tab kind *page* in `UnifiedGUI`; hand-built pages for **Settings**, **Guild settings**, **Gear values**, **Advanced**.
+- [ ] Guild settings / Gear values / officer parts of Advanced: visible to all, editable by officers only.
+- [ ] Apply the K/F/D decisions per setting (fixed values hard-coded, dropped settings removed). Check whether LibSharedMedia and its AceGUI widgets can be dropped.
+
+### Phase 10 — Testing (see §7)
+
+### Phase 11 — Release 1.0
 - [ ] Licensing checklist (§8).
 - [ ] New README (what it is, install, officer setup, raider usage), CHANGELOG starting at 1.0.0.
 - [ ] Packaging: BigWigs packager with a new `.pkgmeta` (no externals, libs are vendored), see §10.4.
@@ -299,11 +324,11 @@ Each phase ends with: luacheck clean, `/reload` without Lua errors, and the rele
 
 ## 7. Test checklist (in-game)
 
-There is no automated test harness for WoW UI code; luacheck catches syntax/global mistakes. Everything else is tested in-game with **at least two accounts/characters in the guild** (one officer, one raider), ideally two officers for sync.
+There is no automated test harness for WoW UI code; luacheck catches syntax/global mistakes. Everything is tested in-game **in test mode first** (Phase 4), then the sync and bidding parts once more on the test channel with a second account, and only then live. The multi-person parts need **at least two accounts/characters in the guild** (one officer, one raider), ideally two officers for sync.
 
 **Startup & sync**
 - [ ] `/reload` with zero Lua errors (BugSack empty), with and without CLM installed alongside.
-- [ ] Minimap icon shows; `/bpepgp` opens the main window; settings panel opens.
+- [ ] Minimap icon shows; `/bpepgp` opens the main window; Settings, Guild settings, Gear values and Advanced tabs open; nothing appears under Options → AddOns.
 - [ ] Officer A awards EP → officer B sees it within ~30 s; raider sees standings.
 - [ ] Non-officer cannot award, start auctions, or push ledger data.
 
@@ -456,7 +481,7 @@ Tags map to CurseForge release types (packager rules):
 4. Wait for moderation. The first upload also triggers the project review.
 5. Tell the guild to install "BP EPGP" from the CurseForge app (or WowUp/Wago).
 
-For the guild rollout (Phase 8): publish `v1.0.0-beta1` first and have officers opt in to Beta. Then publish `v1.0.0` before rollout day.
+For the guild rollout (Phase 11): publish `v1.0.0-beta1` first and have officers opt in to Beta. Then publish `v1.0.0` before rollout day.
 
 ### 10.6 Alternatives (if we don't want a public CurseForge page)
 
