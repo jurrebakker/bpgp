@@ -12,6 +12,7 @@
 	<Include file="Import\_filelist.xml"/>
 
 	<Include file="Global\_filelist.xml"/>
+	<Include file="UI\_filelist.xml"/>
 	<Include file="GUI\_filelist.xml"/>
 	<Include file="Alerts\Alerts.xml"/>
 	<Script file="Alerts\Alerts.lua"/>

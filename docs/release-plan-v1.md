@@ -311,7 +311,7 @@ Each phase ends with: luacheck clean, `/reload` without Lua errors, and the rele
 
 ### Phase 9 — UI redesign: native Blizzard windows ([features/ui-redesign.md](features/ui-redesign.md), [features/ui-overhaul.md](features/ui-overhaul.md))
 Built from the Claude Design spec (`docs/design/`). Decisions R1-R11 in ui-redesign.md; all windows move from AceGUI/lib-st to Blizzard templates.
-- [ ] **9a** Shared UI pieces in `Modules/UI/`: window factory (portrait/flat, saved position, test-mode tint), bottom tabs, ScrollBox list with column headers and selection, buttons, inputs, dropdown, checkbox, MenuUtil context menus, item buttons.
+- [ ] **9a** (built, in-game check pending: `/bpepgp uitest`) Shared UI pieces in `Modules/UI/`: window factory (portrait/flat, saved position, test-mode tint), bottom tabs, ScrollBox list with column headers and selection, buttons, inputs, dropdown, checkbox, MenuUtil context menus, item buttons.
 - [ ] **9b** Main window (min 720×480, resizable): Standings (officer + raider view), History, Raids, Roster, Audit, empty/syncing states, right-click *Award item*.
 - [ ] **9c** One Settings tab (Personal, Guild, Gear values, Advanced); remove all Options → AddOns pages; `/bpepgp config`. Guild/Gear values visible to all, editable by officers. Apply the K/F/D decisions per setting.
 - [ ] **9d** Auctioning and Bidding windows: docked countdown, optional timer bar, winner preselected + Enter awards, auto-advance to the next item.
