@@ -1049,12 +1049,11 @@ function AuctionManager:Award(item, name, price)
 end
 
 ---@param name string?
----@param relaxed boolean?
 ---@return boolean
-function AuctionManager:IsAuctioneer(name, relaxed)
+function AuctionManager:IsAuctioneer(name)
     LOG:Trace("AuctionManager:IsAuctioneer()")
     name = name or UTILS.whoami()
-    return CLM.MODULES.RaidManager:IsAllowedToAuction(name, relaxed)
+    return CLM.MODULES.RaidManager:IsAllowedToAuction(name)
 end
 
 -- NEW

@@ -120,6 +120,12 @@ LedgerFactory.createLedger = function(table, send, registerReceiveHandler, autho
         disableSending = function()
             listSync:disableSending()
         end,
+        isSendingEnabled = function()
+            return listSync:isSendingEnabled()
+        end,
+        getFailedEntries = function()
+            return stateManager:getFailedEntries()
+        end,
         getPeerStatus = function()
             return listSync:getPeerStatus()
         end,

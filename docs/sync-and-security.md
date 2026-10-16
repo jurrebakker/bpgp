@@ -1,6 +1,6 @@
 # Sync & security analysis
 
-- **Status:** analysis (2026-10-16). **Decisions made** (S1-S9 at the bottom; ✅ = as recommended). Work is scheduled in the release plan, Phase 1 (C1) and Phase 8 (sync hardening).
+- **Status:** implemented. C1 in Phase 1, S1/S2 in Phase 3, S3-S7, S9 and L2 in Phase 8 (2026-10-16). Decisions at the bottom; ✅ = as recommended.
 - **Scope:** how officers' data reaches everyone, and whether "officers can edit, players can't" actually holds.
 - **Code read:**
   - `Libs/LibEventSourcing/source/*` (ListSync, StateManager, LedgerFactory, LogEntry, SortedList)

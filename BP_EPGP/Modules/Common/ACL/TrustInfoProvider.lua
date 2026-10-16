@@ -48,7 +48,7 @@ end
 function TrustInfoProvider:BuildGuildCache()
     LOG:Trace("TrustInfoProvider:BuildGuildCache()")
     for i=1,GetNumGuildMembers() do
-        local name, rankName, rankIndex = GetGuildRosterInfo(i)
+        local name, rankName, rankIndex, _, _, _, _, _, _, _, _, _, _, _, _, _, GUID = GetGuildRosterInfo(i)
         if name then
             -- https://wowwiki-archive.fandom.com/wiki/API_GetGuildRosterInfo
             -- rankIndex
@@ -57,6 +57,7 @@ function TrustInfoProvider:BuildGuildCache()
             rankIndex = rankIndex + 1
             name = UTILS.Disambiguate(name)
             self.cache.guildies[name] = rankIndex
+            self.cache.guildieGUIDs[name] = GUID
             if self.cache.ranks[rankIndex] then
                 self.cache.ranks[rankIndex].name = rankName
                 if self.cache.ranks[rankIndex].isOfficer then
@@ -88,9 +89,16 @@ function TrustInfoProvider:GetGuildies()
     return self.cache.guildies
 end
 
+---@param name string full name (Name-Realm)
+---@return string? GUID
+function TrustInfoProvider:GetGuildieGUID(name)
+    self:BuildCache()
+    return self.cache.guildieGUIDs[name]
+end
+
 function TrustInfoProvider:WipeAll()
     LOG:Trace("TrustInfoProvider:WipeAll()")
-    self.cache = { guildMaster = "", officers = {}, ranks = {}, guildies = {} }
+    self.cache = { guildMaster = "", officers = {}, ranks = {}, guildies = {}, guildieGUIDs = {} }
 end
 
 

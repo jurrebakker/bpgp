@@ -69,7 +69,7 @@ function BiddingManager:Initialize()
         self:HandleIncomingMessage(message, distribution, sender)
     end),
     (function(name)
-        return CLM.MODULES.AuctionManager:IsAuctioneer(name, true) -- relaxed for cross-guild bidding
+        return CLM.MODULES.AuctionManager:IsAuctioneer(name) -- officer and raid lead/assist (S9)
     end),
     true)
 
@@ -80,7 +80,7 @@ function BiddingManager:Initialize()
             self:HandleIncomingMessage(message, distribution, sender)
         end),
         (function(name)
-            return CLM.MODULES.AuctionManager:IsAuctioneer(name, true) -- relaxed for cross-guild bidding
+            return CLM.MODULES.AuctionManager:IsAuctioneer(name) -- officer and raid lead/assist (S9)
         end),
         true)
     end
@@ -143,7 +143,7 @@ end
 ---@param sender string
 function BiddingManager:HandleIncomingMessage(message, _, sender)
     LOG:Trace("BiddingManager:HandleIncomingMessage()")
-    if not CLM.MODULES.AuctionManager:IsAuctioneer(sender, true) then
+    if not CLM.MODULES.AuctionManager:IsAuctioneer(sender) then
         LOG:Error("Received unauthorised auction command from %s", sender)
         return
     end

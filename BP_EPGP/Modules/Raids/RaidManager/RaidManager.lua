@@ -566,18 +566,16 @@ function RaidManager:IsMasterLooter(name)
     return self.IsMasterLootSystem and (self.MasterLooter == (name or UTILS.whoami())) or false
 end
 
+-- An auctioneer is an officer who is also raid leader or assistant (S9)
 ---@param name string?
----@param relaxed boolean?
 ---@return boolean
-function RaidManager:IsAllowedToAuction(name, relaxed)
+function RaidManager:IsAllowedToAuction(name)
     LOG:Trace("RaidManager:IsAllowedToAuction()")
     name = name or UTILS.whoami()
 
-    if not relaxed then -- Relaxed requirements: doesn't need to be assitant (for out of guild checks)
-        if not CLM.MODULES.ACL:CheckLevel(CONSTANTS.ACL.LEVEL.OFFICER, name) then
-            LOG:Debug("Not Assistant")
-            return false
-        end
+    if not CLM.MODULES.ACL:CheckLevel(CONSTANTS.ACL.LEVEL.OFFICER, name) then
+        LOG:Debug("Not an officer")
+        return false
     end
 
     local allow = self.RaidAssistants[name]

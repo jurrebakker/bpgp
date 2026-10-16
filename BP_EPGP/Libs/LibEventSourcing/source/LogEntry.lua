@@ -133,6 +133,37 @@ function LogEntry.fields()
     return {privateTimestamp, privateCounter, privateRealm, privateCreator}
 end
 
+-- Content digests per entry table; entries never change after creation
+local digestCache = setmetatable({}, { __mode = "k" })
+
+--[[
+    Numbers for the week and state checksums: the identity plus a digest of all fields,
+    so two clients with the same entry IDs but different content are not "in sync".
+    The entry must be cast to its class. uuid() stays identity-only (undo refers to it).
+]]--
+function LogEntry:numbersForStateHash()
+    local digest = digestCache[self]
+    if digest == nil then
+        digest = 7
+        for _, key in ipairs(self:fields()) do
+            digest = Util.ValueDigest(self[key], digest)
+        end
+        digestCache[self] = digest
+    end
+    return {self[privateTimestamp], self[privateCounter], self[privateRealm], self[privateCreator], digest}
+end
+
+-- Identity fields are numbers (checked before accepting remote entries)
+function LogEntry:hasValidIdentity()
+    for _, key in ipairs(LogEntry.fields()) do
+        local v = self[key]
+        if type(v) ~= "number" or v ~= v or v == math.huge or v == -math.huge then
+            return false
+        end
+    end
+    return true
+end
+
 function LogEntry:creator()
     return self[privateCreator]
 end

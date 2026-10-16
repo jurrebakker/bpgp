@@ -300,13 +300,13 @@ Each phase ends with: luacheck clean, `/reload` without Lua errors, and the rele
 - [x] Event registrations reviewed: `RAID_ROSTER_UPDATE` removed (`GROUP_ROSTER_UPDATE` covers it); the rest are valid on retail. Still to watch in-game during Phase 10.
 
 ### Phase 8 — Sync hardening ([sync-and-security.md](sync-and-security.md))
-- [ ] **S3:** validate every incoming entry (types, ranges, referenced roster/profile) before inserting it. Wrap each mutator in `pcall`; skip and flag failures in the Audit tab instead of halting. Show a warning on `MutatorFailed`.
-- [ ] **S4:** include a digest of entry content in the week/state checksums (new hash format; free with the fresh ledger).
-- [ ] **S5:** handle `AdvertiseHash` only from officers via GUILD/WHISPER; ignore `State`/`RequestState` from outside the guild.
-- [ ] **S6:** reject entries > 10 min in the future; flag live entries with stale timestamps.
-- [ ] **S7:** live single-entry pushes require `creator == sender`; week data accepted only from officers.
-- [ ] **S9:** raiders accept auction control only from someone who is officer **and** raid leader/assistant (drop "relaxed" mode).
-- [ ] Re-evaluate "am I an officer?" on `GUILD_ROSTER_UPDATE` so promotions/demotions take effect without `/reload` (L2).
+- [x] **S3:** incoming entries are checked one by one (known type, numeric identity) and bad ones dropped without losing the rest. Every mutator runs in `pcall`; a failing or unknown entry is skipped and recorded (`getFailedEntries`) instead of halting replay, and a chat warning names the count. Semantic checks (ranges, referenced roster/profile) are left to the mutators, which now fail safely.
+- [x] **S4:** week and state checksums include a digest of every entry field (`LogEntry:numbersForStateHash`); `uuid()` stays identity-only. All clients must run the same version.
+- [x] **S5:** `AdvertiseHash` only from officers via GUILD/WHISPER; the whole sync-control channel only accepts guild members.
+- [x] **S6:** remote entries > 10 min in the future are dropped; live entries older than 5 min are logged.
+- [x] **S7:** live single-entry pushes require `creator == sender` (via the sender's guild GUID); week data only from officers.
+- [x] **S9:** raiders accept auction control only from an officer who is raid leader/assistant; relaxed mode removed.
+- [x] Sync sending is re-evaluated on `GUILD_ROSTER_UPDATE`, so promotions/demotions take effect without `/reload` (L2). Officer-only UI still needs a `/reload`.
 
 ### Phase 9 — Main window & settings tabs ([features/ui-overhaul.md](features/ui-overhaul.md))
 - [ ] Remove all Options → AddOns pages (`AddToBlizOptions`) and the minimap "Configuration" menu item; add `/bpepgp config`.

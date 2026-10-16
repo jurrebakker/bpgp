@@ -45,20 +45,38 @@ local function entryToList(entry)
     return result
 end
 
+local function recordFailedEntry(stateManager, entry, uuid, reason)
+    stateManager.failedEntries[uuid] = tostring(reason)
+    stateManager.logger:Warning("Skipping ledger entry %s (%s): %s", uuid, tostring(LogEntry.class(entry)), tostring(reason))
+    trigger(stateManager, EVENT.MUTATOR_FAILED, entry, reason)
+end
+
+--[[
+    A failing or unknown entry is skipped and recorded instead of stopping all further updates,
+    so one bad entry (a bug or a bad sender) can't freeze every client that syncs it.
+]]--
 local function applyEntry(stateManager, entry, index)
-    if type(stateManager.handlers[entry:class()]) ~= 'function' then
-        error("Callback for class " .. entry:class() .. "is not a function")
-    end
     local result, hash
+    local numbersForHash
+    local known = pcall(stateManager.castLogEntry, stateManager, entry)
+        and type(stateManager.handlers[LogEntry.class(entry)]) == 'function'
 
-    --[[ Check ignored entries ]]--
-    local uuid = entry:uuid();
-    local numbersForHash = LogEntry.numbersForHash(entry);
+    if known then
+        --[[ Check ignored entries ]]--
+        local uuid = entry:uuid();
+        numbersForHash = entry:numbersForStateHash();
 
-    if (stateManager.ignoredEntries[uuid] ~= nil) then
-        stateManager.ignoredEntries[uuid] = nil
+        if (stateManager.ignoredEntries[uuid] ~= nil) then
+            stateManager.ignoredEntries[uuid] = nil
+        else
+            local ok, err = pcall(stateManager.handlers[entry:class()], entry)
+            if not ok then
+                recordFailedEntry(stateManager, entry, uuid, err)
+            end
+        end
     else
-        stateManager.handlers[entry:class()](entry)
+        numbersForHash = LogEntry.numbersForHash(entry)
+        recordFailedEntry(stateManager, entry, table.concat(numbersForHash, '-'), "unknown entry type")
     end
 
     --[[
@@ -110,8 +128,7 @@ local function updateState(stateManager, batchSize)
     local applied = 0
     while applied < batchSize and stateManager.lastAppliedIndex < #entries do
         local entry = entries[stateManager.lastAppliedIndex + 1]
-        stateManager:castLogEntry(entry)
-        if (stateManager.timeTraveling ~= nil and entry:time() > stateManager.timeTraveling) then
+        if (stateManager.timeTraveling ~= nil and LogEntry.time(entry) > stateManager.timeTraveling) then
             if applied > 0 then
                 print(string.format("Stopping state updates due to time travel restriction, applied %d events", applied))
             end
@@ -154,6 +171,7 @@ function StateManager:new(list, logger)
     o.batchSize = 1
     o.metatables = {}
     o.ignoredEntries = {}
+    o.failedEntries = {}
     o.listeners = {}
     o.lastTick = 0
     o.measuredInterval = 0
@@ -332,7 +350,13 @@ function StateManager:restart()
     self.lastRestartTime = GetTime()
     self.stateCheckSum = 0
     self.checksumCoroutine = Util.IntegerChecksumCoroutine()
+    self.failedEntries = {}
     trigger(self, EVENT.RESTART)
+end
+
+-- uuid -> reason for entries skipped since the last restart
+function StateManager:getFailedEntries()
+    return self.failedEntries
 end
 
 

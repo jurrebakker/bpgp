@@ -19,6 +19,10 @@ local Message = LibStub("BPEPGP-EventSourcing/Message")
 
 
 local ADVERTISEMENT_TIMEOUT = 30
+-- Remote entries dated further in the future are rejected (S6)
+local MAX_FUTURE_SECONDS = 600
+-- Live entries older than this are accepted but logged (S6)
+local STALE_LIVE_SECONDS = 300
 local CHANNEL_GUILD = "GUILD"
 local CHANNEL_RAID = "RAID"
 local CHANNEL_WHISPER = "WHISPER"
@@ -86,13 +90,31 @@ local function weekEntryIterator(listSync, week)
         while position ~= nil and position <= #entries do
             -- luacheck: pop ignore
             local entry = entries[position]
-            stateManager:castLogEntry(entry)
+            -- Unknown entry types (e.g. from an older version) stay uncast; see hashNumbers
+            pcall(stateManager.castLogEntry, stateManager, entry)
             position = position + 1
-            if entry:weekNumber() == week then
+            if LogEntry.weekNumber(entry) == week then
                 return entry
             else
                 return nil
             end
+        end
+    end
+end
+
+-- Checksum numbers of an entry; identity only for entries of an unknown type
+local function hashNumbers(entry)
+    local ok, numbers = pcall(entry.numbersForStateHash, entry)
+    if ok then return numbers end
+    return LogEntry.numbersForHash(entry)
+end
+
+-- Entries of an unknown type can't be serialized; they are left out of week data
+local function addEntriesOfWeek(listSync, message, week)
+    for entry in weekEntryIterator(listSync, week) do
+        local ok, list = pcall(listSync._stateManager.createListFromEntry, listSync._stateManager, entry)
+        if ok then
+            message:addEntry(list)
         end
     end
 end
@@ -116,7 +138,7 @@ local function weekHash(listSync, week)
     end
     if listSync._weekHashCache.entries[week] == nil then
         for entry in weekEntryIterator(listSync, week) do
-            for _, v in ipairs(LogEntry.numbersForHash(entry)) do
+            for _, v in ipairs(hashNumbers(entry)) do
                 result, hash = coroutine.resume(adler32, v)
                 if not result then
                     error(hash)
@@ -160,6 +182,14 @@ local function handleAdvertiseMessage(message, sender, distribution, stateManage
         end
     end
     -- First we check every week's hash
+    -- Only officers advertise (S5); anyone else could make officers withdraw their advertisements
+    if distribution ~= CHANNEL_GUILD and distribution ~= CHANNEL_WHISPER then
+        return
+    end
+    if not listSync.authorizationHandler(nil, sender) then
+        listSync.logger:Debug("Ignoring advertisement from non-officer %s", sender)
+        return
+    end
     for _, whc in ipairs(message.hashes) do
         local week, hash, count = unpack(whc)
 
@@ -170,6 +200,7 @@ local function handleAdvertiseMessage(message, sender, distribution, stateManage
         end
 
         local localHash, localCount = weekHash(listSync, week)
+        localCount = localCount or 0
         if  localHash == hash and localCount == count then
             advertiseWeekHashInhibitorSet(listSync, week)
             listSync.logger:Debug("Received week %s hash from %s, we are in sync", week, sender)
@@ -194,6 +225,35 @@ local function handleAdvertiseMessage(message, sender, distribution, stateManage
     end
 end
 
+--[[
+    Turn received lists into entries and queue them. Each entry is checked on its own; a bad one is
+    dropped without losing the rest (S3, S6, S7).
+    @param isLive true for single-entry pushes: the creator must be the sender
+]]--
+local function queueRemoteEntries(listSync, stateManager, rawEntries, sender, isLive)
+    local now = Util.time()
+    local count = 0
+    for _, v in ipairs(rawEntries or {}) do
+        local ok, entry = pcall(stateManager.createLogEntryFromList, stateManager, v)
+        if not ok or type(entry) ~= "table" then
+            listSync.logger:Warning("Dropping invalid entry from %s: %s", sender, tostring(entry))
+        elseif not entry:hasValidIdentity() then
+            listSync.logger:Warning("Dropping entry with invalid identity from %s", sender)
+        elseif entry:time() > now + MAX_FUTURE_SECONDS then
+            listSync.logger:Warning("Dropping entry dated in the future from %s", sender)
+        elseif isLive and not listSync.authorizationHandler(entry, sender, true) then
+            listSync.logger:Warning("Dropping live entry from %s: creator is not the sender", sender)
+        else
+            if isLive and entry:time() < now - STALE_LIVE_SECONDS then
+                listSync.logger:Warning("Live entry from %s is %d s old", sender, now - entry:time())
+            end
+            stateManager:queueRemoteEvent(entry)
+            count = count + 1
+        end
+    end
+    return count
+end
+
 local function handleWeekDataMessage(message, sender, distribution, stateManager, listSync)
     if not listSync.authorizationHandler(nil, sender) then
         listSync.logger:Warning("Dropping week data message from unauthorized sender %s", sender)
@@ -204,12 +264,7 @@ local function handleWeekDataMessage(message, sender, distribution, stateManager
         listSync.logger:Warning("Dropping week data message from sender %s, we have the same hash", sender)
         return
     end
-    local count = 0
-    for _, v in ipairs(message.entries) do
-        local entry = stateManager:createLogEntryFromList(v)
-        stateManager:queueRemoteEvent(entry)
-        count = count + 1
-    end
+    local count = queueRemoteEntries(listSync, stateManager, message.entries, sender, false)
     listSync.logger:Info("Enqueued %d events for week %s from remote received from %s via %s", count, message.week, sender, distribution)
 end
 
@@ -219,11 +274,9 @@ local function handleBulkDataMessage(message, sender, distribution, stateManager
         listSync.logger:Warning("Dropping bulk data message from unauthorized sender %s", sender)
         return
     end
-    for _, v in ipairs(message.entries) do
-        local entry = stateManager:createLogEntryFromList(v)
-        stateManager:queueRemoteEvent(entry)
-        count = count + 1
-    end
+    -- Single-entry bulk data is a live push of a just-created entry (S7)
+    local isLive = #(message.entries or {}) == 1
+    count = queueRemoteEntries(listSync, stateManager, message.entries, sender, isLive)
     listSync.logger:Info("Enqueued %d events from remote received from %s via %s", count, sender, distribution)
 end
 
@@ -413,17 +466,13 @@ end
 
 function ListSync:weekSyncViaWhisper(target, week)
     local message = WeekDataMessage.create(week, weekHash(self, week))
-    for entry in weekEntryIterator(self, week) do
-        message:addEntry(self._stateManager:createListFromEntry(entry))
-    end
+    addEntriesOfWeek(self, message, week)
     self.sendLargeMessage(message, CHANNEL_WHISPER, target)
 end
 
 function ListSync:weekSyncViaGuild(week)
     local message = WeekDataMessage.create(week, weekHash(self, week))
-    for entry in weekEntryIterator(self, week) do
-        message:addEntry(self._stateManager:createListFromEntry(entry))
-    end
+    addEntriesOfWeek(self, message, week)
     self.sendLargeMessage(message, CHANNEL_GUILD)
 end
 

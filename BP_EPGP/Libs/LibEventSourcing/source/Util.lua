@@ -220,6 +220,44 @@ function Util.random(length, alternativeCharset)
     return result
 end
 
+--[[
+  Deterministic digest of any value (numbers, strings, booleans, nested tables) as an integer
+  below 2^31, so it can go into the integer checksums. Table keys are visited in a stable order.
+]]--
+local DIGEST_MOD = 2147483647
+local function digestString(h, s)
+    for i = 1, #s do
+        h = (h * 31 + string.byte(s, i)) % DIGEST_MOD
+    end
+    return h
+end
+
+local function digestValue(h, v)
+    if type(v) ~= "table" then
+        return digestString(h, type(v) .. ":" .. tostring(v) .. ";")
+    end
+    h = digestString(h, "{")
+    local n = #v
+    for i = 1, n do
+        h = digestValue(h, v[i])
+    end
+    local keys = {}
+    for k in pairs(v) do
+        if not (type(k) == "number" and k >= 1 and k <= n and k % 1 == 0) then
+            keys[#keys + 1] = k
+        end
+    end
+    table.sort(keys, function(a, b) return tostring(a) < tostring(b) end)
+    for _, k in ipairs(keys) do
+        h = digestValue(digestString(h, tostring(k) .. "="), v[k])
+    end
+    return digestString(h, "}")
+end
+
+function Util.ValueDigest(value, seed)
+    return digestValue(seed or 7, value)
+end
+
 function Util.getIntegerGuid(target)
     return Util.getIntegerFromGuid(UnitGUID(target))
 end
