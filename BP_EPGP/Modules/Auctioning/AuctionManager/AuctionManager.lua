@@ -28,12 +28,10 @@ local CHAT_MESSAGE_CHANNEL = "RAID_WARNING"
 ---@field bidInfoSender BidInfoSender
 ---@field handlers table
 ---@field unregisterRolls function?
----@field lastCountdownValue number?
 local AuctionManager = {}
 
 local function InitializeDB(self)
     self.db = CLM.MODULES.Database:Personal('auction', {
-        autoAssign = true,
         autoTrade = true,
         fillFromCorpse = true,
         fillFromCorpseMLOnly = true,
@@ -245,33 +243,6 @@ local function HookAuctionFilling(self)
     end)
 end
 
-UTILS.GetItemInfo(19019)
-local function Joke()
-    local L1, L2, R = "", "", math.random(1,5)
-
-    if R == 1 then
-        L1 = "What do you call a druid who melees in tree form?"
-        L2 = "A combat log."
-    elseif R == 2 then
-        L1 = "What's a rogue's favourite drink?"
-        L2 = "Subtle tea."
-    elseif R == 3 then
-        L1 = "How does Naxxramas fly?"
-        L2 = "With its four wings."
-    elseif R == 4 then
-        L1 = "How many Blizzard developers does it take to get an expansion right?"
-        L2 = "Nobody knows because it hasn't been done yet."
-    elseif R == 5 then
-        L1 = "What do you call a gnome priest?"
-        L2 = "A compact disc."
-    end
-
-    C_Timer.After(1, function()
-        UTILS.SendChatMessage(L1, "RAID")
-        UTILS.SendChatMessage(L2, "RAID")
-    end)
-end
-
 local alreadyPostedLoot = {}
 local function PostLootToRaidChat()
     if not IsInRaid() then return end
@@ -332,15 +303,6 @@ end
 
 -- CONFIGURATION
 
-local function SetAutoAssign(self, value)
-    self.db.autoAssign = value and true or false
-end
-
----@return boolean
-function AuctionManager:GetAutoAssign()
-    return self.db.autoAssign
-end
-
 local function SetAutoTrade(self, value)
     self.db.autoTrade = value and true or false
 end
@@ -374,15 +336,6 @@ local function CreateConfigurationOptions(self)
             get = function(i) return self:GetDefaultRemoveOnAward() end,
             width = 1,
             order = 31.5,
-        },
-        auctioning_enable_auto_award_from_corpse = {
-            name = CLM.L["Auto-assign from corpse"],
-            desc = CLM.L["Enable loot auto-assign (Master Looter UI) from corpse when item is awarded"],
-            type = "toggle",
-            set = function(i, v) SetAutoAssign(self, v) end,
-            get = function(i) return self:GetAutoAssign() end,
-            width = "double",
-            order = 32
         },
         auctioning_enable_auto_trade = {
             name = CLM.L["Auto-trade after award"],
@@ -787,9 +740,6 @@ function AuctionManager:StartAuction()
             auctionMessage = auctionMessage .. string.format(CLM.L["Anti-snipe time: %s."], auction:GetAntiSnipe())
         end
         UTILS.SendChatMessage(auctionMessage , CHAT_MESSAGE_CHANNEL)
-        if CLM.GlobalConfigs:GetCommandsWarning() and CLM.GlobalConfigs:GetAllowChatCommands() then
-            UTILS.SendChatMessage("Whisper me '!bid <amount>' to bid. Whisper '!dkp' to check your dkp.", CHAT_MESSAGE_CHANNEL)
-        end
     end
 
     -- Store the auctioned values as item overrides
@@ -930,9 +880,9 @@ local function AntiSnipe(self, auction)
             SendAntiSnipe()
             -- Cheeky update the warning countdown, but only if above 3/5s
             if antiSnipe >= 5 then
-                self.lastCountdownValue = 5
+                self.auctionTickerLastCountdownValue = 5
             elseif antiSnipe >= 3 then
-                self.lastCountdownValue = 3
+                self.auctionTickerLastCountdownValue = 3
             end
         end
     end
@@ -944,7 +894,7 @@ end
 function AuctionManager:HandleIncomingMessage(message, distribution, sender)
     LOG:Trace("AuctionManager:HandleIncomingMessage()")
     local mtype = message:Type() or 0
-    if self.handlers[mtype] then
+    if self.handlers and self.handlers[mtype] then -- handlers exist only for officers
         self[self.handlers[mtype]](self, message:Data(), sender)
     end
 end
@@ -979,31 +929,10 @@ local function ValidateBid(auction, uid, item, name, userResponse)
         LOG:Warning("Received bid for not auctioned item from [%s]", name)
         return false, CONSTANTS.AUCTION_COMM.DENY_BID_REASON.INVALID_ITEM
     end
-    local auctionType = auction:GetType()
-    local itemValueMode = auction:GetMode()
     local roster = auction:GetRoster()
-    local values = item:GetValues()
-    -- bid cancelling
-    if userResponse:Type() == CONSTANTS.BID_TYPE.CANCEL then
-        if auction:GetAllowCancelPass() then return true end
-        -- only allow cancellin in closed auction
-        if CONSTANTS.AUCTION_TYPES_OPEN[auctionType] then
-            return false, CONSTANTS.AUCTION_COMM.DENY_BID_REASON.CANCELLING_NOT_ALLOWED
-        else
-            return true
-        end
-    end
-    -- bid passing
-    if userResponse:Type() == CONSTANTS.BID_TYPE.PASS then
-        if auction:GetAllowCancelPass() then return true end
-        -- only allow passing if no bids have been placed in open auctions
-        if (itemValueMode == CONSTANTS.ITEM_VALUE_MODE.ASCENDING) and
-            CONSTANTS.AUCTION_TYPES_OPEN[auctionType] and
-            auction:HasBids(uid, name) then
-            return false, CONSTANTS.AUCTION_COMM.DENY_BID_REASON.PASSING_NOT_ALLOWED
-        else
-            return true
-        end
+    -- cancel and pass are always allowed
+    if userResponse:Type() == CONSTANTS.BID_TYPE.CANCEL or userResponse:Type() == CONSTANTS.BID_TYPE.PASS then
+        return true
     end
     if (not auction:GetUseOS()) and (userResponse:Type() == CONSTANTS.BID_TYPE.OFF_SPEC) then
         return false, CONSTANTS.AUCTION_COMM.DENY_BID_REASON.OFF_SPEC_NOT_ALLOWED
@@ -1018,62 +947,8 @@ local function ValidateBid(auction, uid, item, name, userResponse)
     local current = roster:Standings(GUID)
     local minimumPoints = auction:GetMinimumPoints()
     if current < minimumPoints then return false, CONSTANTS.AUCTION_COMM.DENY_BID_REASON.BELOW_MIN_BIDDER end
-    -- bid value
-    if itemValueMode == CONSTANTS.ITEM_VALUE_MODE.ASCENDING then
-        -- ascending
-        -- always allow bidding base in ascending mode but ONLY if player haven't bid yet
-        if not auction:HasBids(uid, name) then
-            if (value == 0) and auction:GetAlwaysAllow0() then
-                return true
-            end
-        end
-        -- min
-        if values[CONSTANTS.SLOT_VALUE_TIER.BASE] > 0 and value < values[CONSTANTS.SLOT_VALUE_TIER.BASE] then return false, CONSTANTS.AUCTION_COMM.DENY_BID_REASON.BID_VALUE_TOO_LOW end
-        -- max
-        if values[CONSTANTS.SLOT_VALUE_TIER.MAX] > 0 and value > values[CONSTANTS.SLOT_VALUE_TIER.MAX] then
-            return false, CONSTANTS.AUCTION_COMM.DENY_BID_REASON.BID_VALUE_TOO_HIGH
-        end
-        -- open bid ascending
-        if CONSTANTS.AUCTION_TYPES_OPEN[auctionType] then
-            -- Do not allow swapping from OS to MS
-            local currentResponse = item:GetResponse(name)
-            if currentResponse then
-                -- Do not allow changing Main Spec bid to Off Spec
-                if currentResponse:Type() == CONSTANTS.BID_TYPE.MAIN_SPEC and
-                      userResponse:Type() == CONSTANTS.BID_TYPE.OFF_SPEC then
-                    return false, CONSTANTS.AUCTION_COMM.DENY_BID_REASON.SPEC_CHANGE
-                end
-            end
-            do return true end -- EPGP: no standings limit; ascending mode goes in Phase 5
-            if auction:GetAlwaysAllowAllInBids() and (current == value) then
-                return true
-            end
-            -- always allow bidding base in ascending mode but ONLY if player haven't bid yet
-            if not auction:HasBids(uid, name) then
-                if value == values[CONSTANTS.SLOT_VALUE_TIER.BASE] and auction:GetAlwaysAllowBaseBids() then
-                    return true
-                end
-            end
-            if value == item:GetHighestBid() then
-                if auction:GetAllowEqualBids() then
-                    return true
-                end
-            end
-
-            if value < item:GetHighestBid() then
-                return false, CONSTANTS.AUCTION_COMM.DENY_BID_REASON.BID_VALUE_TOO_LOW
-            end
-
-            if UTILS.round(value - item:GetHighestBid(), auction:GetRounding()) < auction:GetIncrement() then
-                return false, CONSTANTS.AUCTION_COMM.DENY_BID_REASON.BID_INCREMENT_TOO_LOW
-            end
-        end
-    elseif itemValueMode == CONSTANTS.ITEM_VALUE_MODE.TIERED then
-        if not item:IsValueAccepted(value) then return false, CONSTANTS.AUCTION_COMM.DENY_BID_REASON.BID_VALUE_INVALID end
-    else
-        -- single-priced
-        if values[CONSTANTS.SLOT_VALUE_TIER.BASE] ~= value then return false, CONSTANTS.AUCTION_COMM.DENY_BID_REASON.BID_VALUE_INVALID end
-    end
+    -- tiered: the bid must be one of the item's tier values
+    if not item:IsValueAccepted(value) then return false, CONSTANTS.AUCTION_COMM.DENY_BID_REASON.BID_VALUE_INVALID end
     -- accept otherwise
     return true
 end
@@ -1106,35 +981,10 @@ local function ValidateBidLimited(auction, item, name, userResponse)
     return true
 end
 
-local function AnnounceBid(auction, uid, name, userResponse, newHighBid)
-    local auctionType = auction:GetType()
-    if not CONSTANTS.AUCTION_TYPES_OPEN[auctionType] then return end
+-- Open auction: every bid is shared with the raid
+local function AnnounceBid(auction, uid, name, userResponse)
     if not auction:GetItemByUID(uid) then return end
-
-    local message
-    local nameModdified
-    if auctionType == CONSTANTS.AUCTION_TYPE.ANONYMOUS_OPEN then
-        nameModdified = ""
-        local anonomizedName = auction:GetAnonymousName(name)
-        local modifiedResponse = UTILS.DeepCopy(userResponse)
-        modifiedResponse:SetUpgradedItems({}) -- Clear Upgraded items info
-        SendBidInfo(AuctionManager, uid, anonomizedName, modifiedResponse)
-    else
-        nameModdified = "(" .. name .. ")"
-        SendBidInfo(AuctionManager, uid, name, userResponse)
-    end
-
-    -- -- Raid warning highest bidder
-    if not newHighBid then return end
-    if auction:GetMode() ~= CONSTANTS.ITEM_VALUE_MODE.ASCENDING then return end
-    if not CLM.GlobalConfigs:GetBidsWarning() then return end
-    if userResponse:Type() ~= CONSTANTS.BID_TYPE.MAIN_SPEC then return end
-    message = string.format(CLM.L["New highest bid on %s: %s %s %s"],
-                        auction:GetItemByUID(uid):GetItemLink(),
-                        userResponse:Value(),
-                        CLM.L["GP"],
-                        nameModdified)
-    UTILS.SendChatMessage(message, CHAT_MESSAGE_CHANNEL)
+    SendBidInfo(AuctionManager, uid, name, userResponse)
 end
 
 ---@param name string
@@ -1149,8 +999,8 @@ function AuctionManager:UpdateBid(name, uid, userResponse)
 
     local accept, reason = ValidateBid(auction, uid, item, name, userResponse)
     if accept then
-        local newHighBid = item:SetResponse(name, userResponse)
-        AnnounceBid(auction, uid, name, userResponse, newHighBid)
+        item:SetResponse(name, userResponse)
+        AnnounceBid(auction, uid, name, userResponse)
         if not CONSTANTS.BID_TYPE_HIDDEN[userResponse:Type()] then
             AntiSnipe(self, auction)
             SendBidAccepted(uid, name)
@@ -1189,7 +1039,7 @@ function AuctionManager:Award(item, name, price)
         if GetPostAllBidsOnAward(self) then
             CLM.MODULES.AuctionHistoryManager:PostByUUID(uuid)
         end
-        CLM.MODULES.AutoAssign:Handle(item:GetItemLink(), name)
+        CLM.MODULES.TradeHelper:Handle(item:GetItemLink(), name)
         RevalidateBids(self)
     end
 end
@@ -1267,7 +1117,7 @@ function AuctionManager:RefreshGUI()
 end
 
 CONSTANTS.AUCTION_COMM = {
-    CURRENT_VERSION = 3,
+    CURRENT_VERSION = 4,
     BID_PASS  = CLM.L["PASS"],
     NUM_ANNOUNCE_CHANNELS = 2,
     TYPE = {

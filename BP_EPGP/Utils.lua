@@ -1158,7 +1158,7 @@ function UTILS.GetAuctionConditionalFieldName(key, auction, prefix, suffix)
     local name
     prefix = prefix or "["
     suffix = suffix or "]"
-    if auction and auction:GetNamedButtonsMode() then
+    if auction then
         name = auction:GetFieldName(key)
         if name == "" then name = nil end
     end
@@ -1172,7 +1172,7 @@ function UTILS.GetRosterConditionalFieldName(key, roster, prefix, suffix)
     local name
     prefix = prefix or "["
     suffix = suffix or "]"
-    if roster and roster:GetConfiguration("namedButtons") then
+    if roster then
         name = roster:GetFieldName(key)
         if name == "" then name = nil end
     end

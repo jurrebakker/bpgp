@@ -367,23 +367,8 @@ end
 
 local function UpdateBids(self, cutoff, type)
     LOG:Trace("AuctionManagerGUI:UpdateAwardValue()")
-    local auction = CLM.MODULES.AuctionManager:GetCurrentAuctionInfo()
-    local bidType = type
-    if auction:GetNamedButtonsMode() then
-        bidType = nil
-    end
-    local max, second = self.auctionItem:GetTopBids(cutoff, bidType)
-    local values = self.auctionItem:GetValues()
-    local isVickrey = (auction:GetType() ==  CONSTANTS.AUCTION_TYPE.VICKREY)
-    if isVickrey then
-        if second.bid == 0 then
-            SetInputAwardValue(self, values[CONSTANTS.SLOT_VALUE_TIER.BASE] or 0)
-        else
-            SetInputAwardValue(self, second.bid)
-        end
-    else
-        SetInputAwardValue(self, max.bid)
-    end
+    local max = self.auctionItem:GetTopBids(cutoff, nil)
+    SetInputAwardValue(self, max.bid)
 end
 
 local function CreateBidList(self)
@@ -795,7 +780,7 @@ local function UpdateOptions(self)
     UpdateAwardOptions(self)
 end
 
-local function BuildBidRow(name, response, roster, namedButtonMode, externalData)
+local function BuildBidRow(name, response, roster, externalData)
     local profile = CLM.MODULES.ProfileManager:GetProfileByName(name)
     local class, classColor, current = "", nil, 0
     if profile then
@@ -803,10 +788,7 @@ local function BuildBidRow(name, response, roster, namedButtonMode, externalData
         classColor = UTILS.GetClassColor(profile:Class())
         current = roster:Priority(profile:GUID())
     end
-    local bidTypeString
-    if namedButtonMode then
-        bidTypeString = CONSTANTS.SLOT_VALUE_TIERS[response:Type()] and roster:GetFieldDisplayName(response:Type()) or nil
-    end
+    local bidTypeString = CONSTANTS.SLOT_VALUE_TIERS[response:Type()] and roster:GetFieldDisplayName(response:Type()) or nil
     local bidColor
     if response:Type() == CONSTANTS.BID_TYPE.OFF_SPEC then
         bidColor = colorTurquoise
@@ -900,7 +882,6 @@ function AuctionManagerGUI:Refresh()
     local bidList = {}
     local item = self.auctionItem
     if item then
-        local namedButtonsMode = auction:GetNamedButtonsMode()
         local roster = auction:GetRoster()
         for name, response in pairs(item:GetAllResponses()) do
             local externalData = GetExternalColumnData(self, auction, item, name, response)
@@ -910,7 +891,7 @@ function AuctionManagerGUI:Refresh()
                 include = false
             end
             if include then
-                bidList[#bidList+1] = BuildBidRow(name, response, roster, namedButtonsMode, externalData)
+                bidList[#bidList+1] = BuildBidRow(name, response, roster, externalData)
             end
         end
     end

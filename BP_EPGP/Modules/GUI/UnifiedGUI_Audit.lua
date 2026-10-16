@@ -52,12 +52,6 @@ local configDecodeFunctions = {
         return "", ""
     end),
     ---
-    auctionType = (function(value)
-        return CLM.L["Auction Type"], CONSTANTS.AUCTION_TYPES_GUI[value] or ""
-    end),
-    itemValueMode = (function(value)
-        return CLM.L["Item value mode"], CONSTANTS.ITEM_VALUE_MODES_GUI[value] or ""
-    end),
     auctionTime = (function(value)
         return CLM.L["Auction Time"], safeToString(value)
     end),
@@ -73,17 +67,11 @@ local configDecodeFunctions = {
     roundDecimals = (function(value)
         return CLM.L["Round to"], safeToString(value)
     end),
-    minimalIncrement = (function(value)
-        return CLM.L["Min bid increment"], safeToString(value)
-    end),
     minimumPoints = (function(value)
         return CLM.L["Minimum points (DKP / EP)"], safeToString(value)
     end),
     minGP = (function(value)
         return CLM.L["Minimum GP"], safeToString(value)
-    end),
-    namedButtons = (function(value)
-        return CLM.L["Named Buttons"], safeToString(value)
     end),
 }
 

@@ -32,9 +32,7 @@ function GlobalConfigs:Initialize()
             raid = true,
             auction = true,
             countdown = true,
-            bids = true,
-            loot = true,
-            commands = false
+            loot = true
         },
         loot_roll = {
             rollOnLoot = CONSTANTS.LOOT_ROLL_TYPE_IGNORE,
@@ -175,14 +173,6 @@ function GlobalConfigs:Initialize()
             set = function(i, v) self:SetLootWarning(v) end,
             get = function(i) return self:GetLootWarning() end,
             order = 125
-        },
-        rw_bids = {
-            name = CLM.L["Bids"],
-            desc = CLM.L["Enables announcing new highest bid (when applicable)."],
-            type = "toggle",
-            set = function(i, v) self:SetBidsWarning(v) end,
-            get = function(i) return self:GetBidsWarning() end,
-            order = 126
         },
         danger_zone_header = {
             type = "header",
@@ -325,6 +315,10 @@ end
 
 ---@param value string
 function GlobalConfigs:SetModifierCombination(value)
+    if value == self:GetAwardModifierCombination() then
+        CLM.LOG:Message(CLM.L["Auction and award need different modifier combinations."])
+        return
+    end
     self.db.modifier_combination = CONSTANTS.MODIFIER_COMBINATIONS[value] and value or CONSTANTS.MODIFIER_COMBINATION.ALT
 end
 
@@ -335,12 +329,16 @@ end
 
 ---@param value string
 function GlobalConfigs:SetAwardModifierCombination(value)
-    self.db.award_modifier_combination = CONSTANTS.MODIFIER_COMBINATIONS[value] and value or CONSTANTS.MODIFIER_COMBINATION.ALT
+    if value == self:GetModifierCombination() then
+        CLM.LOG:Message(CLM.L["Auction and award need different modifier combinations."])
+        return
+    end
+    self.db.award_modifier_combination = CONSTANTS.MODIFIER_COMBINATIONS[value] and value or CONSTANTS.MODIFIER_COMBINATION.ALT_SHIFT
 end
 
 ---@return string
 function GlobalConfigs:GetAwardModifierCombination()
-    return self.db.award_modifier_combination or CONSTANTS.MODIFIER_COMBINATION.ALT
+    return self.db.award_modifier_combination or CONSTANTS.MODIFIER_COMBINATION.ALT_SHIFT
 end
 
 ---@param value boolean
@@ -394,16 +392,6 @@ function GlobalConfigs:GetAuctionWarning()
 end
 
 ---@param value boolean
-function GlobalConfigs:SetCommandsWarning(value)
-    self.db.raid_warnings.commands = value and true or false
-end
-
----@return boolean
-function GlobalConfigs:GetCommandsWarning()
-    return self.db.raid_warnings.commands
-end
-
----@param value boolean
 function GlobalConfigs:SetCountdownWarning(value)
     self.db.raid_warnings.countdown = value and true or false
 end
@@ -421,16 +409,6 @@ end
 ---@return boolean
 function GlobalConfigs:GetLootWarning()
     return self.db.raid_warnings.loot
-end
-
----@param value boolean
-function GlobalConfigs:SetBidsWarning(value)
-    self.db.raid_warnings.bids = value and true or false
-end
-
----@return boolean
-function GlobalConfigs:GetBidsWarning()
-    return self.db.raid_warnings.bids
 end
 
 ---@param v boolean

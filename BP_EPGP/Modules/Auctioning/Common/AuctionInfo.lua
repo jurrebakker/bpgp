@@ -11,13 +11,6 @@ local AuctionItem = CLM.MODELS.AuctionItem
 local assertTypeof = UTILS.assertTypeof
 local assertType = UTILS.assertType
 
-local nickMap = {
-    "Millhouse ",
-    "Jenkins ",
-    "Hemet ",
-    "Mrgl-Mrgl "
-}
-
 ---@class AuctionInfo
 ---@field state number
 ---@field configuration table
@@ -35,13 +28,7 @@ local nickMap = {
 ---@field acceptingRolls boolean
 ---@field hasUsableItems boolean|nil
 ---@field rollItem table|nil
----@field anonymousMap table
----@field nextAnonymousId number
----@field auctionType number
----@field mode number
----@field increment number
 ---@field useOS boolean
----@field namedButtons boolean
 ---@field fieldNames table
 local AuctionInfo = {} -- AuctionInfo
 AuctionInfo.__index = AuctionInfo
@@ -75,9 +62,6 @@ local function Clear(self)
     for _, item in pairs(self.items) do
         item:Clear()
     end
-
-    self.anonymousMap = {}
-    self.nextAnonymousId = 1
 end
 
 ---@param object? table
@@ -107,25 +91,12 @@ function AuctionInfo:New(object)
     return o
 end
 
-local function _GetType(s)
-    return s.auctionType
-end
-local function _GetMode(s)
-    return s.mode
-end
 local function _GetUseOS(s)
     return s.useOS
-end
-local function _GetNamedButtonsMode(s)
-    return s.namedButtons
 end
 local function _GetFieldName(s, tier)
     return s.fieldNames[tier] or ""
 end
-local function _GetIncrement(s)
-    return s.increment
-end
-
 local function UpdateAuctionTime(self)
     if self.configuration then
         local auctionTime = self.configuration:Get("auctionTime")
@@ -137,14 +108,11 @@ local function UpdateAuctionTime(self)
     end
 end
 
----@param auctionType number
----@param mode number
+-- Auction built from the START_AUCTION message, for raiders who aren't in the raid in their own ledger
 ---@param useOS boolean
----@param namedButtons boolean
----@param increment number
 ---@param fieldNames table
 ---@return AuctionInfo
-function AuctionInfo:NewShim(auctionType, mode, useOS, namedButtons, increment, fieldNames)
+function AuctionInfo:NewShim(useOS, fieldNames)
     local o = {}
     setmetatable(o, self)
 
@@ -162,29 +130,15 @@ function AuctionInfo:NewShim(auctionType, mode, useOS, namedButtons, increment, 
     -- Remove unsupported
     o.UpdateRaid = nil
     o.UpdateRoster = nil
-    o.GetAlwaysAllowBaseBids = nil
-    o.GetAlwaysAllowAllInBids = nil
-    o.GetAlwaysAllowAll0 = nil
-    o.GetAllowEqualBids = nil
-    o.GetAllowCancelPass = nil
     o.GetRounding = nil
     o.GetMinimumPoints = nil
 
     -- Overwrite new ones
-    self.auctionType = auctionType
-    self.mode = mode
-    self.useOS = useOS
-    self.namedButtons = namedButtons
+    o.useOS = useOS
+    o.fieldNames = UTILS.DeepCopy(fieldNames)
 
-    self.increment = increment
-    self.fieldNames = UTILS.DeepCopy(fieldNames)
-
-    o.GetType = _GetType
-    o.GetMode = _GetMode
     o.GetUseOS = _GetUseOS
-    o.GetNamedButtonsMode = _GetNamedButtonsMode
     o.GetFieldName = _GetFieldName
-    o.GetIncrement = _GetIncrement
 
     return o
 end
@@ -479,7 +433,7 @@ function AuctionInfo:Start(endTime)
     assertIsAcceptingRolls(self)
     self.endTime = endTime and endTime or (GetServerTime() + self.auctionTime)
     self.state = CONSTANTS.AUCTION_INFO.STATE.IN_PROGRESS
-    self.antiSnipeLimit = CONSTANTS.AUCTION_TYPES_OPEN[self:GetType()] and 100 or 3
+    self.antiSnipeLimit = 100
 
     Clear(self)
 end
@@ -535,54 +489,9 @@ function AuctionInfo:IsAntiSnipeAvailable()
     return self.antiSnipeLimit > 0
 end
 
----@return number
-function AuctionInfo:GetType()
-    return self.configuration:Get("auctionType")
-end
-
----@return number
-function AuctionInfo:GetMode()
-    return self.configuration:Get("itemValueMode")
-end
-
 ---@return boolean
 function AuctionInfo:GetUseOS()
     return self.configuration:Get("useOS")
-end
-
----@return boolean
-function AuctionInfo:GetAlwaysAllowBaseBids()
-    return self.configuration:Get("baseAlways")
-end
-
----@return boolean
-function AuctionInfo:GetAlwaysAllowAllInBids()
-    return self.configuration:Get("allInAlways")
-end
-
----@return boolean
-function AuctionInfo:GetAlwaysAllow0()
-    return self.configuration:Get("always0")
-end
-
----@return boolean
-function AuctionInfo:GetAllowEqualBids()
-    return self.configuration:Get("allowEqualMax")
-end
-
----@return boolean
-function AuctionInfo:GetAllowCancelPass()
-    return self.configuration:Get("allowCancelPass")
-end
-
----@return boolean
-function AuctionInfo:GetNamedButtonsMode()
-    return self.configuration:Get("namedButtons")
-end
-
----@return number
-function AuctionInfo:GetIncrement()
-    return self.configuration:Get("minimalIncrement")
 end
 
 ---@return number
@@ -648,16 +557,6 @@ function AuctionInfo:HasUsableItems()
         end
     end
     return self.hasUsableItems
-end
-
----@param name string
----@return string
-function AuctionInfo:GetAnonymousName(name)
-    if not self.anonymousMap[name] then
-        self.anonymousMap[name] = nickMap[math.random(1,#nickMap)] .. tostring(self.nextAnonymousId)
-        self.nextAnonymousId = self.nextAnonymousId + 1
-    end
-    return self.anonymousMap[name]
 end
 
 -----------------

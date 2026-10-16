@@ -282,10 +282,10 @@ Each phase ends with: luacheck clean, `/reload` without Lua errors, and the rele
 - ✅ Verified in-game 2026-10-16: solo raid evening with simulated group and bidders; live event count and hash unchanged.
 
 ### Phase 5 — Auctioning cleanup
-- [ ] Remove Sealed / Vickrey / Anonymous Open, Ascending mode, All-In, auto-update bid, Joke/AF.
-- [ ] Keep Tiered + named buttons, OS/Pass/Cancel, min EP, anti-snipe, `/roll`, upgrade info, history, item notes.
-- [ ] AutoAssign → **TradeHelper**: keep trade tracking + TradeList GUI, drop `GiveMasterLoot`.
-- [ ] Fix the auction bugs in §5.2.
+- [x] Remove Sealed / Vickrey / Anonymous Open, Ascending mode, All-In, auto-update bid, Joke/AF. Auctions are always Open + Tiered + named buttons; cancel/pass always allowed. The bidding window has only the named-button layout (tier buttons, OS, Pass, Cancel). Unnamed tiers show as Base/Small/Medium/Large/Max.
+- [x] Keep Tiered + named buttons, OS/Pass/Cancel, min EP, anti-snipe, `/roll`, upgrade info, history, item notes.
+- [x] AutoAssign → **TradeHelper**: keep trade tracking + TradeList GUI, drop `GiveMasterLoot` and the auto-assign setting.
+- [x] Fix the auction bugs in §5.2: anti-snipe countdown, `GetUseOS`, nil handlers for non-officers, auction/award modifiers must differ, ranged weapons → main hand, `/bpepgp ignore`, stale `!bid/!dkp` hint, defaults. "Raiders accept START/STOP from anyone" is S9 in Phase 8.
 
 ### Phase 6 — New: standings import
 - [ ] Officer-only window: paste lines `Name,EP,GP` (also accept tab-separated from a spreadsheet).

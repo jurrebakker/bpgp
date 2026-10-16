@@ -51,11 +51,7 @@ end
 local function GetConfig(auction)
     local c = {
         r = auction:GetRoster():UID(),
-        t = auction:GetType(),
-        m = auction:GetMode(),
         o = auction:GetUseOS(),
-        n = auction:GetNamedButtonsMode(),
-        i = auction:GetIncrement(),
         f = {}
     }
 
@@ -108,29 +104,10 @@ function AuctionCommStartAuction:GetRosterUID()
     return self.c.r or 0
 end
 
----@return number
-function AuctionCommStartAuction:GetType()
-    return self.c.t or CONSTANTS.AUCTION_TYPE.SEALED
-end
-
----@return number
-function AuctionCommStartAuction:GetMode()
-    return self.c.m or CONSTANTS.ITEM_VALUE_MODE.ASCENDING
-end
-
 ---@return boolean
 function AuctionCommStartAuction:GetUseOS()
-    return self.c.o or true
-end
-
----@return boolean
-function AuctionCommStartAuction:GetNamedButtonsMode()
-    return self.c.n or false
-end
-
----@return number
-function AuctionCommStartAuction:GetIncrement()
-    return self.c.i or 1
+    if self.c.o == nil then return true end
+    return self.c.o and true or false
 end
 
 ---@return table

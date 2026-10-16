@@ -22,7 +22,7 @@ local INVTYPE_to_INVSLOT_map = {
     ["INVTYPE_TRINKET"]         = {INVSLOT_TRINKET1, INVSLOT_TRINKET2},
     ["INVTYPE_WEAPON"]          = {INVSLOT_MAINHAND, INVSLOT_OFFHAND},
     ["INVTYPE_SHIELD"]          = {INVSLOT_MAINHAND, INVSLOT_OFFHAND},
-    ["INVTYPE_RANGED"]          = {INVSLOT_RANGED},
+    ["INVTYPE_RANGED"]          = {INVSLOT_MAINHAND},
     ["INVTYPE_CLOAK"]           = {INVSLOT_BACK},
     ["INVTYPE_2HWEAPON"]        = {INVSLOT_MAINHAND, INVSLOT_OFFHAND},
     ["INVTYPE_TABARD"]          = {INVSLOT_TABARD},
@@ -30,9 +30,8 @@ local INVTYPE_to_INVSLOT_map = {
     ["INVTYPE_WEAPONMAINHAND"]  = {INVSLOT_MAINHAND, INVSLOT_OFFHAND},
     ["INVTYPE_WEAPONOFFHAND"]   = {INVSLOT_MAINHAND, INVSLOT_OFFHAND},
     ["INVTYPE_HOLDABLE"]        = {INVSLOT_MAINHAND, INVSLOT_OFFHAND},
-    ["INVTYPE_THROWN"]          = {INVSLOT_RANGED},
-    ["INVTYPE_RANGEDRIGHT"]     = {INVSLOT_RANGED},
-    ["INVTYPE_RELIC"]           = {INVSLOT_RANGED},
+    ["INVTYPE_THROWN"]          = {INVSLOT_MAINHAND},
+    ["INVTYPE_RANGEDRIGHT"]     = {INVSLOT_MAINHAND},
     ["INVTYPE_NON_EQUIP"]       = {INVSLOT_HEAD, INVSLOT_SHOULDER, INVSLOT_CHEST, INVSLOT_HAND, INVSLOT_LEGS, },
 }
 
@@ -204,7 +203,7 @@ end
 local function StartAuction(self, data)
     local auction
     if data:Version() ~= CLM.CONSTANTS.AUCTION_COMM.CURRENT_VERSION then
-        LOG:Message("Auctioning requires newer version of CLM from Master Looter.")
+        LOG:Message(CLM.L["Your BP EPGP version differs from the auctioneer's. Update BP EPGP."])
         return false
     else
         local raid = CLM.MODULES.RaidManager:GetRaid()
@@ -213,11 +212,7 @@ local function StartAuction(self, data)
             auction:UpdateRaid(raid)
         else -- Extended configuration came from channel
             auction = CLM.MODELS.AuctionInfo:NewShim(
-                data:GetType(),
-                data:GetMode(),
                 data:GetUseOS(),
-                data:GetNamedButtonsMode(),
-                data:GetIncrement(),
                 data:GetFieldNames()
             )
         end
@@ -299,13 +294,7 @@ function BiddingManager:HandleAntiSnipe(_, sender)
 end
 
 local function stringifyBidInfo(auction, item, response)
-    local responseTypeName = CONSTANTS.BID_TYPE_NAMES[response:Type()]
-    if auction:GetNamedButtonsMode() then
-        responseTypeName = responseTypeName or auction:GetFieldDisplayName(response:Type())
-    else
-        -- If its not named button mode but tier comes, display as MS
-        responseTypeName = responseTypeName or CONSTANTS.BID_TYPE_NAMES[CONSTANTS.BID_TYPE.MAIN_SPEC]
-    end
+    local responseTypeName = CONSTANTS.BID_TYPE_NAMES[response:Type()] or auction:GetFieldDisplayName(response:Type())
     local spacer, value, points = "", "", ""
     local short
     if CONSTANTS.BID_TYPE_HIDDEN[response:Type()] then

@@ -66,7 +66,7 @@ function TradeListGUI:Initialize()
                 func = (function()
                     local rowData = self.st:GetRow(self.st:GetSelection())
                     if not rowData or not rowData.cols then return end
-                    CLM.MODULES.AutoAssign:InitiateTrade(ST_GetTradeTarget(rowData))
+                    CLM.MODULES.TradeHelper:InitiateTrade(ST_GetTradeTarget(rowData))
                 end),
                 color = "00cc00"
             },
@@ -79,7 +79,7 @@ function TradeListGUI:Initialize()
                 func = (function()
                     local rowData = self.st:GetRow(self.st:GetSelection())
                     if not rowData or not rowData.cols then return end
-                    CLM.MODULES.AutoAssign:Remove(ST_GetItemLink(rowData), ST_GetTradeTarget(rowData))
+                    CLM.MODULES.TradeHelper:Remove(ST_GetItemLink(rowData), ST_GetTradeTarget(rowData))
                 end),
                 color = "cc0000"
             },
@@ -177,7 +177,7 @@ local function CreateTradeDisplay(self)
             local rowData = self.st:GetRow(selected)
             if not rowData or not rowData.cols then return status end
             if IsAltKeyDown() then
-                CLM.MODULES.AutoAssign:InitiateTrade(ST_GetTradeTarget(rowData))
+                CLM.MODULES.TradeHelper:InitiateTrade(ST_GetTradeTarget(rowData))
             elseif IsModifiedClick() then
                 local message = string.format(CLM.L["%s trade me for %s"], ST_GetTradeTarget(rowData), ST_GetItemLink(rowData))
                 HandleModifiedItemClick(message)
@@ -252,7 +252,7 @@ function TradeListGUI:Refresh(visible)
     if visible and not self.top:IsVisible() then return end
 
     local data = {}
-    local tracked = CLM.MODULES.AutoAssign:GetTracked()
+    local tracked = CLM.MODULES.TradeHelper:GetTracked()
     -- Data
     for playerName, trackedList in pairs(tracked) do
         for _, itemLink in ipairs(trackedList) do

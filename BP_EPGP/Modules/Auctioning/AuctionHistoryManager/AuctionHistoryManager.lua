@@ -89,7 +89,6 @@ function AuctionHistoryManager:AddAuctionItem(auctionItem, uuid)
         -- uuid also in weird state as there can be multiple awards towards 1 auction
         local auction = CLM.MODULES.AuctionManager:GetCurrentAuctionInfo()
         local roster = auction:GetRoster()
-        local namedButtonsMode = auction:GetNamedButtonsMode()
         local bids = {}
         local bidNames = {}
         local rolls = {}
@@ -99,10 +98,7 @@ function AuctionHistoryManager:AddAuctionItem(auctionItem, uuid)
             bids[player] = response:Value()
             rolls[player] = response:Roll()
             -- TODO unify bid name sourcing globally in addon
-            local bidName = CONSTANTS.BID_TYPE_NAMES[response:Type()]
-            if namedButtonsMode then
-                bidName = bidName or roster:GetFieldDisplayName(response:Type())
-            end
+            local bidName = CONSTANTS.BID_TYPE_NAMES[response:Type()] or roster:GetFieldDisplayName(response:Type())
             bidNames[player] = bidName
             items[player] = response:Items()
         end

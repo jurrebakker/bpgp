@@ -1,4 +1,5 @@
 --[[
+    Trade helper: tracks awarded items per winner and puts them in the trade window.
     Lots of thanks to Zh0rax (https://github.com/papa-smurf) for sharing
     all the corner cases of trade handling and solutions to them
 ]]--
@@ -19,7 +20,7 @@ local function ScanTooltip(self)
     local query = string.gsub(BIND_TRADE_TIME_REMAINING, "%%s", ".*")
     local lineWithTimer
     for i = 1, self.fakeTooltip:NumLines() do
-        local line = _G["BPEPGPAutoAssignBagItemCheckerFakeTooltipTextLeft" .. i]
+        local line = _G["BPEPGPTradeHelperBagItemCheckerFakeTooltipTextLeft" .. i]
         if line then
             line = line:GetText() or ""
             if line == ITEM_SOULBOUND then
@@ -43,7 +44,7 @@ end
 ---@field itemInfo table
 local BagItemChecker = {}
 function BagItemChecker:Initialize()
-    self.fakeTooltip = CreateFrame("GameTooltip", "BPEPGPAutoAssignBagItemCheckerFakeTooltip", UIParent, "GameTooltipTemplate")
+    self.fakeTooltip = CreateFrame("GameTooltip", "BPEPGPTradeHelperBagItemCheckerFakeTooltip", UIParent, "GameTooltipTemplate")
     self.fakeTooltip:SetOwner(UIParent, "ANCHOR_NONE");
     self:Clear()
 end
@@ -197,13 +198,13 @@ end
 
 local lootWindowIsOpen = false
 
----@class AutoAssign
+---@class TradeHelper
 ---@field tracking table
 ---@field lastTradeTarget string?
 ---@field lastTradedItems table?
-local AutoAssign = {}
-function AutoAssign:Initialize()
-    LOG:Trace("AutoAssign:Initialize()")
+local TradeHelper = {}
+function TradeHelper:Initialize()
+    LOG:Trace("TradeHelper:Initialize()")
     self.tracking = {}
     Clear(self)
 
@@ -235,49 +236,21 @@ function AutoAssign:Initialize()
     CLM.MODULES.EventManager:RegisterWoWEvent({"LOOT_OPENED"}, (function() lootWindowIsOpen = true end))
     CLM.MODULES.EventManager:RegisterWoWEvent({"LOOT_CLOSED"}, (function() lootWindowIsOpen = false end))
     CLM.MODULES.EventManager:RegisterEvent(CLM.CONSTANTS.EVENTS.GLOBAL_LOOT_REMOVED, function(_, data)
-        AutoAssign:Remove(data.id, data.name)
+        TradeHelper:Remove(data.id, data.name)
     end)
 end
 
-local autoAssignIgnores = UTILS.Set({
-    22726, -- Splinter of Atiesh
-    30183, -- Nether Vortex
-    29434, -- Badge of Justice
-    23572, -- Primal Nether
-    45038, -- Fragment of Val'anyr
-    49908, -- Primordial Saronite
-    50274, -- Shadowfrost Shard
-})
+-- Item IDs never tracked for trading (none yet on retail)
+local tradeIgnores = UTILS.Set({})
 ---@param itemLink string
 ---@return boolean
-function AutoAssign:IsIgnored(itemLink)
-    return autoAssignIgnores[UTILS.GetItemIdFromLink(itemLink)]
-end
-
----@param itemLink string
----@param player string
-function AutoAssign:GiveMasterLooterItem(itemLink, player)
-    LOG:Trace("AutoAssign:GiveMasterLooterItem()")
-    if self:IsIgnored(itemLink) then return end
-    for itemIndex = 1, GetNumLootItems() do
-        local _, _, _, _, _, locked = GetLootSlotInfo(itemIndex)
-        if not locked then
-            if GetLootSlotLink(itemIndex) == itemLink then
-                for playerIndex = 1, GetNumGroupMembers() do
----@diagnostic disable-next-line: redundant-parameter
-                    if (UTILS.Disambiguate(GetMasterLootCandidate(itemIndex, playerIndex) or "") == player) then
-                        GiveMasterLoot(itemIndex, playerIndex)
-                        return
-                    end
-                end
-            end
-        end
-    end
+function TradeHelper:IsIgnored(itemLink)
+    return tradeIgnores[UTILS.GetItemIdFromLink(itemLink)]
 end
 
 ---@param itemLink string|number
 ---@param player string
-function AutoAssign:Track(itemLink, player)
+function TradeHelper:Track(itemLink, player)
     if self:IsIgnored(itemLink) then return end
     player = UTILS.Disambiguate(player)
     -- Lazy start tracking player
@@ -292,7 +265,7 @@ end
 
 ---@param itemLink string
 ---@param player string
-function AutoAssign:Remove(itemLink, player)
+function TradeHelper:Remove(itemLink, player)
     if self:IsIgnored(itemLink) then return end
     -- Sanity check: If we don't track player then return
     if not self.tracking[player] then
@@ -309,27 +282,25 @@ function AutoAssign:Remove(itemLink, player)
 end
 
 ---@return table
-function AutoAssign:GetTracked()
+function TradeHelper:GetTracked()
     return self.tracking
 end
 
 ---@param itemLink string
 ---@param target string
-function AutoAssign:Handle(itemLink, target)
+function TradeHelper:Handle(itemLink, target)
     if not self:IsIgnored(itemLink) then
-        if CLM.MODULES.AuctionManager:GetAutoAssign() and lootWindowIsOpen then
-            self:GiveMasterLooterItem(itemLink, target)
-        elseif CLM.MODULES.AuctionManager:GetAutoTrade() then
+        if CLM.MODULES.AuctionManager:GetAutoTrade() then
             self:Track(itemLink, target)
         end
     end
 end
 
 ---@param target string
-function AutoAssign:InitiateTrade(target)
+function TradeHelper:InitiateTrade(target)
     if lootWindowIsOpen then return end
     if TradeFrame:IsShown() then return end
     InitiateTrade(Ambiguate(target, "none"))
 end
 
-CLM.MODULES.AutoAssign = AutoAssign
+CLM.MODULES.TradeHelper = TradeHelper

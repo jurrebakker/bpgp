@@ -64,9 +64,9 @@ local function Award(args)
     -- Award --
 
     local awarded = CLM.MODULES.LootManager:AwardItem(isRaid and raid or roster, name, itemLink, itemId, extra, value)
-    if awarded and not CLM.MODULES.AutoAssign:IsIgnored(itemLink) then
+    if awarded and not CLM.MODULES.TradeHelper:IsIgnored(itemLink) then
         if CLM.MODULES.AuctionManager:GetAutoTrade() then
-            CLM.MODULES.AutoAssign:Track(itemLink, name)
+            CLM.MODULES.TradeHelper:Track(itemLink, name)
         end
     end
 end
@@ -81,7 +81,7 @@ function GlobalSlashCommands:Initialize()
             name = CLM.L["Ignore entry"],
             set = (function(i, id)
                 id = tonumber(id) or 0
-                local realEntry = CLM.MODULES.LedgerManager.ledger.getSortedList():entries()[id]
+                local realEntry = CLM.MODULES.LedgerManager.activeLedger.getSortedList():entries()[id]
                 if realEntry then
                     CLM.MODULES.LedgerManager:Remove(realEntry)
                 end

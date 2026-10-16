@@ -60,12 +60,6 @@ function RosterManagerOptions:Initialize()
         general_on_time_bonus_value_set = (function(name, value)
             SetRosterOption(name, "onTimeBonusValue", value)
         end),
-        general_named_buttons_toggle_set = (function(name, value)
-            SetRosterOption(name, "namedButtons", value)
-        end),
-        general_named_buttons_toggle_get = (function(name)
-            return GetRosterOption(name, "namedButtons")
-        end),
         -- Caps
         general_round_decimals_get = (function(name)
             return GetRosterOption(name, "roundDecimals")
@@ -86,24 +80,6 @@ function RosterManagerOptions:Initialize()
             SetRosterOption(name, "minGP", value)
         end),
         -- Auction
-        auction_auction_type_get = (function(name)
-            return GetRosterOption(name, "auctionType")
-        end),
-        auction_auction_type_set = (function(name, value)
-            SetRosterOption(name, "auctionType", value)
-        end),
-        auction_item_value_mode_get = (function(name)
-            return GetRosterOption(name, "itemValueMode")
-        end),
-        auction_item_value_mode_set = (function(name, value)
-            SetRosterOption(name, "itemValueMode", value)
-        end),
-        auction_cancelpass_get = (function(name)
-            return GetRosterOption(name, "allowCancelPass")
-        end),
-        auction_cancelpass_set = (function(name, value)
-            SetRosterOption(name, "allowCancelPass", value)
-        end),
         auction_use_os_get = (function(name)
             return GetRosterOption(name, "useOS")
         end),
@@ -488,14 +464,6 @@ function RosterManagerOptions:GenerateRosterOptions(name)
                 type = "group",
                 order = 2,
                 args = {
-                    item_value_mode = {
-                        name = CLM.L["Item value mode"],
-                        desc = CLM.L["|cff00ee44Single-Priced:|r Static value mode. Only bidding Base value is supported.\n\n|cff00ee44Ascending:|r Ranged value mode. Allows bidding any value in |cff44ee00<base, max>|r.\n\n|cff00ee44Tiered:|r Ranged value mode. Allows bidding only specific values. Up to 5 tiers are configurable in |cff44ee00<base, small, medium, large, max>|r."],
-                        type = "select",
-                        disabled = disableManage,
-                        order = 5,
-                        values = CONSTANTS.ITEM_VALUE_MODES_GUI
-                    },
                     bidding_header = {
                         name = CLM.L["Bidding"],
                         type = "header",
@@ -518,14 +486,6 @@ function RosterManagerOptions:GenerateRosterOptions(name)
                         disabled = disableManage,
                         width = 1,
                         order = 12
-                    },
-                    cancelpass = {
-                        name = CLM.L["Always allow cancel/pass"],
-                        desc = CLM.L["Enable to always allow cancelling or passing bids. Affects Open-Ascending Auction."],
-                        type = "toggle",
-                        disabled = disableManage,
-                        width = 2,
-                        order = 12.1
                     },
                     time_header = {
                         name = CLM.L["Time"],
@@ -584,23 +544,7 @@ function RosterManagerOptions:GenerateRosterOptions(name)
             },
         }
     }
-    options.args.auction.args.auction_type = {
-        name = CLM.L["Auction type"],
-        desc = CLM.L["|cff00ee44Open:|r English Auction with highest bidder announcement. Highest bidder wins. Two players can not bid same value. Additionally always allows bidding base to accomodate for Swedish Auction flavor.\n\n|cff00ee44Anonymous Open:|r Same as Open but highest bidder name is not disclosed.\n\n|cff00ee44Sealed:|r Bids are not announced. Highest bidder wins.\n\n|cff00ee44Vickrey:|r Same as sealed but winner pays with second-highest bid."],
-        type = "select",
-        disabled = disableManage,
-        order = 4,
-        values = CONSTANTS.AUCTION_TYPES_GUI
-    }
     -- Button names
-    options.args.general.args.named_buttons_toggle = {
-        name = CLM.L["Use named buttons"],
-        desc = CLM.L["Will display names of the buttons instead of values in bidding UI"],
-        type = "toggle",
-        order = 29,
-        disabled = disableManage,
-        width = 1
-    }
     local order = 30
     for _, tier in ipairs(CONSTANTS.SLOT_VALUE_TIERS_ORDERED) do
         options.args.general.args["named_button_tier_" .. tostring(tier)] = {

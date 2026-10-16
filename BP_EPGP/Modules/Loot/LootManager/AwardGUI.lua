@@ -165,7 +165,7 @@ local function UpdateOptions(self)
                 end
                 local success, _ = CLM.MODULES.LootManager:AwardItem(awardTarget, self.awardPlayer, self.itemLink, self.itemId, self.extra, self.awardValue)
                 if success then
-                    CLM.MODULES.AutoAssign:Handle(self.itemLink, self.awardPlayer)
+                    CLM.MODULES.TradeHelper:Handle(self.itemLink, self.awardPlayer)
                 else
                     self:Refresh()
                 end
