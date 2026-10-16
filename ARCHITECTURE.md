@@ -1,355 +1,271 @@
-# CoreLootManager — Architecture Reference
+# BP EPGP: architecture reference
 
-> **Audience:** developers contributing to or extending the addon.
-> Covers structure, key design patterns, data flow, and module responsibilities.
-
----
-
-## 1. Bird's-Eye View
-
-CLM is a WoW addon that manages loot distribution for guilds. Its two defining architectural choices are:
-
-1. **Event Sourcing via LibEventSourcing** — all state changes are appended as immutable ledger entries. State is derived by replaying those entries. This makes cross-client sync trivial and enables time-travel / auditing.
-2. **MVC-ish module system** — managers own state and business logic; GUI modules are separate and depend only on managers, never the reverse.
+> **Audience:** developers working on the addon.
+> Covers structure, key design patterns, data flow and module responsibilities.
+> BP EPGP is a fork of Core Loot Manager (CLM) v5.7.8, trimmed to EPGP only on retail (Midnight, 12.x). The internal Lua namespace is still `CLM`.
+> Plans and decisions live in [`docs/`](docs/README.md).
 
 ---
 
-## 2. Repository Layout
+## 1. Bird's-eye view
+
+BP EPGP manages EPGP loot for one guild: EP for raiding, GP for loot, priority PR = EP ÷ GP. Two architectural choices define it:
+
+1. **Event sourcing via LibEventSourcing.** Every change is appended to a ledger as an immutable entry. State (standings, raids, settings) is rebuilt by replaying the entries. Sync between guild members means syncing the ledger. Undo is another entry.
+2. **Managers and GUI kept apart.** Managers own state and business logic. GUI modules read from managers and change state only through manager methods, which write ledger entries.
+
+---
+
+## 2. Repository layout
 
 ```
-CoreLootManager/
-├── ClassicLootManager/          # Main addon package (loads first)
-│   ├── ClassicLootManager.lua   # Entry point, global namespace, init stages
-│   ├── Utils.lua                # CLM.UTILS + CLM.CONSTANTS
-│   ├── Modules/
-│   │   ├── Common/              # ACL, Comms, Config, Database, EventManager, Logger, Version, Hooks
-│   │   ├── Global/              # Slash commands, chat handlers, UI handlers, guild-change handler
-│   │   ├── GUI/                 # AceGUI widgets, UnifiedGUI panels, filters, UI helpers
-│   │   ├── Ledger/              # LedgerManager, SandboxManager, CrossGuildSyncManager
-│   │   ├── Loot/                # LootManager, Loot model, AwardGUI
-│   │   ├── Points/              # PointManager, AutoAwardManager (on-time/interval/boss-kill)
-│   │   ├── Profiles/            # ProfileManager, ProfileInfoManager, alt-main linking
-│   │   ├── Raids/               # RaidManager, StandbyStagingManager
-│   │   └── Rosters/             # RosterManager, Roster model, configuration, attendance
-│   │       └── RosterManager/
-│   │           ├── Roster.lua
-│   │           ├── RosterManager.lua
-│   │           ├── RosterConfiguration.lua
-│   │           ├── ItemValueCalculator.lua
-│   │           ├── AttendanceTracker.lua
-│   │           ├── IndirectSlotMap.lua
-│   │           ├── LedgerEntries.lua
-│   │           ├── Options.lua
-│   │           └── PointInfo.lua
-│   ├── Libs/
-│   │   ├── LibEventSourcing/    # The ledger/sync core (vendored, custom library)
-│   │   ├── LibEventDispatcher/  # Internal event bus
-│   │   ├── LibExpiringTimer/    # Timer utilities
-│   │   ├── LibDeformat-3.0/     # String de-formatting
-│   │   └── LibDataBroker-1.1/   # Minimap data broker
-│   ├── Locale/                  # Localisation strings (enUS, deDE, frFR, ruRU, zhCN, zhTW, esES)
-│   └── Auctioning/              # AuctionManager, BiddingManager, AutoAssign, AuctionHistory
-├── ClassicLootManager_Tracker/  # Lightweight companion: item tracking / tooltip
-├── ClassicLootManager_Alerts/   # Companion: UI alerts and notifications
-├── ClassicLootManager_Integrations/ # Companion: CSV/MonolithDKP/CEPGP/Gargul import
-└── scripts/                     # Build, release, and localization tooling (Python/bash)
+bp-epgp/
+├── BP_EPGP/                         # The addon (packaged as BP_EPGP)
+│   ├── BP_EPGP.toc
+│   ├── Core.lua                     # Namespace, staged initialization
+│   ├── Utils.lua                    # CLM.UTILS, retail API wrappers, Midnight helpers
+│   ├── MinimapIcon.lua              # LibDBIcon button + tooltip
+│   ├── Locale/                      # enUS only (missing keys fall back to the key)
+│   ├── Media/Icons/                 # bp-epgp-32.png
+│   ├── Libs/                        # All libraries vendored (see Libs/README.md)
+│   └── Modules/
+│       ├── Common/                  # ACL, Comms, ConfigManager, Database, EventManager, Hooks, Logger, TestMode, Version
+│       ├── Ledger/LedgerManager/    # Wrapper around LibEventSourcing
+│       ├── Profiles/                # ProfileManager (one character = one profile), ProfileInfoManager (versions)
+│       ├── Rosters/RosterManager/   # The single roster, its configuration, slot values, item overrides
+│       ├── Raids/RaidManager/       # Raids, raid members, on-time bonus
+│       ├── Points/PointManager/     # EP/GP award, set and decay
+│       ├── Loot/LootManager/        # Loot awards (GP charges), Award window
+│       ├── Auctioning/              # AuctionManager (officer), BiddingManager (raider), AuctionHistory, TradeHelper, Common
+│       ├── Import/                  # Standings import (Name, EP, GP)
+│       ├── Global/                  # Slash commands, chat handlers, global configs, guild change handler
+│       ├── GUI/                     # Main window (UnifiedGUI) and its tabs, AceGUI widgets, filters
+│       └── Alerts/                  # Alert toasts (points received, bid accepted/denied)
+├── docs/                            # Release plan, decisions, feature docs, design spec (not packaged)
+└── scripts/                         # check_addon.py (TOC/XML references, packager markers, Lua balance)
 ```
+
+Phase 9 of the release plan replaces the AceGUI/lib-st windows with Blizzard templates, built from shared pieces in `Modules/UI/` ([docs/features/ui-redesign.md](docs/features/ui-redesign.md)).
 
 ---
 
-## 3. Global Namespace
+## 3. Global namespace
 
-All code shares a single addon-local table injected via `local name, CLM = ...`. It is also exposed globally as `_G["CLM"]`.
+All files share one addon table via `local name, CLM = ...`. It's also exposed as `_G.BPEPGP`.
 
 | Namespace | Contents |
 |-----------|----------|
-| `CLM.MODULES` | Core runtime modules (managers) keyed by name |
-| `CLM.MODELS` | Data-model constructors (Roster, Profile, Loot, …) and `CLM.MODELS.LEDGER` entry types |
-| `CLM.GUI` | GUI panels — initialized after all managers |
-| `CLM.OPTIONS` | AceConfig option tables |
-| `CLM.EXTERNAL` | Third-party integration hooks |
+| `CLM.MODULES` | Runtime modules (managers), keyed by name |
+| `CLM.MODELS` | Data models (Roster, Profile, Loot, Raid, …) and `CLM.MODELS.LEDGER` entry types |
+| `CLM.GUI` | GUI modules, initialized after all managers |
+| `CLM.OPTIONS` | AceConfig option modules |
+| `CLM.EXTERNAL` | Externally registered modules (unused for now) |
 | `CLM.UTILS` | Utility functions |
 | `CLM.CONSTANTS` | Shared constants |
-| `CLM.COMM_CHANNEL` | Named comm channel strings |
-| `CLM.LOG` | Logger instance (LibLogger) |
+| `CLM.COMM_CHANNEL` | Comm channel names |
+| `CLM.LOG` | Logger (LibLogger) |
 | `CLM.L` | Localisation table |
-| `CLM.AF` | April-Fools flag (time-gated) |
+
+**Coexisting with CLM:** the guild still runs the real CLM, and both addons can be loaded together. That's why everything global has a BP EPGP name:
+- SavedVariables: `BPEPGP_DB`, `BPEPGP_Logs`, `BPEPGP_Minimap`;
+- comm prefix: `BPEP` (`BPEPT` in test mode);
+- frames and popups: `BPEPGP_*`;
+- AceGUI widget types, and the LibStub names of the forked libraries: `BPEPGP-EventSourcing/*`, `BPEPGP-EventDispatcher`.
 
 ---
 
-## 4. Initialization Sequence
+## 4. Initialization
 
-Initialization is **asynchronous and staged**. It fires after `GUILD_ROSTER_UPDATE` confirms the player is in a guild (needed to key the database by guild name). A 10-second fallback timer fires `_ExecuteInitialize` in case the event never comes.
+Initialization is **asynchronous and staged**. It starts after `GUILD_ROSTER_UPDATE` (the database is keyed by guild), with a 10-second fallback timer.
 
 ```
 OnInitialize()
-  └─ Register GUILD_ROSTER_UPDATE
-  └─ C_Timer.After(10, _ExecuteInitialize)
+  └─ SavedVariables, logger, version
+  └─ Register GUILD_ROSTER_UPDATE, C_Timer.After(10, _ExecuteInitialize)
 
-GUILD_ROSTER_UPDATE → _ExecuteInitialize → _SequentialInitialize(stage)
-  Stage 1  _InitializeDatabase    (retries until guild name resolves)
-  Stage 2  _InitializeCore        (ConfigManager, ACL, Hooks)
-  Stage 3  _InitializeBackend     (Logger, Comms, EventManager, TrustInfoProvider, LedgerManager)
-  Stage 4  _InitializeMinimap
-  Stage 5  _InitializeFeatures    (all domain managers + global handlers)
-  Stage 6  _InitializeOptions
-  Stage 7  _InitializeGUI
-  Stage 8  _InitializeExternal    (CLM.EXTERNAL modules)
-  Final    _Enable                (Comms:Enable, LedgerManager:Enable)
+_SequentialInitialize(stage), 0.1 s apart:
+  1  _InitializeDatabase   (retries until the guild name resolves)
+  2  _InitializeCore       (ConfigManager, ACL, Hooks)
+  3  _InitializeBackend    (Logger, Comms, TestMode, EventManager, TrustInfoProvider, LedgerManager)
+  4  _InitializeMinimap
+  5  _InitializeFeatures   (managers, then global handlers)
+  6  _InitializeOptions
+  7  _InitializeGUI        (every CLM.GUI module)
+  8  _InitializeExternal
+  ✓  _Enable               (Comms:Enable, LedgerManager:Enable)
 ```
-
-Each stage calls `C_Timer.After(0.1, next_stage)` so WoW's main thread is never blocked. Stage 1 uses a `retry = true` flag and retries up to 5 times.
 
 ---
 
-## 5. Event Sourcing / Ledger Pattern
+## 5. Event sourcing / ledger
 
-This is the single most important thing to understand about CLM.
+This is the most important thing to understand.
 
-### How it works
-
-1. **Every mutation** (create roster, award loot, change points, …) is encoded as a `LogEntry` and appended to the ledger, not applied directly to state.
-2. **State is a fold** — when the ledger is replayed, registered *mutator* callbacks rebuild all in-memory state from scratch.
-3. **Sync is automatic** — `LibEventSourcing` syncs the ledger between all online CLM users in the guild over `LEDGER.SYNC` / `LEDGER.DATA` comm channels.
-
-### Defining a new ledger entry type
+1. **Every change** (create roster, add profiles, award EP, charge GP, decay, settings) is a `LogEntry` submitted to the ledger. It is never applied to state directly.
+2. **State is a replay.** Registered *mutators* rebuild all in-memory state from the entries. An entry inserted in the past triggers a full replay.
+3. **Sync** happens over the `LedgerS3` (control) and `LedgerD3` (data) channels:
+   - officers advertise week hashes on GUILD;
+   - clients request the weeks they're missing;
+   - a new entry is pushed live to the guild.
 
 ```lua
--- 1. Define the entry schema (in LedgerEntries.lua of the relevant manager)
-local MyEntry = CLM.MODELS.LEDGER.LogEntry:extend("MyEntry")
-function MyEntry:fields(version)
-    return { "rosterUid", "someValue" }
-end
-CLM.MODELS.LEDGER.MY_ENTRY = MyEntry
+-- 1. Entry type (LedgerEntries.lua next to the manager)
+local MyEntry = LogEntry:extend("XY")          -- short, unique class id
+function MyEntry:new(rosterUid, value) ... end
+function MyEntry:fields() return mergeLists(LogEntry:fields(), {"r", "v"}) end
 
--- 2. Register a mutator in the manager's Initialize()
-CLM.MODULES.LedgerManager:RegisterEntryType(
-    CLM.MODELS.LEDGER.MY_ENTRY,
-    function(entry)
-        -- rebuild state from `entry`
-    end
-)
+-- 2. Mutator, registered in the manager's Initialize()
+CLM.MODULES.LedgerManager:RegisterEntryType(MyEntry, function(entry)
+    -- update in-memory state from entry
+end)
 
--- 3. Append an entry to trigger the mutation on all clients
-CLM.MODULES.LedgerManager:Add(MyEntry:new({ rosterUid = ..., someValue = ... }))
+-- 3. Submit; it's applied locally and broadcast
+CLM.MODULES.LedgerManager:Submit(MyEntry:new(uid, 10), true)
 ```
 
-`LedgerManager:Add()` calls the mutator locally, then broadcasts the entry to the guild for all other clients to replay.
-
-### Sandbox mode
-
-`SandboxManager` wraps the ledger in a "what-if" context — mutations are applied without persisting or broadcasting them. Used for previewing changes.
-
-### Cross-guild sync
-
-`CrossGuildSyncManager` allows sharing ledger state between different guilds via direct whisper-based sync.
+- **Undo:** `LedgerManager:Remove(entry)` writes an ignore entry; the target is skipped on replay.
+- **Hardening** (Phase 8, [docs/sync-and-security.md](docs/sync-and-security.md)):
+  - A failing or unknown entry is skipped and recorded, not fatal.
+  - Checksums include each entry's content.
+  - Only officers advertise or send data.
+  - A live push must come from the entry's creator.
+  - Entries dated in the future are dropped.
+- **Entry formats are free to change until 1.0**, because v1.0 starts with a fresh ledger. After 1.0 they're frozen.
 
 ---
 
 ## 6. Database
 
-`CLM.MODULES.Database` is a thin wrapper around the WoW `SavedVariables` table `CLM2_DB`.
+`CLM.MODULES.Database` wraps the SavedVariables table `BPEPGP_DB`. The key is `retail <faction> <realm> <guild>` (lowercase).
 
-The database key is built from: `<expansion_prefix> <faction> <realm> <guild_name>` (lowercase), isolating each guild's data.
+| Accessor | Storage | Purpose |
+|----------|---------|---------|
+| `DB:Global()` | `BPEPGP_DB.global` | Account-wide settings |
+| `DB:Personal(table, schema)` | `BPEPGP_DB[key].personal[table]` | Personal data and settings |
+| `DB:GUI(table, schema)` | `BPEPGP_DB[key].personal.gui[table]` | Window positions and GUI state |
+| `DB:Ledger()` | `BPEPGP_DB[key].ledger`, or `.ledger_test` in test mode | The event log |
+| `DB:Server()` | `BPEPGP_DB[key]` | The whole guild-scoped table |
 
-| Accessor | Storage path | Purpose |
-|----------|-------------|---------|
-| `DB:Global()` | `CLM2_DB.global` | Cross-character global settings |
-| `DB:Logger()` | `CLM2_DB.global.logger` | Log severity / verbosity |
-| `DB:Personal(table)` | `CLM2_DB[key].personal[table]` | Per-character data |
-| `DB:GUI(table)` | `CLM2_DB[key].personal.gui[table]` | Per-character GUI layout |
-| `DB:Ledger()` | `CLM2_DB[key].ledger` | The event log (owned by LibEventSourcing) |
-| `DB:Server()` | `CLM2_DB[key]` | Full server-scoped namespace |
+The optional `schema` fills in missing keys on load.
 
-`DB:Personal(table, schema)` and `DB:GUI(table, schema)` accept an optional schema table to auto-populate missing keys on first load, making safe migrations easy.
+**Test mode** is fixed for a session; switching reloads the UI ([docs/features/test-mode.md](docs/features/test-mode.md)). In test mode:
+- `DB:Ledger()` returns the test ledger;
+- comms use the `BPEPT` prefix;
+- chat is printed locally instead of sent.
 
 ---
 
-## 7. Key Domain Models
+## 7. Domain models
 
 ### Roster (`CLM.MODELS.Roster`)
 
-The central aggregate. A roster represents one loot-management "team" with its own point system.
+There is **one roster**, created with "Set up BP EPGP" in the Standings tab.
 
 ```
 Roster
-├── uid / name
-├── pointType          (DKP or EPGP)
-├── configuration      (RosterConfiguration)
-├── defaultSlotValues  (per-slot bid tiers, keyed by INVTYPE_*)
-├── itemValues         (per-item overrides)
-├── bossKillBonusValues
-├── classMultipliers
-├── inRoster           { GUID → true }
-├── standings          { GUID → number }    (current points)
-├── pointInfo          { GUID → PointInfo }
-├── attendanceTracker  (AttendanceTracker)
-├── pointHistory       [ PointHistoryEntry ]
-├── profilePointHistory{ GUID → [entries] }
-├── raidLoot           [ Loot ]
-├── profileLoot        { GUID → [Loot] }
-└── disenchantedLoot   [ Loot ]
+├── uid
+├── configuration        RosterConfiguration (starting EP/GP, min GP, rounding, on-time bonus,
+│                        min standing, OS, auction length, anti-snipe, roll time, ...)
+├── defaultSlotValues    GP per gear slot × 5 tiers (Base, Small, Medium, Large, Max)
+├── itemValues           per-item overrides (written automatically when an auction starts)
+├── fieldNames           tier button names
+├── inRoster / standings (EP) / pointInfo (GP and totals)
+├── pointHistory / profilePointHistory
+└── raidLoot / profileLoot
 ```
 
-`RosterConfiguration` stores all tunable parameters (base points, caps, decay, zero-sum bank, etc.). Configuration changes are themselves ledger entries.
+`RosterConfiguration` fields are stored by position in some entries, so add new fields at the end only.
 
 ### Profile (`CLM.MODELS.Profile`)
 
-Represents a single character. Stored using `StorageQualifiedObject` (see §8).
-
-Key fields: `name`, `guid`, `class`, `spec`, `role`, `main` (GUID or ""), `alts` (set of GUIDs), `locked`.
-
-Alt-main linking: standings always live on the main; alts mirror from main via `Roster:MirrorStandings()`.
-
-### Loot (`CLM.MODELS.Loot`)
-
-An item-award record. Created from a `LedgerEntry` at replay time. Carries: item ID/link, value charged, timestamp, raidUid, profile GUID.
+One character: GUID, name, class, plus the addon version reported by the player. Profiles are created for guild members when they're added to the roster (Manage roster tab or standings import).
 
 ### Raid (`CLM.MODELS.Raid`)
 
-Tracks an active or completed raid session: roster UID, player list, bench, configuration snapshot. Multiple raids can be active simultaneously.
+A raid session for the roster: status (created / in progress / finished / stale), players, configuration snapshot (on-time bonus). The raid group comes from the WoW raid roster, or from a simulated group in test mode.
+
+### Loot (`CLM.MODELS.Loot`)
+
+An awarded item: item, GP charged, time, raid, player. Rebuilt from loot entries on replay.
 
 ---
 
-## 8. StorageQualifiedObject
+## 8. Access control
 
-A base pattern used by `Profile` and others to split object fields into two categories:
+| Level | Who |
+|-------|-----|
+| `PLEBS` | Any guild member (read-only) |
+| `OFFICER` | Guild ranks with **"Is Officer"** (rank permission flags 11/12) |
+| `GUILD_MASTER` | Guild Master |
 
-```lua
-object.persistent   -- table backed by SavedVariables
-object.volatile     -- transient in-memory table
-```
-
-Constructed via `UTILS.NewStorageQualifiedObject(storage, prototype)`.
-
-Pass `nil` as `storage` to create a "virtual" (non-persisted) object — used for the disenchanter pseudo-profile.
-
----
-
-## 9. Access Control (`CLM.MODULES.ACL`)
-
-Four trust levels gating almost every action:
-
-| Constant | Value | Who |
-|----------|-------|-----|
-| `PLEBS` | 0 | Any guild member |
-| `ASSISTANT` | 1 | Officers with assistant role |
-| `MANAGER` | 2 | Full officers |
-| `GUILD_MASTER` | 3 | Guild leader only |
-
-`TrustInfoProvider` aggregates the guild-master name, the manager list, and the assistant list from the in-game guild roster and from CLM's own configuration. `ACL:CheckLevel(level, name)` queries this to gate operations.
-
-Comm channels register a minimum trust level; messages from senders below that level are silently dropped.
-
-> **Dev note:** In `--@do-not-package@` blocks (active only in a dev environment without the packager stripping them), `ACL.CheckLevel` always returns `true` so all actions are permitted during local testing.
+- `TrustInfoProvider` reads the guild roster and rank permissions.
+- `ACL:CheckLevel(level, name)` gates actions, both when sending and when receiving.
+- Officer checks are enforced on **receive** too, not only in the UI.
 
 ---
 
-## 10. Communications (`CLM.MODULES.Comms`)
+## 9. Communications (`CLM.MODULES.Comms`)
 
-A wrapper around AceComm-3.0. Channels:
+Comms wraps AceComm-3.0 and handles serialisation, compression and a security callback per channel. Addon messages are queued during Midnight's chat or encounter lockdown.
 
-| Channel | Constant | Trust | Purpose |
-|---------|----------|-------|---------|
-| `LedgerS3` | `LEDGER.SYNC` | PLEBS | Ledger hash advertisement (low traffic) |
-| `LedgerD3` | `LEDGER.DATA` | ASSISTANT | Bulk ledger data transfer |
-| `Auction5` | `AUCTION` | — | Auction state (item list, timers) |
-| `Bidding5` | `BIDDING` | — | Bid submissions from raiders |
-| `Bids2` | `BIDANNOUNCE` | — | Bid announcements back to raiders |
-| `Standby2` | `STANDBY` | — | Standby/bench staging |
-| `Version2` | `GLOBAL` | — | Version handshake |
-
-`Comms:Send(channel, data, distribution, target, priority)` serializes and sends. `Comms:Register(channel, callback, minLevel)` receives and ACL-gates.
+| Channel | Constant | Accepted from | Purpose |
+|---------|----------|---------------|---------|
+| `LedgerS3` | `LEDGER.SYNC` | guild members | Hash advertisements (officers only), week requests, peer state |
+| `LedgerD3` | `LEDGER.DATA` | officers | Week data and live entries |
+| `Auction5` | `AUCTION` | officer raid leader/assistant | Auction start/stop, anti-snipe, bid accepted/denied |
+| `Bidding5` | `BIDDING` | anyone (validated by the auctioneer) | Bids |
+| `Bids2<n>` | `BIDANNOUNCE` | officer raid leader/assistant | Bid list for raiders (open auction) |
+| `Version2` | `GLOBAL` | anyone | Version announcements |
 
 ---
 
-## 11. Auctioning System
+## 10. Auctioning
 
-The auction subsystem has a clean client/server split:
+- **AuctionManager:** runs on the auctioneer's client (an officer who is raid leader/assistant). It owns the auction, broadcasts items, timers and bids, validates bids, and awards the winner (a GP ledger entry).
+- **BiddingManager:** runs on every raider's client. It shows the bidding window and sends bids.
+- **AuctionInfo / AuctionItem:** shared models of the auction in progress.
+- **AuctionHistoryManager:** keeps finished auctions with their bids.
+- **TradeHelper:** tracks awarded items per winner and puts them in the trade window.
 
-- **AuctionManager** — runs on the ML/GL's client. Owns the auction session, broadcasts item list and timers, collects bids, decides winner.
-- **BiddingManager** — runs on all raiders' clients. Displays the bidding UI, sends bid packets to AuctionManager.
-- **AuctionInfo** — shared data structure describing an in-flight auction (items, mode, values, anti-snipe state).
-- **AuctionHistoryManager** — persists completed auctions for review.
-- **AutoAssign** — post-auction logic to automatically assign items based on bid results.
-
-Auction modes: Open, Closed, Vickrey. Item value systems: Static, Ascending, Tiered. All configurable per roster.
+Auctions are always **Open** with **named tier buttons**: each of the 5 tiers has its own GP, plus OS, Pass and Cancel. GP values come from the slot table or item overrides. Anti-snipe and a `/roll` phase are supported.
 
 ---
 
-## 12. Points Subsystem
+## 11. Points
 
-Two point types share one manager via `CONSTANTS.POINT_TYPE`:
+`PointManager` writes point entries:
+- **Modify:** award EP or add GP.
+- **Set:** used by the standings import.
+- **Decay:** EP, GP or both, by %.
 
-| Type | Fields |
-|------|--------|
-| `DKP` | Single `standings` value per player |
-| `EPGP` | `EP` (effort points) and `GP` (gear points); priority = EP/GP |
-
-`PointManager` operations:
-- `ModifyPoints` / `SetPoints` / `DecayPoints` — manual mutations, each appended as a ledger entry.
-- `UpdatePointsDirectly` — used internally (zero-sum bank, auto-awards) to batch-apply points without creating a user-visible history entry.
-
-`AutoAwardManager` fires automatic awards based on:
-- **On-time bonus** — when a raid starts.
-- **Interval bonus** — every N minutes during a raid.
-- **Boss-kill bonus** — per encounter ID (tables in `Encounters/`), configurable per difficulty.
-- **Raid-end bonus** — when a raid ends.
+Each works for selected players, the whole roster, or the current raid. PR is EP ÷ max(GP, minimum GP). The only automatic award is the on-time bonus when a raid starts.
 
 ---
 
-## 13. GUI Architecture
+## 12. GUI
 
-All GUI is in `CLM.GUI`. Panels register themselves and are initialized in stage 7 after all managers are ready.
+- `UnifiedGUI.lua` hosts the main window. Its tabs are Standings, History, Raids, Manage roster and Audit.
+- Separate windows: Auctioning, Bidding, Award, Auction history, Trade list, Import standings.
+- The rule: GUI reads from managers and writes only through manager methods.
 
-`UnifiedGUI.lua` hosts a tabbed container. Individual tabs are in:
-- `UnifiedGUI_Standings.lua`
-- `UnifiedGUI_History.lua`
-- `UnifiedGUI_Profiles.lua`
-- `UnifiedGUI_Raids.lua`
-- `UnifiedGUI_Audit.lua`
-
-Custom AceGUI widgets (`AceGUIWidget-*.lua`) extend the framework with:
-- `ButtonDropDown` — a button that opens a dropdown.
-- `IconNoLabel` — icon-only button for item cells.
-- `LibScrollingTable` — bridge between LibScrollingTable and AceGUI.
-
-`Filters.lua` provides reusable roster/class/search filter bar logic used across multiple tabs.
-
-**Rule:** GUI modules may read from managers; they must never write state directly — all writes go through a manager method which appends a ledger entry.
+The current GUI is AceGUI + lib-st. The Phase 9 redesign moves every window to Blizzard templates ([docs/features/ui-redesign.md](docs/features/ui-redesign.md)).
 
 ---
 
-## 14. Companion Packages
+## 13. Midnight (12.x) specifics
 
-| Package | Purpose |
-|---------|---------|
-| `ClassicLootManager_Tracker` | Tracks items looted from boss kills and queues them for auction without needing the ML window. |
-| `ClassicLootManager_Alerts` | Floating alert banners shown to all players when loot is awarded or points change. |
-| `ClassicLootManager_Integrations` | Import wizards for MonolithDKP, EssentialDKP, CommunityDKP, BastionLoot, CEPGP. |
-
-Each companion has its own `.toc` file so they load independently. They call into `CLM.EXTERNAL` to register themselves, which is iterated in `_InitializeExternal`.
+- **Chat lockdown:** `UTILS.SendChatMessage` queues messages during `C_ChatInfo.InChatMessagingLockdown()`.
+- **Addon-message lockdown:** `Comms:Send` queues messages during lockdown or a boss encounter.
+- **Secret values:** `UTILS.IsSecret` guards raid-roster reads (updates wait and retry), loot and `/roll` parsing, target GUIDs and the chat filter.
 
 ---
 
-## 15. Multi-Expansion Compatibility
+## 14. Adding a feature: checklist
 
-`CLM.GetExpansion()` returns the numeric expansion index from `GetBuildInfo()`. Expansion-conditional code gates:
-
-- Class lists (Death Knight added in WotLK, Monk in MoP, Demon Hunter in Legion, Evoker in Dragonflight).
-- Database key prefix (`cata`, `tww`, `exp<N>`).
-- Loot roll types (Disenchant and Transmog added in Cataclysm).
-- API shims in `Utils.lua` — `UTILS.GetItemInfo`, `UTILS.GetContainerNumSlots`, `UTILS.GetLootMethod`, etc. wrap both old global functions and the newer `C_Item`/`C_Container` namespaced APIs.
-
-`CLM.IsClassicEra()` and `CLM.IsSoD()` disambiguate Season of Discovery from classic-era.
-
----
-
-## 16. Adding a New Feature — Checklist
-
-1. **Define ledger entry** in a `LedgerEntries.lua` file beside your manager. Extend `CLM.MODELS.LEDGER.LogEntry` and add to `CLM.MODELS.LEDGER`.
-2. **Register mutator** inside your manager's `Initialize()` via `LedgerManager:RegisterEntryType`.
-3. **Add manager** to `CLM.MODULES` and call `Initialize()` in `CORE:_InitializeFeatures()` at the correct order position.
-4. **Keep GUI separate** — create/extend a panel in `CLM.GUI`, initialize in stage 7.
-5. **ACL-gate** any privileged action with `CLM.MODULES.ACL:CheckLevel(CONSTANTS.ACL.LEVEL.MANAGER, sender)`.
-6. **Schema-migrate** any new `DB:Personal` or `DB:GUI` tables by passing a default schema table as the second argument — missing keys are filled automatically on load.
+1. **Ledger entry** in the manager's `LedgerEntries.lua`, with a unique short class id. Formats are frozen after 1.0.
+2. **Mutator** registered in the manager's `Initialize()`. Make it robust: a throwing mutator is skipped, not fatal, but the change is lost.
+3. **Manager** initialized in `CORE:_InitializeFeatures()` at the right position.
+4. **GUI** in `CLM.GUI`. It reads from managers and writes through them.
+5. **ACL:** gate officer actions with `ACL:CheckLevel(CONSTANTS.ACL.LEVEL.OFFICER, sender)`, also on receive.
+6. **Globals** get BP EPGP names (see §3). Never add packager-only blocks (`@do-not-package@`, `@debug@`).
+7. **Check:** run `python -I scripts/check_addon.py`, then test in-game, in **test mode** first.
