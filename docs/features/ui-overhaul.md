@@ -59,12 +59,12 @@ Knowing this explains the decisions below:
 | D1 | When? | a) part of v1.0 · b) v1.1 | a | **a: v1.0** ✅ |
 | D2 | What happens to Options → AddOns? | a) remove completely · b) keep a one-line stub page | b | **a: remove completely** |
 | D3 | Who sees the Guild settings / Gear values tabs? | a) everyone; read-only unless officer · b) officers only | a | **a: everyone, read-only** ✅ |
-| D4 | Where do settings go? | a) one Configuration tab with sub-tabs · b) separate top-level tabs in a wider window | a | **b: top-level tabs** |
+| D4 | Where do settings go? | a) one Configuration tab with sub-tabs · b) separate top-level tabs in a wider window | a | ~~b: top-level tabs~~ → **one Settings tab with sections** (redesign R3, [ui-redesign.md](ui-redesign.md)) |
 | D5 | How to build the settings pages | a) render existing AceConfig tables · b) hand-build widgets | a | **b: hand-build** |
 | D6 | Minimap right-click "Configuration" | a) open the Settings tab · b) remove the menu item | a | **b: remove**. After the Phase 3 smoke test the whole right-click menu went: any click opens the main window. The other windows open with `/bpepgp` commands. |
 | D7 | Roster creation (single roster) | a) "Set up BP EPGP" button for officers when no roster exists · b) "Create roster" button in Guild settings | a | **a: setup button** ✅ |
-| D8 | "Advanced" items (logging, remove roster) | a) bottom of Settings tab · b) own *Advanced* tab | a | **b: own Advanced tab** (9 tabs) |
-| D9 | Window size | a) fixed, wider · b) resizable with minimum size, remembered per character | b | **b: resizable** ✅ |
+| D8 | "Advanced" items (logging, remove roster) | a) bottom of Settings tab · b) own *Advanced* tab | a | ~~b: own Advanced tab~~ → **Advanced section in the Settings tab** (redesign R3) |
+| D9 | Window size | a) fixed, wider · b) resizable with minimum size, remembered per character | b | **b: resizable** ✅ (minimum 720×480 per the redesign) |
 
 ---
 

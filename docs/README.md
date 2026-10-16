@@ -47,6 +47,7 @@ How we'll verify it in-game.
 - [UI overhaul: settings as tabs in the main window](features/ui-overhaul.md) (planned, v1.0)
 - [Test mode: isolated test ledger and simulation tools](features/test-mode.md) (done, v1.0)
 - [Claude Design brief: native Blizzard look for every window](features/ui-design-brief.md) (prompt for the UI redesign)
+- [UI redesign: native Blizzard windows](features/ui-redesign.md) (planned, v1.0, Phase 9; spec in [design/](design/))
 
 ### Ideas
 _None yet._

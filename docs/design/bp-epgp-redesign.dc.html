@@ -1,0 +1,909 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link href="https://fonts.googleapis.com/css2?family=Marcellus&amp;family=Archivo+Narrow:wght@400;600&amp;family=IBM+Plex+Sans:wght@400;500;600&amp;family=IBM+Plex+Mono:wght@400;500&amp;display=swap" rel="stylesheet">
+<style>body{margin:0;background:#0d0c0b;color:#c9c2b6;-webkit-font-smoothing:antialiased}a{color:#ffd100;text-decoration:none}a:hover{color:#fff}</style>
+</helmet>
+<div style="max-width:1360px;margin:0 auto;padding:56px 40px 120px;font-family:'IBM Plex Sans',sans-serif;font-size:14px;line-height:1.55;color:#bdb5a8;display:flex;flex-direction:column;gap:72px">
+
+<header style="display:flex;flex-direction:column;gap:12px;border-bottom:1px solid #2a2622;padding-bottom:32px">
+  <div style="font-family:'IBM Plex Mono',monospace;font-size:12px;color:#8a8273;letter-spacing:.08em">BP EPGP · UI REDESIGN SPEC · RETAIL (MIDNIGHT)</div>
+  <h1 style="margin:0;font-family:Marcellus,serif;font-weight:400;font-size:44px;line-height:1.1;color:#f1e9da">Native-Blizzard EPGP</h1>
+  <p style="margin:0;max-width:760px;text-wrap:pretty">Every window below is drawn at 1× from stock templates, atlases and GameFont objects only. Template names are the build targets; one addon asset (the round logo) is used for portraits and the minimap button. The tweaks panel lets you preview game UI scale (0.64–1.15), test mode and the GP-on-button option.</p>
+  <nav style="display:flex;flex-wrap:wrap;gap:8px 20px;font-size:13px;margin-top:6px">
+    <a href="#lang">1 Design language</a><a href="#main">2 Main window</a><a href="#states">3 States</a><a href="#auction">4 Auctioning</a><a href="#bidding">5 Bidding</a><a href="#small">6 Award · History · Trade</a><a href="#minimap">7 Minimap &amp; popups</a><a href="#components">8 Components</a><a href="#simplify">9 Simplify</a>
+  </nav>
+</header>
+
+<section id="lang" style="display:flex;flex-direction:column;gap:24px">
+  <div style="display:flex;align-items:baseline;gap:16px"><span style="font-family:'IBM Plex Mono',monospace;color:#8a8273">01</span><h2 style="margin:0;font-family:Marcellus,serif;font-weight:400;font-size:30px;color:#f1e9da">Design language</h2></div>
+  <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(400px,1fr));gap:16px">
+
+    <div style="background:#151311;border:1px solid #2a2622;border-radius:6px;padding:20px;display:flex;flex-direction:column;gap:10px">
+      <h3 style="margin:0;font-family:Marcellus,serif;font-weight:400;font-size:18px;color:#efe6d6">Frame chrome</h3>
+      <ul style="margin:0;padding-left:18px;display:flex;flex-direction:column;gap:6px">
+        <li>Primary windows (Main, Auctioning, Bidding) → <code style="font-family:'IBM Plex Mono',monospace;font-size:12px;color:#e6cc80">PortraitFrameTemplate</code> with the logo via <code style="font-family:'IBM Plex Mono',monospace;font-size:12px;color:#e6cc80">SetPortraitToAsset</code>.</li>
+        <li>Utility windows (Award, History, Trade, compact Bidding) → <code style="font-family:'IBM Plex Mono',monospace;font-size:12px;color:#e6cc80">DefaultPanelFlatTemplate</code>, no portrait.</li>
+        <li>Close: <code style="font-family:'IBM Plex Mono',monospace;font-size:12px;color:#e6cc80">UIPanelCloseButtonDefaultAnchors</code>. Title: <code style="font-family:'IBM Plex Mono',monospace;font-size:12px;color:#e6cc80">frame:SetTitle()</code>.</li>
+        <li>Tabs move to the bottom (<code style="font-family:'IBM Plex Mono',monospace;font-size:12px;color:#e6cc80">PanelTabButtonTemplate</code>), like Character and Adventure Guide.</li>
+        <li>All windows: <code style="font-family:'IBM Plex Mono',monospace;font-size:12px;color:#e6cc80">SetMovable</code>, <code style="font-family:'IBM Plex Mono',monospace;font-size:12px;color:#e6cc80">SetClampedToScreen(true)</code>, positions saved per-character.</li>
+      </ul>
+    </div>
+
+    <div style="background:#151311;border:1px solid #2a2622;border-radius:6px;padding:20px;display:flex;flex-direction:column;gap:12px">
+      <h3 style="margin:0;font-family:Marcellus,serif;font-weight:400;font-size:18px;color:#efe6d6">Backgrounds</h3>
+      <div style="display:grid;grid-template-columns:64px 1fr;gap:8px 12px;align-items:center;font-size:13px">
+        <div style="height:28px;background:#16130f;box-shadow:0 0 0 1px #000,0 0 0 2px #4d443a"></div><div>Frame body — template NineSlice + <code style="font-family:'IBM Plex Mono',monospace;font-size:12px;color:#e6cc80">Bg</code> (flat dark)</div>
+        <div style="height:28px;background:#080706;border:1px solid #2b2723"></div><div>Content well — <code style="font-family:'IBM Plex Mono',monospace;font-size:12px;color:#e6cc80">InsetFrameTemplate</code></div>
+        <div style="height:28px;background:linear-gradient(#2e2721,#191511);border:1px solid #000"></div><div>Column header — <code style="font-family:'IBM Plex Mono',monospace;font-size:12px;color:#e6cc80">ColumnDisplayTemplate</code></div>
+        <div style="height:28px;background:#080706;border:1px solid #2b2723;position:relative"><div style="position:absolute;inset:0;background:rgba(255,209,0,.15);border-top:1px solid rgba(255,209,0,.5);border-bottom:1px solid rgba(255,209,0,.5)"></div></div><div>Selected row — <code style="font-family:'IBM Plex Mono',monospace;font-size:12px;color:#e6cc80">UI-QuestTitleHighlight</code>, ADD, vertex 1,.82,0</div>
+        <div style="height:28px;background:#080706;border:1px solid #2b2723;position:relative"><div style="position:absolute;inset:0;background:rgba(255,255,255,.035)"></div></div><div>Alternating row — white texture, alpha 0.035</div>
+      </div>
+    </div>
+
+    <div style="background:#151311;border:1px solid #2a2622;border-radius:6px;padding:20px;display:flex;flex-direction:column;gap:10px">
+      <h3 style="margin:0;font-family:Marcellus,serif;font-weight:400;font-size:18px;color:#efe6d6">Spacing grid — 4 px base</h3>
+      <div style="display:grid;grid-template-columns:auto 1fr;gap:6px 16px;font-size:13px">
+        <span style="font-family:'IBM Plex Mono',monospace;color:#e6cc80">4</span><span>icon-to-label, inset inner padding</span>
+        <span style="font-family:'IBM Plex Mono',monospace;color:#e6cc80">8</span><span>between controls; frame edge → inset</span>
+        <span style="font-family:'IBM Plex Mono',monospace;color:#e6cc80">12</span><span>between control groups; utility-window padding</span>
+        <span style="font-family:'IBM Plex Mono',monospace;color:#e6cc80">20</span><span>list row height (16 in compact)</span>
+        <span style="font-family:'IBM Plex Mono',monospace;color:#e6cc80">22</span><span>button / dropdown height; input 20</span>
+        <span style="font-family:'IBM Plex Mono',monospace;color:#e6cc80">60</span><span>top band under title on portrait frames (clears portrait)</span>
+      </div>
+      <p style="margin:0;font-size:13px;color:#8f877a">Anchor everything with offsets from this scale. At UI scale 0.64 a 20 px row is ~13 physical px, so no hit target is smaller than 20 px tall.</p>
+    </div>
+
+    <div style="background:#151311;border:1px solid #2a2622;border-radius:6px;padding:20px;display:flex;flex-direction:column;gap:12px">
+      <h3 style="margin:0;font-family:Marcellus,serif;font-weight:400;font-size:18px;color:#efe6d6">Button hierarchy</h3>
+      <p style="margin:0;font-size:13px;color:#8f877a">Blizzard uses one red button. Show rank with size, position and count: one primary per area, bottom-right.</p>
+      <div style="display:grid;grid-template-columns:150px 1fr;gap:10px 12px;align-items:center;font-size:13px">
+        <div style="height:40px;display:flex;flex-direction:column;align-items:center;justify-content:center;background:linear-gradient(#b4170f,#6b0905);box-shadow:0 0 0 1px #2a0000,inset 0 0 0 1px #c9963d;border-radius:4px;font-family:Marcellus,serif"><span style="font-size:13px;color:#ffd100">Large</span><span style="font-family:'Archivo Narrow',sans-serif;font-size:11px;color:#fff">200 GP</span></div><div>Bid tier — 74×40, two FontStrings</div>
+        <div style="height:22px;display:flex;align-items:center;justify-content:center;background:linear-gradient(#b4170f,#6b0905);box-shadow:0 0 0 1px #2a0000,inset 0 0 0 1px #8c6b2b;border-radius:3px;font-family:Marcellus,serif;font-size:12px;color:#ffd100">Award</div><div>Primary — <code style="font-family:'IBM Plex Mono',monospace;font-size:12px;color:#e6cc80">UIPanelButtonTemplate</code>, rightmost</div>
+        <div style="height:22px;width:110px;display:flex;align-items:center;justify-content:center;background:linear-gradient(#b4170f,#6b0905);box-shadow:0 0 0 1px #2a0000,inset 0 0 0 1px #8c6b2b;border-radius:3px;font-family:Marcellus,serif;font-size:12px;color:#ffd100">Clear list</div><div>Secondary — same template, left of primary</div>
+        <div style="width:24px;height:24px;display:flex;align-items:center;justify-content:center;background:linear-gradient(#3a332c,#191511);box-shadow:0 0 0 1px #000,inset 0 0 0 1px #6b5a3a;border-radius:3px;font-size:13px;color:#fff">⚄</div><div>Icon — <code style="font-family:'IBM Plex Mono',monospace;font-size:12px;color:#e6cc80">UIPanelSquareButton</code> + game icon</div>
+        <div style="height:22px;display:flex;align-items:center;justify-content:center;background:linear-gradient(#4a4642,#2a2724);box-shadow:0 0 0 1px #000;border-radius:3px;font-family:Marcellus,serif;font-size:12px;color:#7a7570">Award</div><div>Disabled — <code style="font-family:'IBM Plex Mono',monospace;font-size:12px;color:#e6cc80">:Disable()</code>, officers only</div>
+      </div>
+    </div>
+
+    <div style="background:#151311;border:1px solid #2a2622;border-radius:6px;padding:20px;display:flex;flex-direction:column;gap:8px">
+      <h3 style="margin:0 0 4px;font-family:Marcellus,serif;font-weight:400;font-size:18px;color:#efe6d6">Typography — FRIZQT / ARIALN only</h3>
+      <div style="display:grid;grid-template-columns:1fr auto;gap:8px 12px;align-items:baseline">
+        <span style="font-family:Marcellus,serif;font-size:24px;color:#ffd100">1.82</span><code style="font-family:'IBM Plex Mono',monospace;font-size:12px;color:#8a8273">GameFontNormalHuge — your PR</code>
+        <span style="font-family:Marcellus,serif;font-size:16px;color:#ffd100">Standings</span><code style="font-family:'IBM Plex Mono',monospace;font-size:12px;color:#8a8273">GameFontNormalLarge — section</code>
+        <span style="font-family:Marcellus,serif;font-size:12px;color:#ffd100">Anti-snipe</span><code style="font-family:'IBM Plex Mono',monospace;font-size:12px;color:#8a8273">GameFontNormal — labels</code>
+        <span style="font-family:Marcellus,serif;font-size:12px;color:#fff">Remove on award</span><code style="font-family:'IBM Plex Mono',monospace;font-size:12px;color:#8a8273">GameFontHighlight — values, body</code>
+        <span style="font-family:Marcellus,serif;font-size:10px;color:#9d9d9d">Synced 21:04 · 1284 events</span><code style="font-family:'IBM Plex Mono',monospace;font-size:12px;color:#8a8273">GameFontDisableSmall — meta</code>
+        <span style="font-family:'Archivo Narrow',sans-serif;font-size:14px;color:#fff">1250 · 830 · 1.51</span><code style="font-family:'IBM Plex Mono',monospace;font-size:12px;color:#8a8273">NumberFontNormal — EP / GP / PR</code>
+      </div>
+    </div>
+
+    <div style="background:#151311;border:1px solid #2a2622;border-radius:6px;padding:20px;display:flex;flex-direction:column;gap:10px">
+      <h3 style="margin:0;font-family:Marcellus,serif;font-weight:400;font-size:18px;color:#efe6d6">Colour roles</h3>
+      <div style="display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px 14px;font-size:12px">
+        <sc-for list="{{ swatches }}" as="s" hint-placeholder-count="12">
+          <div style="display:flex;align-items:center;gap:8px"><span style="width:16px;height:16px;flex:none;border-radius:2px;background:{{ s.c }};box-shadow:0 0 0 1px #000"></span><span style="color:#d8d0c2">{{ s.role }}</span><code style="font-family:'IBM Plex Mono',monospace;font-size:10px;color:#7a7366;margin-left:auto;text-align:right">{{ s.k }}</code></div>
+        </sc-for>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section id="main" style="display:flex;flex-direction:column;gap:24px">
+  <div style="display:flex;align-items:baseline;gap:16px"><span style="font-family:'IBM Plex Mono',monospace;color:#8a8273">02</span><h2 style="margin:0;font-family:Marcellus,serif;font-weight:400;font-size:30px;color:#f1e9da">Main window</h2></div>
+  <p style="margin:0;max-width:760px;text-wrap:pretty">Officer and raider share one frame. Raiders get no management column and no Roster/Audit tabs; their own row is pinned and their PR sits in the header. Click rows in the officer view to multi-select.</p>
+  <div style="background:radial-gradient(ellipse at 30% 10%,#2d2938,#141219 75%);border:1px solid #26232c;border-radius:6px;padding:28px 32px 48px;overflow-x:auto">
+  <div style="zoom:{{ zoom }};display:flex;flex-wrap:wrap;gap:72px 56px;align-items:flex-start">
+
+    <div style="display:flex;flex-direction:column;gap:48px;padding:24px 0 0 24px">
+      <div style="position:relative;width:720px;height:480px;background:#16130f;box-shadow:0 0 0 1px #000,0 0 0 3px #4d443a,0 0 0 4px #000;font-family:Marcellus,serif">
+        <div style="position:absolute;left:-26px;top:-24px;width:62px;height:62px;border-radius:50%;background:radial-gradient(circle at 40% 35%,#c3261b,#4a0806 60%,#120202);box-shadow:0 0 0 3px #b8913f,0 0 0 4px #000;z-index:3;display:flex;align-items:center;justify-content:center;color:#f2d9b0;font-size:15px">BP</div>
+        <div style="height:22px;display:flex;align-items:center;justify-content:center;gap:6px;background:linear-gradient(#3a322a,#1b1712);border-bottom:1px solid #000;font-size:12px;color:#ffd100">BP EPGP<sc-if value="{{ testMode }}" hint-placeholder-val="{{ false }}"><span style="color:#ff8000">— TEST MODE</span></sc-if></div>
+        <div style="position:absolute;right:3px;top:2px;width:18px;height:18px;border-radius:3px;background:linear-gradient(#b4170f,#5e0804);box-shadow:0 0 0 1px #000,inset 0 0 0 1px #c9963d;color:#ffd100;font-size:12px;line-height:18px;text-align:center">✕</div>
+        <div style="height:38px;display:flex;align-items:center;gap:10px;padding:0 10px 0 52px">
+          <span style="font-size:16px;color:#ffd100">Standings</span>
+          <span style="font-family:'Archivo Narrow',sans-serif;font-size:12px;color:#9d9d9d">18 in raid · 3 standby</span>
+          <span style="flex:1"></span>
+          <span style="display:flex;align-items:center;gap:5px;font-size:11px;color:#1eff00"><span style="width:7px;height:7px;border-radius:50%;background:#1eff00"></span>In-Sync</span>
+          <div style="width:150px;height:20px;border-radius:10px;background:#000;box-shadow:0 0 0 1px #4a4540;display:flex;align-items:center;gap:5px;padding:0 8px;font-size:11px;color:#6f6a64">⌕ Search</div>
+          <div style="width:110px;height:22px;border-radius:4px;background:linear-gradient(#2c2620,#141210);box-shadow:0 0 0 1px #5a5048;display:flex;align-items:center;padding-left:8px;font-size:12px;color:#fff">Raid<span style="margin-left:auto;width:18px;height:18px;margin-right:2px;border-radius:3px;background:#2a1408;box-shadow:inset 0 0 0 1px #8c6b2b;color:#ffd100;font-size:9px;line-height:18px;text-align:center">▼</span></div>
+        </div>
+        <div style="position:absolute;top:62px;left:8px;right:8px;bottom:24px;display:grid;grid-template-columns:minmax(0,1fr) 232px;gap:8px">
+          <div style="background:#080706;border:1px solid #2b2723;display:flex;flex-direction:column;overflow:hidden;position:relative">
+            <div style="display:grid;grid-template-columns:28px minmax(0,1fr) 70px 70px 64px 14px;height:20px;background:linear-gradient(#2e2721,#191511);border-bottom:1px solid #000;font-size:11px;color:#ffd100;align-items:center">
+              <span style="text-align:center">#</span><span style="padding-left:4px">Name</span><span style="text-align:right;padding-right:8px">EP</span><span style="text-align:right;padding-right:8px">GP</span><span style="text-align:right;padding-right:8px;color:#fff">PR ▾</span><span></span>
+            </div>
+            <sc-for list="{{ officerRows }}" as="r" hint-placeholder-count="18">
+              <div onClick="{{ r.toggle }}" style="display:grid;grid-template-columns:28px minmax(0,1fr) 70px 70px 64px 14px;height:20px;align-items:center;background:{{ r.bg }};box-shadow:{{ r.edge }};cursor:pointer;font-family:'Archivo Narrow',sans-serif;font-size:13px;color:#fff" style-hover="background:rgba(255,209,0,.08)">
+                <span style="text-align:center;color:#9d9d9d;font-size:12px">{{ r.rank }}</span>
+                <span style="display:flex;align-items:center;gap:5px;padding-left:4px;font-family:Marcellus,serif;font-size:12px;color:{{ r.color }};white-space:nowrap;overflow:hidden"><span style="width:14px;height:14px;flex:none;border-radius:2px;background:{{ r.color }};box-shadow:inset 0 0 0 1px rgba(0,0,0,.6),0 0 0 1px #000;opacity:.85"></span>{{ r.name }}</span>
+                <span style="text-align:right;padding-right:8px">{{ r.ep }}</span><span style="text-align:right;padding-right:8px">{{ r.gp }}</span><span style="text-align:right;padding-right:8px;color:#ffd100">{{ r.pr }}</span><span></span>
+              </div>
+            </sc-for>
+            <div style="position:absolute;right:2px;top:24px;bottom:4px;width:8px;border-radius:4px;background:#1a1714"><div style="height:70px;margin-top:4px;border-radius:4px;background:#5a4f42"></div></div>
+          </div>
+          <div style="display:flex;flex-direction:column;gap:10px;padding:2px 4px 0">
+            <div style="display:flex;flex-direction:column;gap:4px">
+              <span style="font-size:12px;color:#ffd100">Act on</span>
+              <div style="height:22px;border-radius:4px;background:linear-gradient(#2c2620,#141210);box-shadow:0 0 0 1px #5a5048;display:flex;align-items:center;padding-left:8px;font-size:12px;color:#fff">{{ selLabel }}<span style="margin-left:auto;width:18px;height:18px;margin-right:2px;border-radius:3px;background:#2a1408;box-shadow:inset 0 0 0 1px #8c6b2b;color:#ffd100;font-size:9px;line-height:18px;text-align:center">▼</span></div>
+              <span style="font-size:10px;color:#9d9d9d;line-height:1.3">{{ selNames }}</span>
+            </div>
+            <div style="height:1px;background:linear-gradient(90deg,transparent,#5a4c3a,transparent)"></div>
+            <div style="display:flex;flex-direction:column;gap:6px">
+              <span style="font-size:12px;color:#ffd100">Amount</span>
+              <div style="display:flex;gap:6px">
+                <div style="width:64px;height:20px;border-radius:3px;background:#000;box-shadow:0 0 0 1px #4a4540;display:flex;align-items:center;padding:0 6px;font-family:'Archivo Narrow',sans-serif;font-size:13px;color:#fff">100</div>
+                <div style="flex:1;display:grid;grid-template-columns:repeat(3,1fr);gap:4px">
+                  <div style="height:20px;border-radius:3px;background:linear-gradient(#3a332c,#191511);box-shadow:0 0 0 1px #000,inset 0 0 0 1px #6b5a3a;font-size:10px;color:#fff;display:flex;align-items:center;justify-content:center">Boss</div>
+                  <div style="height:20px;border-radius:3px;background:linear-gradient(#3a332c,#191511);box-shadow:0 0 0 1px #000,inset 0 0 0 1px #6b5a3a;font-size:10px;color:#fff;display:flex;align-items:center;justify-content:center">On time</div>
+                  <div style="height:20px;border-radius:3px;background:linear-gradient(#3a332c,#191511);box-shadow:0 0 0 1px #000,inset 0 0 0 1px #6b5a3a;font-size:10px;color:#fff;display:flex;align-items:center;justify-content:center">Prog</div>
+                </div>
+              </div>
+              <span style="font-size:12px;color:#ffd100;margin-top:2px">Reason</span>
+              <div style="height:20px;border-radius:3px;background:#000;box-shadow:0 0 0 1px #4a4540;display:flex;align-items:center;padding:0 6px;font-size:12px;color:#fff">Boss kill: Fallen-King Salhadaar</div>
+              <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-top:4px">
+                <div style="height:22px;border-radius:3px;background:linear-gradient(#b4170f,#6b0905);box-shadow:0 0 0 1px #2a0000,inset 0 0 0 1px #8c6b2b;display:flex;align-items:center;justify-content:center;font-size:12px;color:#ffd100">Award EP</div>
+                <div style="height:22px;border-radius:3px;background:linear-gradient(#b4170f,#6b0905);box-shadow:0 0 0 1px #2a0000,inset 0 0 0 1px #8c6b2b;display:flex;align-items:center;justify-content:center;font-size:12px;color:#ffd100">Charge GP</div>
+              </div>
+            </div>
+            <div style="height:1px;background:linear-gradient(90deg,transparent,#5a4c3a,transparent)"></div>
+            <div style="display:flex;flex-direction:column;gap:6px">
+              <span style="font-size:12px;color:#ffd100">Decay</span>
+              <div style="display:flex;gap:6px;align-items:center">
+                <div style="width:44px;height:20px;border-radius:3px;background:#000;box-shadow:0 0 0 1px #4a4540;display:flex;align-items:center;padding:0 6px;font-family:'Archivo Narrow',sans-serif;font-size:13px;color:#fff">10</div><span style="font-family:'Archivo Narrow',sans-serif;font-size:13px;color:#9d9d9d">%</span>
+                <div style="flex:1;height:22px;border-radius:3px;background:linear-gradient(#b4170f,#6b0905);box-shadow:0 0 0 1px #2a0000,inset 0 0 0 1px #8c6b2b;display:flex;align-items:center;justify-content:center;font-size:12px;color:#ffd100">Decay roster…</div>
+              </div>
+            </div>
+            <span style="flex:1"></span>
+            <div style="display:flex;align-items:center;gap:6px;font-size:11px;color:#9d9d9d;padding-bottom:4px"><span style="color:#ffd100">↶ Undo</span>last: +100 EP to 18 players</div>
+          </div>
+        </div>
+        <div style="position:absolute;left:12px;right:12px;bottom:5px;display:flex;font-size:10px;color:#9d9d9d"><span>Right-click a name: Award item · Set alt · Show history</span><span style="margin-left:auto">1284 events · synced 21:04</span></div>
+        <div style="position:absolute;top:100%;left:14px;display:flex;gap:2px;align-items:flex-start">
+          <div style="height:32px;padding:0 18px;display:flex;align-items:center;background:linear-gradient(#352d25,#1a1612);box-shadow:0 0 0 1px #000,inset 0 0 0 1px #c9963d;border-radius:0 0 5px 5px;font-size:12px;color:#fff">Standings</div>
+          <div style="height:28px;padding:0 16px;display:flex;align-items:center;background:linear-gradient(#211c17,#100e0c);box-shadow:0 0 0 1px #000,inset 0 0 0 1px #5a4c3a;border-radius:0 0 5px 5px;font-size:12px;color:#ffd100">History</div>
+          <div style="height:28px;padding:0 16px;display:flex;align-items:center;background:linear-gradient(#211c17,#100e0c);box-shadow:0 0 0 1px #000,inset 0 0 0 1px #5a4c3a;border-radius:0 0 5px 5px;font-size:12px;color:#ffd100">Raids</div>
+          <div style="height:28px;padding:0 16px;display:flex;align-items:center;background:linear-gradient(#211c17,#100e0c);box-shadow:0 0 0 1px #000,inset 0 0 0 1px #5a4c3a;border-radius:0 0 5px 5px;font-size:12px;color:#ffd100">Roster</div>
+          <div style="height:28px;padding:0 16px;display:flex;align-items:center;background:linear-gradient(#211c17,#100e0c);box-shadow:0 0 0 1px #000,inset 0 0 0 1px #5a4c3a;border-radius:0 0 5px 5px;font-size:12px;color:#ffd100">Settings</div>
+        </div>
+      </div>
+      <div style="font-family:'IBM Plex Mono',monospace;font-size:11px;color:#8a8494">2a · Officer · Standings · 720×480 · PortraitFrameTemplate</div>
+    </div>
+
+    <div style="display:flex;flex-direction:column;gap:48px;padding:24px 0 0 24px">
+      <div style="position:relative;width:520px;height:440px;background:#16130f;box-shadow:0 0 0 1px #000,0 0 0 3px #4d443a,0 0 0 4px #000;font-family:Marcellus,serif">
+        <div style="position:absolute;left:-26px;top:-24px;width:62px;height:62px;border-radius:50%;background:radial-gradient(circle at 40% 35%,#c3261b,#4a0806 60%,#120202);box-shadow:0 0 0 3px #b8913f,0 0 0 4px #000;z-index:3;display:flex;align-items:center;justify-content:center;color:#f2d9b0;font-size:15px">BP</div>
+        <div style="height:22px;display:flex;align-items:center;justify-content:center;background:linear-gradient(#3a322a,#1b1712);border-bottom:1px solid #000;font-size:12px;color:#ffd100">BP EPGP</div>
+        <div style="position:absolute;right:3px;top:2px;width:18px;height:18px;border-radius:3px;background:linear-gradient(#b4170f,#5e0804);box-shadow:0 0 0 1px #000,inset 0 0 0 1px #c9963d;color:#ffd100;font-size:12px;line-height:18px;text-align:center">✕</div>
+        <div style="height:38px;display:flex;align-items:center;gap:10px;padding:0 12px 0 52px">
+          <span style="font-size:16px;color:#ffd100">Standings</span>
+          <span style="flex:1"></span>
+          <div style="display:flex;flex-direction:column;align-items:flex-end;line-height:1"><span style="font-size:9px;color:#9d9d9d;letter-spacing:.05em">YOUR PR · #3 OF 18</span></div>
+          <span style="font-size:24px;color:#ffd100;line-height:1">1.82</span>
+          <div style="width:96px;height:22px;border-radius:4px;background:linear-gradient(#2c2620,#141210);box-shadow:0 0 0 1px #5a5048;display:flex;align-items:center;padding-left:8px;font-size:12px;color:#fff">Raid<span style="margin-left:auto;width:18px;height:18px;margin-right:2px;border-radius:3px;background:#2a1408;box-shadow:inset 0 0 0 1px #8c6b2b;color:#ffd100;font-size:9px;line-height:18px;text-align:center">▼</span></div>
+        </div>
+        <div style="position:absolute;top:62px;left:8px;right:8px;bottom:24px;background:#080706;border:1px solid #2b2723;display:flex;flex-direction:column;overflow:hidden">
+          <div style="display:grid;grid-template-columns:28px minmax(0,1fr) 70px 70px 64px;height:20px;background:linear-gradient(#2e2721,#191511);border-bottom:1px solid #000;font-size:11px;color:#ffd100;align-items:center">
+            <span style="text-align:center">#</span><span style="padding-left:4px">Name</span><span style="text-align:right;padding-right:8px">EP</span><span style="text-align:right;padding-right:8px">GP</span><span style="text-align:right;padding-right:8px;color:#fff">PR ▾</span>
+          </div>
+          <div style="display:grid;grid-template-columns:28px minmax(0,1fr) 70px 70px 64px;height:22px;align-items:center;background:rgba(255,209,0,.12);border-bottom:1px solid rgba(255,209,0,.45);font-family:'Archivo Narrow',sans-serif;font-size:13px;color:#fff">
+            <span style="text-align:center;color:#ffd100;font-size:12px">3</span>
+            <span style="display:flex;align-items:center;gap:5px;padding-left:4px;font-family:Marcellus,serif;font-size:12px;color:#FF7C0A"><span style="width:14px;height:14px;border-radius:2px;background:#FF7C0A;box-shadow:0 0 0 1px #000;opacity:.85"></span>Amitax<span style="font-size:10px;color:#9d9d9d">(you)</span></span>
+            <span style="text-align:right;padding-right:8px">1510</span><span style="text-align:right;padding-right:8px">830</span><span style="text-align:right;padding-right:8px;color:#ffd100">1.82</span>
+          </div>
+          <sc-for list="{{ raiderRows }}" as="r" hint-placeholder-count="16">
+            <div style="display:grid;grid-template-columns:28px minmax(0,1fr) 70px 70px 64px;height:20px;align-items:center;background:{{ r.bg }};font-family:'Archivo Narrow',sans-serif;font-size:13px;color:#fff">
+              <span style="text-align:center;color:#9d9d9d;font-size:12px">{{ r.rank }}</span>
+              <span style="display:flex;align-items:center;gap:5px;padding-left:4px;font-family:Marcellus,serif;font-size:12px;color:{{ r.color }};white-space:nowrap;overflow:hidden"><span style="width:14px;height:14px;flex:none;border-radius:2px;background:{{ r.color }};box-shadow:0 0 0 1px #000;opacity:.85"></span>{{ r.name }}</span>
+              <span style="text-align:right;padding-right:8px">{{ r.ep }}</span><span style="text-align:right;padding-right:8px">{{ r.gp }}</span><span style="text-align:right;padding-right:8px;color:#ffd100">{{ r.pr }}</span>
+            </div>
+          </sc-for>
+        </div>
+        <div style="position:absolute;left:12px;right:12px;bottom:5px;display:flex;font-size:10px;color:#9d9d9d"><span>Min. EP 500 to bid · Decay 10 % weekly</span><span style="margin-left:auto;color:#1eff00">In-Sync</span></div>
+        <div style="position:absolute;top:100%;left:14px;display:flex;gap:2px;align-items:flex-start">
+          <div style="height:32px;padding:0 18px;display:flex;align-items:center;background:linear-gradient(#352d25,#1a1612);box-shadow:0 0 0 1px #000,inset 0 0 0 1px #c9963d;border-radius:0 0 5px 5px;font-size:12px;color:#fff">Standings</div>
+          <div style="height:28px;padding:0 16px;display:flex;align-items:center;background:linear-gradient(#211c17,#100e0c);box-shadow:0 0 0 1px #000,inset 0 0 0 1px #5a4c3a;border-radius:0 0 5px 5px;font-size:12px;color:#ffd100">History</div>
+          <div style="height:28px;padding:0 16px;display:flex;align-items:center;background:linear-gradient(#211c17,#100e0c);box-shadow:0 0 0 1px #000,inset 0 0 0 1px #5a4c3a;border-radius:0 0 5px 5px;font-size:12px;color:#ffd100">Raids</div>
+          <div style="height:28px;padding:0 16px;display:flex;align-items:center;background:linear-gradient(#211c17,#100e0c);box-shadow:0 0 0 1px #000,inset 0 0 0 1px #5a4c3a;border-radius:0 0 5px 5px;font-size:12px;color:#ffd100">Settings</div>
+        </div>
+      </div>
+      <div style="font-family:'IBM Plex Mono',monospace;font-size:11px;color:#8a8494">2b · Raider (read-only) · 520×440 · officer controls hidden, not disabled</div>
+    </div>
+
+    <div style="display:flex;flex-direction:column;gap:48px;padding:24px 0 0 24px">
+      <div style="position:relative;width:720px;height:480px;background:#16130f;box-shadow:0 0 0 1px #000,0 0 0 3px #4d443a,0 0 0 4px #000;font-family:Marcellus,serif">
+        <div style="position:absolute;left:-26px;top:-24px;width:62px;height:62px;border-radius:50%;background:radial-gradient(circle at 40% 35%,#c3261b,#4a0806 60%,#120202);box-shadow:0 0 0 3px #b8913f,0 0 0 4px #000;z-index:3;display:flex;align-items:center;justify-content:center;color:#f2d9b0;font-size:15px">BP</div>
+        <div style="height:22px;display:flex;align-items:center;justify-content:center;background:linear-gradient(#3a322a,#1b1712);border-bottom:1px solid #000;font-size:12px;color:#ffd100">BP EPGP</div>
+        <div style="position:absolute;right:3px;top:2px;width:18px;height:18px;border-radius:3px;background:linear-gradient(#b4170f,#5e0804);box-shadow:0 0 0 1px #000,inset 0 0 0 1px #c9963d;color:#ffd100;font-size:12px;line-height:18px;text-align:center">✕</div>
+        <div style="height:38px;display:flex;align-items:center;gap:10px;padding:0 10px 0 52px">
+          <span style="font-size:16px;color:#ffd100">History</span>
+          <span style="flex:1"></span>
+          <span style="display:flex;align-items:center;gap:5px;font-size:11px;color:#fff"><span style="width:14px;height:14px;border-radius:2px;background:#000;box-shadow:0 0 0 1px #6b5a3a;color:#ffd100;font-size:11px;line-height:14px;text-align:center">✓</span>Show audit issues</span>
+          <div style="width:150px;height:20px;border-radius:10px;background:#000;box-shadow:0 0 0 1px #4a4540;display:flex;align-items:center;padding:0 8px;font-size:11px;color:#6f6a64">⌕ Player or item</div>
+          <div style="width:110px;height:22px;border-radius:4px;background:linear-gradient(#2c2620,#141210);box-shadow:0 0 0 1px #5a5048;display:flex;align-items:center;padding-left:8px;font-size:12px;color:#fff">All types<span style="margin-left:auto;width:18px;height:18px;margin-right:2px;border-radius:3px;background:#2a1408;box-shadow:inset 0 0 0 1px #8c6b2b;color:#ffd100;font-size:9px;line-height:18px;text-align:center">▼</span></div>
+        </div>
+        <div style="position:absolute;top:62px;left:8px;right:8px;bottom:24px;background:#080706;border:1px solid #2b2723;display:flex;flex-direction:column;overflow:hidden">
+          <div style="display:grid;grid-template-columns:56px 44px 150px 64px minmax(0,1fr) 96px;height:20px;background:linear-gradient(#2e2721,#191511);border-bottom:1px solid #000;font-size:11px;color:#ffd100;align-items:center">
+            <span style="padding-left:8px">Time</span><span>Type</span><span>Player</span><span style="text-align:right;padding-right:10px">Amount</span><span>Reason</span><span>By</span>
+          </div>
+          <sc-for list="{{ historyRows }}" as="h" hint-placeholder-count="18">
+            <div style="display:grid;grid-template-columns:56px 44px 150px 64px minmax(0,1fr) 96px;height:20px;align-items:center;background:{{ h.bg }};font-size:12px;color:#fff;white-space:nowrap">
+              <span style="padding-left:8px;font-family:'Archivo Narrow',sans-serif;color:#9d9d9d">{{ h.t }}</span>
+              <span style="font-size:10px;color:{{ h.typeColor }}">{{ h.type }}</span>
+              <span style="color:{{ h.color }};overflow:hidden;text-overflow:ellipsis">{{ h.who }}</span>
+              <span style="text-align:right;padding-right:10px;font-family:'Archivo Narrow',sans-serif;font-size:13px;color:{{ h.amtColor }}">{{ h.amt }}</span>
+              <span style="color:{{ h.reasonColor }};overflow:hidden;text-overflow:ellipsis">{{ h.reason }}</span>
+              <span style="color:{{ h.byColor }}">{{ h.by }}</span>
+            </div>
+          </sc-for>
+        </div>
+        <div style="position:absolute;left:12px;right:12px;bottom:5px;display:flex;font-size:10px;color:#9d9d9d"><span>Right-click an entry: Revert · Copy · Show player</span><span style="margin-left:auto;color:#ff2020">1 audit issue</span></div>
+        <div style="position:absolute;top:100%;left:14px;display:flex;gap:2px;align-items:flex-start">
+          <div style="height:28px;padding:0 16px;display:flex;align-items:center;background:linear-gradient(#211c17,#100e0c);box-shadow:0 0 0 1px #000,inset 0 0 0 1px #5a4c3a;border-radius:0 0 5px 5px;font-size:12px;color:#ffd100">Standings</div>
+          <div style="height:32px;padding:0 18px;display:flex;align-items:center;background:linear-gradient(#352d25,#1a1612);box-shadow:0 0 0 1px #000,inset 0 0 0 1px #c9963d;border-radius:0 0 5px 5px;font-size:12px;color:#fff">History</div>
+          <div style="height:28px;padding:0 16px;display:flex;align-items:center;background:linear-gradient(#211c17,#100e0c);box-shadow:0 0 0 1px #000,inset 0 0 0 1px #5a4c3a;border-radius:0 0 5px 5px;font-size:12px;color:#ffd100">Raids</div>
+          <div style="height:28px;padding:0 16px;display:flex;align-items:center;background:linear-gradient(#211c17,#100e0c);box-shadow:0 0 0 1px #000,inset 0 0 0 1px #5a4c3a;border-radius:0 0 5px 5px;font-size:12px;color:#ffd100">Roster</div>
+          <div style="height:28px;padding:0 16px;display:flex;align-items:center;background:linear-gradient(#211c17,#100e0c);box-shadow:0 0 0 1px #000,inset 0 0 0 1px #5a4c3a;border-radius:0 0 5px 5px;font-size:12px;color:#ffd100">Settings</div>
+        </div>
+      </div>
+      <div style="font-family:'IBM Plex Mono',monospace;font-size:11px;color:#8a8494">2c · Officer · History with Audit merged in as a filter · 720×480</div>
+    </div>
+
+  </div>
+  </div>
+</section>
+
+<section id="states" style="display:flex;flex-direction:column;gap:24px">
+  <div style="display:flex;align-items:baseline;gap:16px"><span style="font-family:'IBM Plex Mono',monospace;color:#8a8273">03</span><h2 style="margin:0;font-family:Marcellus,serif;font-weight:400;font-size:30px;color:#f1e9da">Window states</h2></div>
+  <div style="background:radial-gradient(ellipse at 30% 10%,#2d2938,#141219 75%);border:1px solid #26232c;border-radius:6px;padding:32px;overflow-x:auto">
+  <div style="zoom:{{ zoom }};display:flex;flex-wrap:wrap;gap:40px 32px;align-items:flex-start">
+
+    <div style="display:flex;flex-direction:column;gap:14px">
+      <div style="position:relative;width:340px;height:220px;background:#16130f;box-shadow:0 0 0 1px #000,0 0 0 3px #4d443a,0 0 0 4px #000;font-family:Marcellus,serif">
+        <div style="height:22px;display:flex;align-items:center;justify-content:center;background:linear-gradient(#3a322a,#1b1712);border-bottom:1px solid #000;font-size:12px;color:#ffd100">BP EPGP</div>
+        <div style="position:absolute;top:30px;left:8px;right:8px;bottom:8px;background:#080706;border:1px solid #2b2723;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;text-align:center;padding:0 24px">
+          <span style="font-size:14px;color:#9d9d9d">No standings yet</span>
+          <span style="font-size:11px;color:#6f6a64;line-height:1.4">Nobody has EP. Award EP to start, or wait for the first sync from an officer.</span>
+        </div>
+      </div>
+      <div style="font-family:'IBM Plex Mono',monospace;font-size:11px;color:#8a8494">3a · Empty</div>
+    </div>
+
+    <div style="display:flex;flex-direction:column;gap:14px">
+      <div style="position:relative;width:340px;height:220px;background:#16130f;box-shadow:0 0 0 1px #000,0 0 0 3px #4d443a,0 0 0 4px #000;font-family:Marcellus,serif">
+        <div style="height:22px;display:flex;align-items:center;justify-content:center;background:linear-gradient(#3a322a,#1b1712);border-bottom:1px solid #000;font-size:12px;color:#ffd100">BP EPGP</div>
+        <div style="position:absolute;top:30px;left:8px;right:8px;bottom:8px;background:#080706;border:1px solid #2b2723;overflow:hidden">
+          <sc-for list="{{ ghostRows }}" as="r" hint-placeholder-count="8">
+            <div style="height:20px;display:flex;align-items:center;gap:6px;padding-left:8px;font-size:12px;color:{{ r.color }};opacity:.22">{{ r.name }}<span style="margin-left:auto;padding-right:10px;font-family:'Archivo Narrow',sans-serif;color:#fff">{{ r.pr }}</span></div>
+          </sc-for>
+          <div style="position:absolute;inset:0;background:rgba(0,0,0,.55);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:10px">
+            <div style="width:28px;height:28px;border-radius:50%;box-shadow:inset 0 0 0 3px #3a3128;border-top:3px solid #ffd100;box-sizing:border-box"></div>
+            <span style="font-size:13px;color:#ffd100">BP EPGP is processing…</span>
+            <div style="width:200px;height:12px;background:#000;box-shadow:0 0 0 1px #6b5a3a;position:relative"><div style="width:42%;height:100%;background:linear-gradient(#ffe066,#c79a00)"></div></div>
+            <span style="font-family:'Archivo Narrow',sans-serif;font-size:12px;color:#9d9d9d">412 / 980 events from Cheatzone</span>
+          </div>
+        </div>
+      </div>
+      <div style="font-family:'IBM Plex Mono',monospace;font-size:11px;color:#8a8494">3b · Loading / syncing — LoadingSpinnerTemplate + StatusBar</div>
+    </div>
+
+    <div style="display:flex;flex-direction:column;gap:14px;padding:18px 0 0 18px">
+      <div style="position:relative;width:340px;height:220px;background:#16130f;box-shadow:0 0 0 1px #000,0 0 0 3px #ff8000,0 0 0 4px #000;font-family:Marcellus,serif">
+        <div style="position:absolute;left:-22px;top:-20px;width:52px;height:52px;border-radius:50%;background:radial-gradient(circle at 40% 35%,#ff9a2a,#8a3a04 60%,#1a0802);box-shadow:0 0 0 3px #b8913f,0 0 0 4px #000;z-index:3;display:flex;align-items:center;justify-content:center;color:#2a1000;font-size:13px">BP</div>
+        <div style="height:22px;display:flex;align-items:center;justify-content:center;gap:6px;background:linear-gradient(#3a322a,#1b1712);border-bottom:1px solid #000;font-size:12px;color:#ffd100">BP EPGP <span style="color:#ff8000">— TEST MODE</span></div>
+        <div style="height:24px;display:flex;align-items:center;padding:0 10px 0 40px;font-size:11px;color:#ff8000;background:rgba(255,128,0,.08);border-bottom:1px solid rgba(255,128,0,.35)">Changes are local. Leaving test mode reloads the UI.</div>
+        <div style="position:absolute;top:56px;left:8px;right:8px;bottom:8px;background:#080706;border:1px solid #2b2723;overflow:hidden">
+          <sc-for list="{{ ghostRows }}" as="r" hint-placeholder-count="8">
+            <div style="height:20px;display:flex;align-items:center;gap:6px;padding-left:8px;font-size:12px;color:{{ r.color }}">{{ r.name }}<span style="margin-left:auto;padding-right:10px;font-family:'Archivo Narrow',sans-serif;color:#ffd100">{{ r.pr }}</span></div>
+          </sc-for>
+        </div>
+      </div>
+      <div style="font-family:'IBM Plex Mono',monospace;font-size:11px;color:#8a8494">3c · Test mode — orange edge (NineSlice vertex colour), tinted portrait</div>
+    </div>
+
+    <div style="display:flex;flex-direction:column;gap:14px">
+      <div style="position:relative;width:340px;height:220px;background:#16130f;box-shadow:0 0 0 1px #000,0 0 0 3px #4d443a,0 0 0 4px #000;font-family:Marcellus,serif">
+        <div style="height:22px;display:flex;align-items:center;justify-content:center;background:linear-gradient(#3a322a,#1b1712);border-bottom:1px solid #000;font-size:12px;color:#ffd100">BP EPGP</div>
+        <div style="padding:12px 14px;display:flex;flex-direction:column;gap:10px">
+          <div style="display:flex;align-items:baseline"><span style="font-size:14px;color:#ffd100">Guild settings</span><span style="margin-left:auto;font-size:10px;color:#9d9d9d">Read-only · set by officers</span></div>
+          <div style="height:1px;background:linear-gradient(90deg,#5a4c3a,transparent)"></div>
+          <div style="display:grid;grid-template-columns:120px 1fr;gap:8px;align-items:center;font-size:12px">
+            <span style="color:#7a7570">Decay %</span><div style="width:60px;height:20px;border-radius:3px;background:#0e0d0c;box-shadow:0 0 0 1px #2e2b28;display:flex;align-items:center;padding:0 6px;font-family:'Archivo Narrow',sans-serif;font-size:13px;color:#7a7570">10</div>
+            <span style="color:#7a7570">Base GP</span><div style="width:60px;height:20px;border-radius:3px;background:#0e0d0c;box-shadow:0 0 0 1px #2e2b28;display:flex;align-items:center;padding:0 6px;font-family:'Archivo Narrow',sans-serif;font-size:13px;color:#7a7570">100</div>
+            <span style="color:#7a7570">Minimum EP</span><div style="width:60px;height:20px;border-radius:3px;background:#0e0d0c;box-shadow:0 0 0 1px #2e2b28;display:flex;align-items:center;padding:0 6px;font-family:'Archivo Narrow',sans-serif;font-size:13px;color:#7a7570">500</div>
+            <span style="color:#7a7570">Tier names</span><span style="font-size:11px;color:#7a7570">Max · Large · Medium · Small · Base</span>
+          </div>
+        </div>
+      </div>
+      <div style="font-family:'IBM Plex Mono',monospace;font-size:11px;color:#8a8494">3d · Read-only settings (non-officer) — GameFontDisable, :Disable()</div>
+    </div>
+
+  </div>
+  </div>
+</section>
+
+<section id="auction" style="display:flex;flex-direction:column;gap:24px">
+  <div style="display:flex;align-items:baseline;gap:16px"><span style="font-family:'IBM Plex Mono',monospace;color:#8a8273">04</span><h2 style="margin:0;font-family:Marcellus,serif;font-weight:400;font-size:30px;color:#f1e9da">Auctioning (officers)</h2></div>
+  <p style="margin:0;max-width:760px;text-wrap:pretty">Left column is the queue (Alt-click loot or bags to add). GP tiers prefill from the item slot table, so a normal item is Alt-click → Start → Award. Inputs lock while the auction runs.</p>
+  <div style="background:radial-gradient(ellipse at 30% 10%,#2d2938,#141219 75%);border:1px solid #26232c;border-radius:6px;padding:28px 32px 40px;overflow-x:auto">
+  <div style="zoom:{{ zoom }};display:flex;flex-wrap:wrap;gap:56px 48px;align-items:flex-start">
+    <sc-for list="{{ auctionStates }}" as="st" hint-placeholder-count="3">
+      <div style="display:flex;flex-direction:column;gap:16px;padding:24px 0 0 24px">
+        <div style="position:relative;width:540px;height:470px;background:#16130f;box-shadow:0 0 0 1px #000,0 0 0 3px #4d443a,0 0 0 4px #000;font-family:Marcellus,serif">
+          <div style="position:absolute;left:-26px;top:-24px;width:62px;height:62px;border-radius:50%;background:radial-gradient(circle at 40% 35%,#c3261b,#4a0806 60%,#120202);box-shadow:0 0 0 3px #b8913f,0 0 0 4px #000;z-index:3;display:flex;align-items:center;justify-content:center;color:#f2d9b0;font-size:15px">BP</div>
+          <div style="height:22px;display:flex;align-items:center;justify-content:center;gap:6px;background:linear-gradient(#3a322a,#1b1712);border-bottom:1px solid #000;font-size:12px;color:#ffd100">Auctioning<sc-if value="{{ testMode }}" hint-placeholder-val="{{ false }}"><span style="color:#ff8000">— TEST MODE</span></sc-if></div>
+          <div style="position:absolute;right:3px;top:2px;width:18px;height:18px;border-radius:3px;background:linear-gradient(#b4170f,#5e0804);box-shadow:0 0 0 1px #000,inset 0 0 0 1px #c9963d;color:#ffd100;font-size:12px;line-height:18px;text-align:center">✕</div>
+          <div style="height:36px;display:flex;align-items:center;gap:10px;padding:0 12px 0 52px">
+            <span style="font-size:14px;color:{{ st.labelColor }}">{{ st.label }}</span>
+            <span style="flex:1"></span>
+            <div style="width:200px;height:14px;background:#000;box-shadow:0 0 0 1px #6b5a3a;position:relative;opacity:{{ st.timerOpacity }}"><div style="width:{{ st.pct }};height:100%;background:linear-gradient(#ffe066,#c79a00)"></div><span style="position:absolute;right:4px;top:0;line-height:14px;font-family:'Archivo Narrow',sans-serif;font-size:11px;color:#fff">{{ st.timer }}</span></div>
+          </div>
+          <div style="position:absolute;top:60px;left:8px;right:8px;bottom:8px;display:flex;gap:8px">
+            <div style="width:40px;display:flex;flex-direction:column;gap:6px;padding-top:2px">
+              <sc-for list="{{ st.queue }}" as="q" hint-placeholder-count="3">
+                <div style="width:36px;height:36px;border-radius:3px;background:linear-gradient(135deg,{{ q.hue }},#0a0908 85%);box-shadow:0 0 0 2px {{ q.border }},0 0 0 3px #000"></div>
+              </sc-for>
+            </div>
+            <div style="flex:1;min-width:0;display:flex;flex-direction:column;gap:8px">
+              <div style="display:flex;flex-direction:column;gap:8px;opacity:{{ st.lock }}">
+                <div style="display:flex;align-items:center;gap:6px">
+                  <div style="width:30px;height:30px;flex:none;border-radius:3px;background:linear-gradient(135deg,#3fa0b8,#0a0908 85%);box-shadow:0 0 0 1px #a335ee,0 0 0 2px #000"></div>
+                  <div style="flex:1;min-width:0;height:20px;border-radius:3px;background:#000;box-shadow:0 0 0 1px #4a4540;display:flex;align-items:center;padding:0 6px;font-size:12px;color:#a335ee;white-space:nowrap;overflow:hidden">[Signet of the Fallen King]</div>
+                  <div style="width:120px;height:20px;border-radius:3px;background:#000;box-shadow:0 0 0 1px #4a4540;display:flex;align-items:center;padding:0 6px;font-size:11px;color:#6f6a64">Note</div>
+                </div>
+                <div style="display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:6px">
+                  <sc-for list="{{ tierFields }}" as="t" hint-placeholder-count="5">
+                    <div style="display:flex;flex-direction:column;gap:3px"><span style="font-size:11px;color:#ffd100">{{ t.name }}</span><div style="height:20px;border-radius:3px;background:#000;box-shadow:0 0 0 1px #4a4540;display:flex;align-items:center;padding:0 6px;font-family:'Archivo Narrow',sans-serif;font-size:13px;color:#fff">{{ t.gp }}</div></div>
+                  </sc-for>
+                </div>
+              </div>
+              <div style="display:flex;align-items:center;gap:6px;font-size:11px;color:#ffd100">
+                <span style="opacity:{{ st.lock }}">Length</span><div style="width:30px;height:20px;border-radius:3px;background:#000;box-shadow:0 0 0 1px #4a4540;display:flex;align-items:center;padding:0 5px;font-family:'Archivo Narrow',sans-serif;font-size:13px;color:#fff;opacity:{{ st.lock }}">20</div>
+                <span style="opacity:{{ st.lock }}">Anti-snipe</span><div style="width:26px;height:20px;border-radius:3px;background:#000;box-shadow:0 0 0 1px #4a4540;display:flex;align-items:center;padding:0 5px;font-family:'Archivo Narrow',sans-serif;font-size:13px;color:#fff;opacity:{{ st.lock }}">5</div>
+                <span style="flex:1"></span>
+                <sc-if value="{{ testMode }}" hint-placeholder-val="{{ false }}"><div style="height:22px;padding:0 8px;border-radius:3px;background:linear-gradient(#3a332c,#191511);box-shadow:0 0 0 1px #000,inset 0 0 0 1px #ff8000;display:flex;align-items:center;font-size:11px;color:#ff8000">Simulate bids</div></sc-if>
+                <div style="width:24px;height:24px;border-radius:3px;background:linear-gradient(#3a332c,#191511);box-shadow:0 0 0 1px #000,inset 0 0 0 1px #6b5a3a;display:flex;align-items:center;justify-content:center;font-size:14px;color:#fff">⚄</div>
+                <div style="height:22px;padding:0 10px;border-radius:3px;background:linear-gradient(#b4170f,#6b0905);box-shadow:0 0 0 1px #2a0000,inset 0 0 0 1px #8c6b2b;display:flex;align-items:center;font-size:12px;color:#ffd100">Clear list</div>
+                <div style="width:72px;height:22px;border-radius:3px;background:linear-gradient(#b4170f,#6b0905);box-shadow:0 0 0 1px #2a0000,inset 0 0 0 1px #c9963d;display:flex;align-items:center;justify-content:center;font-size:12px;color:#ffd100">{{ st.startLabel }}</div>
+              </div>
+              <div style="flex:1;min-height:0;background:#080706;border:1px solid #2b2723;display:flex;flex-direction:column;overflow:hidden;position:relative">
+                <div style="display:grid;grid-template-columns:minmax(0,1fr) 64px 44px 40px 52px;height:20px;background:linear-gradient(#2e2721,#191511);border-bottom:1px solid #000;font-size:11px;color:#ffd100;align-items:center">
+                  <span style="padding-left:8px">Name</span><span>Bid</span><span style="text-align:right;padding-right:6px">PR</span><span style="text-align:right;padding-right:6px">Roll</span><span style="padding-left:4px">Eq.</span>
+                </div>
+                <sc-for list="{{ st.bids }}" as="b" hint-placeholder-count="5">
+                  <div style="display:grid;grid-template-columns:minmax(0,1fr) 64px 44px 40px 52px;height:22px;align-items:center;background:{{ b.bg }};box-shadow:{{ b.edge }};font-size:12px">
+                    <span style="display:flex;align-items:center;gap:5px;padding-left:6px;color:{{ b.color }};white-space:nowrap;overflow:hidden"><span style="width:14px;height:14px;flex:none;border-radius:2px;background:{{ b.color }};box-shadow:0 0 0 1px #000;opacity:.85"></span>{{ b.name }}</span>
+                    <span style="color:{{ b.bidColor }}">{{ b.bid }}</span>
+                    <span style="text-align:right;padding-right:6px;font-family:'Archivo Narrow',sans-serif;font-size:13px;color:#fff">{{ b.pr }}</span>
+                    <span style="text-align:right;padding-right:6px;font-family:'Archivo Narrow',sans-serif;font-size:13px;color:#9d9d9d">{{ b.roll }}</span>
+                    <span style="display:flex;gap:3px;padding-left:4px"><sc-for list="{{ b.eq }}" as="e" hint-placeholder-count="2"><span style="width:16px;height:16px;border-radius:2px;background:linear-gradient(135deg,{{ e.hue }},#0a0908);box-shadow:0 0 0 1px {{ e.q }}"></span></sc-for></span>
+                  </div>
+                </sc-for>
+                <sc-if value="{{ st.empty }}" hint-placeholder-val="{{ false }}"><div style="position:absolute;inset:20px 0 0;display:flex;align-items:center;justify-content:center;font-size:12px;color:#6f6a64;text-align:center;padding:0 40px">No bids yet. Alt-click items to queue them, then press Start.</div></sc-if>
+              </div>
+              <div style="display:flex;align-items:center;gap:6px">
+                <span style="width:16px;height:16px;border-radius:2px;background:#000;box-shadow:0 0 0 1px #6b5a3a;color:#ffd100;font-size:11px;line-height:16px;text-align:center">✓</span><span style="font-size:11px;color:#fff">Remove on award</span>
+                <span style="flex:1"></span>
+                <span style="font-size:11px;color:#ffd100">Value</span>
+                <div style="width:56px;height:20px;border-radius:3px;background:#000;box-shadow:0 0 0 1px #4a4540;display:flex;align-items:center;padding:0 6px;font-family:'Archivo Narrow',sans-serif;font-size:13px;color:#fff">{{ st.award }}</div>
+                <div style="width:84px;height:22px;border-radius:3px;background:{{ st.awardBg }};box-shadow:0 0 0 1px #000,inset 0 0 0 1px {{ st.awardEdge }};display:flex;align-items:center;justify-content:center;font-size:12px;color:{{ st.awardColor }}">{{ st.awardLabel }}</div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div style="font-family:'IBM Plex Mono',monospace;font-size:11px;color:#8a8494">{{ st.caption }}</div>
+      </div>
+    </sc-for>
+  </div>
+  </div>
+</section>
+
+<section id="bidding" style="display:flex;flex-direction:column;gap:24px">
+  <div style="display:flex;align-items:baseline;gap:16px"><span style="font-family:'IBM Plex Mono',monospace;color:#8a8273">05</span><h2 style="margin:0;font-family:Marcellus,serif;font-weight:400;font-size:30px;color:#f1e9da">Bidding (raiders)</h2></div>
+  <p style="margin:0;max-width:760px;text-wrap:pretty">One row of tier buttons, GP printed on each. One click bids; clicking another tier replaces the bid. A popup appears only for items your class can't use. Try clicking the tiers in 5a.</p>
+  <div style="background:radial-gradient(ellipse at 30% 10%,#2d2938,#141219 75%);border:1px solid #26232c;border-radius:6px;padding:28px 32px 40px;overflow-x:auto">
+  <div style="zoom:{{ zoom }};display:flex;flex-direction:column;gap:48px">
+  <div style="display:flex;flex-wrap:wrap;gap:56px 48px;align-items:flex-start">
+
+    <div style="display:flex;flex-direction:column;gap:16px;padding:24px 0 0 24px">
+      <div style="position:relative;width:480px;height:440px;background:#16130f;box-shadow:0 0 0 1px #000,0 0 0 3px #4d443a,0 0 0 4px #000;font-family:Marcellus,serif">
+        <div style="position:absolute;left:-26px;top:-24px;width:62px;height:62px;border-radius:50%;background:radial-gradient(circle at 40% 35%,#c3261b,#4a0806 60%,#120202);box-shadow:0 0 0 3px #b8913f,0 0 0 4px #000;z-index:3;display:flex;align-items:center;justify-content:center;color:#f2d9b0;font-size:15px">BP</div>
+        <div style="height:22px;display:flex;align-items:center;justify-content:center;gap:6px;background:linear-gradient(#3a322a,#1b1712);border-bottom:1px solid #000;font-size:12px;color:#ffd100">Bidding<sc-if value="{{ testMode }}" hint-placeholder-val="{{ false }}"><span style="color:#ff8000">— TEST MODE</span></sc-if></div>
+        <div style="position:absolute;right:3px;top:2px;width:18px;height:18px;border-radius:3px;background:linear-gradient(#b4170f,#5e0804);box-shadow:0 0 0 1px #000,inset 0 0 0 1px #c9963d;color:#ffd100;font-size:12px;line-height:18px;text-align:center">✕</div>
+        <div style="height:40px;display:flex;align-items:center;gap:10px;padding:0 12px 0 52px">
+          <div style="display:flex;flex-direction:column;line-height:1.25"><span style="font-size:11px;color:#9d9d9d">Item 2 of 4 · 14s left</span><span style="font-size:10px;color:#6f6a64">The Voidspire · Fallen-King Salhadaar</span></div>
+          <span style="flex:1"></span>
+          <span style="font-size:9px;color:#9d9d9d;letter-spacing:.06em">YOUR PR</span>
+          <span style="font-size:26px;color:#ffd100;line-height:1">1.82</span>
+        </div>
+        <div style="position:absolute;top:64px;left:8px;right:8px;bottom:8px;display:flex;gap:8px">
+          <div style="width:40px;display:flex;flex-direction:column;gap:6px;padding-top:2px">
+            <sc-for list="{{ bidQueueA }}" as="q" hint-placeholder-count="4">
+              <div style="width:36px;height:36px;border-radius:3px;background:linear-gradient(135deg,{{ q.hue }},#0a0908 85%);box-shadow:0 0 0 2px {{ q.border }},0 0 0 3px #000"></div>
+            </sc-for>
+          </div>
+          <div style="flex:1;min-width:0;display:flex;flex-direction:column;gap:8px">
+            <div style="display:flex;align-items:center;gap:8px">
+              <div style="width:40px;height:40px;flex:none;border-radius:3px;background:linear-gradient(135deg,#3fa0b8,#0a0908 85%);box-shadow:0 0 0 1px #a335ee,0 0 0 2px #000"></div>
+              <div style="flex:1;min-width:0;display:flex;flex-direction:column;line-height:1.3"><span style="font-size:14px;color:#a335ee;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">[Signet of the Fallen King]</span><span style="font-size:11px;color:#9d9d9d">Finger · Item Level 289</span></div>
+              <div style="height:22px;padding:0 10px;border-radius:3px;background:linear-gradient(#b4170f,#6b0905);box-shadow:0 0 0 1px #2a0000,inset 0 0 0 1px #8c6b2b;display:flex;align-items:center;font-size:12px;color:#ffd100">Next ›</div>
+            </div>
+            <div style="display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:6px">
+              <sc-for list="{{ tierButtons }}" as="t" hint-placeholder-count="5">
+                <div onClick="{{ t.pick }}" style="height:{{ tierH }};border-radius:4px;background:{{ t.bg }};box-shadow:{{ t.edge }};display:flex;flex-direction:column;align-items:center;justify-content:center;gap:1px;cursor:pointer" style-hover="filter:brightness(1.18)">
+                  <span style="font-size:13px;color:{{ t.text }}">{{ t.name }}</span>
+                  <sc-if value="{{ showCost }}" hint-placeholder-val="{{ true }}"><span style="font-family:'Archivo Narrow',sans-serif;font-size:11px;color:#fff">{{ t.gp }} GP</span></sc-if>
+                </div>
+              </sc-for>
+            </div>
+            <div style="display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:6px">
+              <sc-for list="{{ altButtons }}" as="t" hint-placeholder-count="3">
+                <div onClick="{{ t.pick }}" style="height:24px;border-radius:3px;background:{{ t.bg }};box-shadow:{{ t.edge }};display:flex;align-items:center;justify-content:center;gap:5px;font-size:12px;color:{{ t.text }};cursor:pointer" style-hover="filter:brightness(1.18)">{{ t.name }}<span style="font-family:'Archivo Narrow',sans-serif;font-size:11px;color:#9d9d9d">{{ t.sub }}</span></div>
+              </sc-for>
+            </div>
+            <div style="height:18px;display:flex;align-items:center;gap:6px;font-size:12px;color:{{ statusColor }}">{{ statusText }}</div>
+            <div style="flex:1;min-height:0;background:#080706;border:1px solid #2b2723;display:flex;flex-direction:column;overflow:hidden">
+              <div style="display:grid;grid-template-columns:minmax(0,1fr) 64px 44px 40px 46px;height:20px;background:linear-gradient(#2e2721,#191511);border-bottom:1px solid #000;font-size:11px;color:#ffd100;align-items:center">
+                <span style="padding-left:8px">Name</span><span>Bid</span><span style="text-align:right;padding-right:6px">PR</span><span style="text-align:right;padding-right:6px">Roll</span><span style="padding-left:4px">Eq.</span>
+              </div>
+              <sc-for list="{{ openBids }}" as="b" hint-placeholder-count="5">
+                <div style="display:grid;grid-template-columns:minmax(0,1fr) 64px 44px 40px 46px;height:20px;align-items:center;background:{{ b.bg }};font-size:12px">
+                  <span style="display:flex;align-items:center;gap:5px;padding-left:6px;color:{{ b.color }};white-space:nowrap;overflow:hidden"><span style="width:14px;height:14px;flex:none;border-radius:2px;background:{{ b.color }};box-shadow:0 0 0 1px #000;opacity:.85"></span>{{ b.name }}</span>
+                  <span style="color:{{ b.bidColor }}">{{ b.bid }}</span>
+                  <span style="text-align:right;padding-right:6px;font-family:'Archivo Narrow',sans-serif;font-size:13px;color:#fff">{{ b.pr }}</span>
+                  <span style="text-align:right;padding-right:6px;font-family:'Archivo Narrow',sans-serif;font-size:13px;color:#9d9d9d">{{ b.roll }}</span>
+                  <span style="display:flex;gap:3px;padding-left:4px"><sc-for list="{{ b.eq }}" as="e" hint-placeholder-count="2"><span style="width:14px;height:14px;border-radius:2px;background:linear-gradient(135deg,{{ e.hue }},#0a0908);box-shadow:0 0 0 1px {{ e.q }}"></span></sc-for></span>
+                </div>
+              </sc-for>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div style="font-family:'IBM Plex Mono',monospace;font-size:11px;color:#8a8494">5a · Comfortable · 480×440 · bid accepted (interactive)</div>
+    </div>
+
+    <div style="display:flex;flex-direction:column;gap:16px">
+      <div style="position:relative;width:330px;height:300px;background:#16130f;box-shadow:0 0 0 1px #000,0 0 0 3px #4d443a,0 0 0 4px #000;font-family:Marcellus,serif">
+        <div style="height:22px;display:flex;align-items:center;padding:0 26px 0 10px;background:linear-gradient(#3a322a,#1b1712);border-bottom:1px solid #000;font-size:12px;color:#ffd100"><span style="flex:1;text-align:center">Bidding</span></div>
+        <div style="position:absolute;right:3px;top:2px;width:18px;height:18px;border-radius:3px;background:linear-gradient(#b4170f,#5e0804);box-shadow:0 0 0 1px #000,inset 0 0 0 1px #c9963d;color:#ffd100;font-size:12px;line-height:18px;text-align:center">✕</div>
+        <div style="position:absolute;top:28px;left:6px;right:6px;bottom:6px;display:flex;gap:6px">
+          <div style="width:26px;display:flex;flex-direction:column;gap:5px;padding-top:2px">
+            <sc-for list="{{ bidQueueB }}" as="q" hint-placeholder-count="4">
+              <div style="width:24px;height:24px;border-radius:2px;background:linear-gradient(135deg,{{ q.hue }},#0a0908 85%);box-shadow:0 0 0 2px {{ q.border }},0 0 0 3px #000"></div>
+            </sc-for>
+          </div>
+          <div style="flex:1;min-width:0;display:flex;flex-direction:column;gap:5px">
+            <div style="display:flex;align-items:center;gap:6px">
+              <div style="width:26px;height:26px;flex:none;border-radius:2px;background:linear-gradient(135deg,#c8903a,#0a0908 85%);box-shadow:0 0 0 1px #a335ee,0 0 0 2px #000"></div>
+              <span style="flex:1;min-width:0;font-size:12px;color:#a335ee;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">[Pauldrons of the Sunwell Vigil]</span>
+              <span style="font-size:9px;color:#9d9d9d">PR</span><span style="font-size:18px;color:#ffd100;line-height:1">1.82</span>
+            </div>
+            <div style="display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:4px">
+              <sc-for list="{{ compactTiers }}" as="t" hint-placeholder-count="5">
+                <div style="height:{{ tierHc }};border-radius:3px;background:{{ t.bg }};box-shadow:{{ t.edge }};display:flex;flex-direction:column;align-items:center;justify-content:center;line-height:1.1"><span style="font-size:11px;color:{{ t.text }}">{{ t.name }}</span><sc-if value="{{ showCost }}" hint-placeholder-val="{{ true }}"><span style="font-family:'Archivo Narrow',sans-serif;font-size:10px;color:#fff">{{ t.gp }}</span></sc-if></div>
+              </sc-for>
+            </div>
+            <div style="display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:4px">
+              <div style="height:20px;border-radius:3px;background:linear-gradient(#3a332c,#191511);box-shadow:0 0 0 1px #000,inset 0 0 0 1px #6b5a3a;display:flex;align-items:center;justify-content:center;font-size:11px;color:#e6cc80">OS</div>
+              <div style="height:20px;border-radius:3px;background:linear-gradient(#3a332c,#191511);box-shadow:0 0 0 1px #000,inset 0 0 0 1px #6b5a3a;display:flex;align-items:center;justify-content:center;font-size:11px;color:#fff">Pass</div>
+              <div style="height:20px;border-radius:3px;background:linear-gradient(#3a332c,#191511);box-shadow:0 0 0 1px #000,inset 0 0 0 1px #6b5a3a;display:flex;align-items:center;justify-content:center;font-size:11px;color:#fff">Cancel</div>
+              <div style="height:20px;border-radius:3px;background:linear-gradient(#b4170f,#6b0905);box-shadow:0 0 0 1px #2a0000,inset 0 0 0 1px #8c6b2b;display:flex;align-items:center;justify-content:center;font-size:11px;color:#ffd100">Next ›</div>
+            </div>
+            <div style="font-size:11px;color:#ffd100;line-height:1.3">Bid denied: minimum 500 EP not reached</div>
+            <div style="flex:1;min-height:0;background:#080706;border:1px solid #2b2723;overflow:hidden">
+              <sc-for list="{{ compactBids }}" as="b" hint-placeholder-count="5">
+                <div style="display:grid;grid-template-columns:minmax(0,1fr) 54px 36px 18px;height:16px;align-items:center;background:{{ b.bg }};font-size:11px">
+                  <span style="padding-left:6px;color:{{ b.color }};white-space:nowrap;overflow:hidden">{{ b.name }}</span>
+                  <span style="color:{{ b.bidColor }}">{{ b.bid }}</span>
+                  <span style="text-align:right;padding-right:4px;font-family:'Archivo Narrow',sans-serif;font-size:12px;color:#fff">{{ b.pr }}</span>
+                  <span style="width:12px;height:12px;border-radius:2px;background:linear-gradient(135deg,{{ b.eq0 }},#0a0908);box-shadow:0 0 0 1px #a335ee"></span>
+                </div>
+              </sc-for>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div style="font-family:'IBM Plex Mono',monospace;font-size:11px;color:#8a8494">5b · Compact · 330×300 · DefaultPanelFlatTemplate · bid denied</div>
+    </div>
+
+    <div style="display:flex;flex-direction:column;gap:12px;font-size:12px;font-family:Marcellus,serif;padding-top:24px">
+      <span style="font-family:'IBM Plex Sans',sans-serif;font-size:12px;color:#8a8494">Queue border states — UI-ActionButton-Border, vertex colour</span>
+      <sc-for list="{{ legend }}" as="l" hint-placeholder-count="5">
+        <div style="display:flex;align-items:center;gap:10px"><span style="width:24px;height:24px;border-radius:2px;background:linear-gradient(135deg,#555,#0a0908);box-shadow:0 0 0 2px {{ l.c }},0 0 0 3px #000"></span><span style="color:{{ l.c }}">{{ l.label }}</span></div>
+      </sc-for>
+    </div>
+  </div>
+
+  <div style="display:flex;flex-wrap:wrap;gap:40px 48px;align-items:flex-start">
+    <div style="display:flex;flex-direction:column;gap:16px">
+      <div style="display:flex;flex-direction:column;gap:12px">
+        <div style="width:270px;height:24px;display:flex;align-items:center;gap:4px;font-family:Marcellus,serif">
+          <div style="width:24px;height:24px;border-radius:2px;background:linear-gradient(135deg,#3fa0b8,#0a0908 85%);box-shadow:0 0 0 1px #a335ee"></div>
+          <div style="flex:1;height:18px;position:relative;background:#000;box-shadow:0 0 0 1px #000,0 0 0 2px #8c7a5a"><div style="width:62%;height:100%;background:linear-gradient(#ffe066,#c79a00)"></div><span style="position:absolute;left:6px;top:0;line-height:18px;font-size:11px;color:#fff;text-shadow:0 1px 0 #000">Signet of the Fallen King</span><span style="position:absolute;right:6px;top:0;line-height:18px;font-family:'Archivo Narrow',sans-serif;font-size:12px;color:#fff;text-shadow:0 1px 0 #000">12s</span></div>
+        </div>
+        <div style="width:270px;height:24px;display:flex;align-items:center;gap:4px;font-family:Marcellus,serif">
+          <div style="width:24px;height:24px;border-radius:2px;background:linear-gradient(135deg,#3fa0b8,#0a0908 85%);box-shadow:0 0 0 1px #a335ee"></div>
+          <div style="flex:1;height:18px;position:relative;background:#000;box-shadow:0 0 0 1px #000,0 0 0 2px #8c7a5a"><div style="width:22%;height:100%;background:linear-gradient(#ff6a50,#b01800)"></div><span style="position:absolute;left:6px;top:0;line-height:18px;font-size:11px;color:#fff;text-shadow:0 1px 0 #000">Signet of the Fallen King</span><span style="position:absolute;right:6px;top:0;line-height:18px;font-family:'Archivo Narrow',sans-serif;font-size:12px;color:#1eff00;text-shadow:0 1px 0 #000">+5s · 4s</span></div>
+        </div>
+      </div>
+      <div style="font-family:'IBM Plex Mono',monospace;font-size:11px;color:#8a8494">5c · Timer bar · 270×24 · normal / anti-snipe extended (&lt;5s turns red)</div>
+    </div>
+
+    <div style="display:flex;flex-direction:column;gap:16px">
+      <div style="display:flex;flex-wrap:wrap;gap:12px">
+        <sc-for list="{{ toasts }}" as="t" hint-placeholder-count="3">
+          <div style="width:276px;height:72px;display:flex;align-items:center;gap:10px;padding:0 14px;box-sizing:border-box;border-radius:8px;background:linear-gradient(#262019,#0e0c0a);box-shadow:0 0 0 1px #000,inset 0 0 0 1px #8a6d32,inset 0 0 0 2px #2a2219;font-family:Marcellus,serif">
+            <div style="width:42px;height:42px;flex:none;border-radius:3px;background:linear-gradient(135deg,{{ t.hue }},#0a0908 85%);box-shadow:0 0 0 1px {{ t.ring }},0 0 0 2px #000"></div>
+            <div style="display:flex;flex-direction:column;min-width:0;line-height:1.3"><span style="font-size:10px;color:#9d9d9d">BP EPGP</span><span style="font-size:14px;color:{{ t.color }}">{{ t.title }}</span><span style="font-size:11px;color:#fff;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ t.sub }}</span></div>
+          </div>
+        </sc-for>
+      </div>
+      <div style="font-family:'IBM Plex Mono',monospace;font-size:11px;color:#8a8494">5d · Alert toasts · 276×72 · AlertFrame queued subsystem</div>
+    </div>
+  </div>
+  </div>
+  </div>
+</section>
+
+<section id="small" style="display:flex;flex-direction:column;gap:24px">
+  <div style="display:flex;align-items:baseline;gap:16px"><span style="font-family:'IBM Plex Mono',monospace;color:#8a8273">06</span><h2 style="margin:0;font-family:Marcellus,serif;font-weight:400;font-size:30px;color:#f1e9da">Award · Auction history · Trade list</h2></div>
+  <div style="background:radial-gradient(ellipse at 30% 10%,#2d2938,#141219 75%);border:1px solid #26232c;border-radius:6px;padding:32px;overflow-x:auto">
+  <div style="zoom:{{ zoom }};display:flex;flex-wrap:wrap;gap:48px;align-items:flex-start">
+
+    <div style="display:flex;flex-direction:column;gap:16px">
+      <div style="position:relative;width:300px;height:205px;background:#16130f;box-shadow:0 0 0 1px #000,0 0 0 3px #4d443a,0 0 0 4px #000;font-family:Marcellus,serif">
+        <div style="height:22px;display:flex;align-items:center;justify-content:center;background:linear-gradient(#3a322a,#1b1712);border-bottom:1px solid #000;font-size:12px;color:#ffd100">Award item</div>
+        <div style="position:absolute;right:3px;top:2px;width:18px;height:18px;border-radius:3px;background:linear-gradient(#b4170f,#5e0804);box-shadow:0 0 0 1px #000,inset 0 0 0 1px #c9963d;color:#ffd100;font-size:12px;line-height:18px;text-align:center">✕</div>
+        <div style="padding:12px;display:flex;flex-direction:column;gap:10px">
+          <div style="display:flex;align-items:center;gap:8px">
+            <div style="width:36px;height:36px;flex:none;border-radius:3px;background:linear-gradient(135deg,#9a5f3a,#0a0908 85%);box-shadow:0 0 0 1px #a335ee,0 0 0 2px #000"></div>
+            <div style="flex:1;min-width:0;height:20px;border-radius:3px;background:#000;box-shadow:0 0 0 1px #4a4540;display:flex;align-items:center;padding:0 6px;font-size:12px;color:#a335ee;white-space:nowrap;overflow:hidden">[Averzian's Imperial Greaves]</div>
+          </div>
+          <div style="display:grid;grid-template-columns:52px 1fr;gap:8px;align-items:center">
+            <span style="font-size:12px;color:#ffd100">Player</span>
+            <div style="height:22px;border-radius:4px;background:linear-gradient(#2c2620,#141210);box-shadow:0 0 0 1px #5a5048;display:flex;align-items:center;padding-left:8px;font-size:12px;color:#C41E3A">Cheatzone<span style="margin-left:auto;width:18px;height:18px;margin-right:2px;border-radius:3px;background:#2a1408;box-shadow:inset 0 0 0 1px #8c6b2b;color:#ffd100;font-size:9px;line-height:18px;text-align:center">▼</span></div>
+            <span style="font-size:12px;color:#ffd100">GP</span>
+            <div style="display:flex;align-items:center;gap:8px"><div style="width:64px;height:20px;border-radius:3px;background:#000;box-shadow:0 0 0 1px #4a4540;display:flex;align-items:center;padding:0 6px;font-family:'Archivo Narrow',sans-serif;font-size:13px;color:#fff">200</div><span style="font-size:10px;color:#9d9d9d">Large · legs</span></div>
+          </div>
+          <div style="display:flex;justify-content:flex-end;gap:6px;margin-top:2px">
+            <div style="width:80px;height:22px;border-radius:3px;background:linear-gradient(#b4170f,#6b0905);box-shadow:0 0 0 1px #2a0000,inset 0 0 0 1px #8c6b2b;display:flex;align-items:center;justify-content:center;font-size:12px;color:#ffd100">Cancel</div>
+            <div style="width:80px;height:22px;border-radius:3px;background:linear-gradient(#b4170f,#6b0905);box-shadow:0 0 0 1px #2a0000,inset 0 0 0 1px #c9963d;display:flex;align-items:center;justify-content:center;font-size:12px;color:#ffd100">Award</div>
+          </div>
+        </div>
+      </div>
+      <div style="font-family:'IBM Plex Mono',monospace;font-size:11px;color:#8a8494">6a · Award · 300×205</div>
+    </div>
+
+    <div style="display:flex;flex-direction:column;gap:16px">
+      <div style="position:relative;width:265px;height:400px;background:#16130f;box-shadow:0 0 0 1px #000,0 0 0 3px #4d443a,0 0 0 4px #000;font-family:Marcellus,serif">
+        <div style="height:22px;display:flex;align-items:center;justify-content:center;background:linear-gradient(#3a322a,#1b1712);border-bottom:1px solid #000;font-size:12px;color:#ffd100">Auction history</div>
+        <div style="position:absolute;right:3px;top:2px;width:18px;height:18px;border-radius:3px;background:linear-gradient(#b4170f,#5e0804);box-shadow:0 0 0 1px #000,inset 0 0 0 1px #c9963d;color:#ffd100;font-size:12px;line-height:18px;text-align:center">✕</div>
+        <div style="position:absolute;top:28px;left:6px;right:6px;bottom:6px;background:#080706;border:1px solid #2b2723;overflow:hidden;display:flex;flex-direction:column">
+          <sc-for list="{{ auctionHistory }}" as="a" hint-placeholder-count="7">
+            <div style="display:flex;flex-direction:column;background:{{ a.bg }};border-bottom:1px solid #1a1714">
+              <div style="display:flex;align-items:center;gap:6px;padding:4px 6px;height:30px;box-sizing:border-box">
+                <div style="width:22px;height:22px;flex:none;border-radius:2px;background:linear-gradient(135deg,{{ a.hue }},#0a0908 85%);box-shadow:0 0 0 1px #a335ee"></div>
+                <div style="flex:1;min-width:0;display:flex;flex-direction:column;line-height:1.2">
+                  <span style="font-size:11px;color:#a335ee;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ a.item }}</span>
+                  <span style="font-size:10px;color:#9d9d9d;white-space:nowrap"><span style="color:{{ a.color }}">{{ a.winner }}</span> · {{ a.price }}</span>
+                </div>
+                <span style="font-family:'Archivo Narrow',sans-serif;font-size:10px;color:#6f6a64">{{ a.t }}</span>
+                <span style="font-size:9px;color:#ffd100">{{ a.caret }}</span>
+              </div>
+              <sc-for list="{{ a.bids }}" as="b" hint-placeholder-count="0">
+                <div style="display:flex;align-items:center;gap:6px;padding:0 10px 0 34px;height:16px;font-size:10px"><span style="color:{{ b.color }};flex:1">{{ b.name }}</span><span style="color:{{ b.bidColor }}">{{ b.bid }}</span><span style="width:28px;text-align:right;font-family:'Archivo Narrow',sans-serif;font-size:11px;color:#fff">{{ b.pr }}</span></div>
+              </sc-for>
+            </div>
+          </sc-for>
+        </div>
+        <div style="position:absolute;left:150px;top:150px;width:150px;padding:6px 0;border-radius:4px;background:rgba(8,8,8,.97);box-shadow:0 0 0 1px #5a5a5a;font-size:11px;color:#fff;display:flex;flex-direction:column;z-index:4">
+          <span style="padding:2px 10px 4px;color:#ffd100">Shroud of Endless Dusk</span>
+          <span style="padding:3px 10px;background:rgba(80,140,255,.25)">Post bids to chat</span>
+          <span style="padding:3px 10px">Remove auction</span>
+          <span style="height:1px;margin:4px 8px;background:#3a3a3a"></span>
+          <span style="padding:3px 10px">Remove older than 7 days</span>
+          <span style="padding:3px 10px;color:#ff4040">Remove all…</span>
+        </div>
+      </div>
+      <div style="font-family:'IBM Plex Mono',monospace;font-size:11px;color:#8a8494">6b · Auction history · 265×400 · MenuUtil context menu</div>
+    </div>
+
+    <div style="display:flex;flex-direction:column;gap:16px">
+      <div style="position:relative;width:350px;height:230px;background:#16130f;box-shadow:0 0 0 1px #000,0 0 0 3px #4d443a,0 0 0 4px #000;font-family:Marcellus,serif">
+        <div style="height:22px;display:flex;align-items:center;justify-content:center;background:linear-gradient(#3a322a,#1b1712);border-bottom:1px solid #000;font-size:12px;color:#ffd100">Trade list</div>
+        <div style="position:absolute;right:3px;top:2px;width:18px;height:18px;border-radius:3px;background:linear-gradient(#b4170f,#5e0804);box-shadow:0 0 0 1px #000,inset 0 0 0 1px #c9963d;color:#ffd100;font-size:12px;line-height:18px;text-align:center">✕</div>
+        <div style="position:absolute;top:28px;left:6px;right:6px;bottom:24px;background:#080706;border:1px solid #2b2723;overflow:hidden">
+          <sc-for list="{{ tradeRows }}" as="r" hint-placeholder-count="5">
+            <div style="display:flex;align-items:center;gap:6px;height:28px;padding:0 8px;background:{{ r.bg }}">
+              <div style="width:20px;height:20px;flex:none;border-radius:2px;background:linear-gradient(135deg,{{ r.hue }},#0a0908 85%);box-shadow:0 0 0 1px #a335ee"></div>
+              <span style="flex:1;min-width:0;font-size:11px;color:#a335ee;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ r.item }}</span>
+              <span style="width:76px;font-size:11px;color:{{ r.color }};white-space:nowrap;overflow:hidden">{{ r.winner }}</span>
+              <span style="width:44px;text-align:right;font-family:'Archivo Narrow',sans-serif;font-size:11px;color:{{ r.timeColor }}">{{ r.left }}</span>
+            </div>
+          </sc-for>
+        </div>
+        <div style="position:absolute;left:10px;right:10px;bottom:5px;font-size:10px;color:#9d9d9d">Trade a winner and their items are placed automatically.</div>
+        <div style="position:absolute;left:200px;top:86px;width:120px;padding:6px 0;border-radius:4px;background:rgba(8,8,8,.97);box-shadow:0 0 0 1px #5a5a5a;font-size:11px;color:#fff;display:flex;flex-direction:column;z-index:4">
+          <span style="padding:3px 10px;background:rgba(80,140,255,.25)">Open trade</span>
+          <span style="padding:3px 10px">Remove</span>
+        </div>
+      </div>
+      <div style="font-family:'IBM Plex Mono',monospace;font-size:11px;color:#8a8494">6c · Trade list · 350×230 · time column = loot-trade window left</div>
+    </div>
+
+  </div>
+  </div>
+</section>
+
+<section id="minimap" style="display:flex;flex-direction:column;gap:24px">
+  <div style="display:flex;align-items:baseline;gap:16px"><span style="font-family:'IBM Plex Mono',monospace;color:#8a8273">07</span><h2 style="margin:0;font-family:Marcellus,serif;font-weight:400;font-size:30px;color:#f1e9da">Minimap button &amp; popups</h2></div>
+  <div style="background:radial-gradient(ellipse at 30% 10%,#2d2938,#141219 75%);border:1px solid #26232c;border-radius:6px;padding:32px;overflow-x:auto">
+  <div style="zoom:{{ zoom }};display:flex;flex-direction:column;gap:48px">
+    <div style="display:flex;flex-wrap:wrap;gap:40px;align-items:flex-start">
+      <sc-for list="{{ minimapStates }}" as="m" hint-placeholder-count="3">
+        <div style="display:flex;flex-direction:column;gap:14px">
+          <div style="display:flex;gap:8px;align-items:flex-start;font-family:Marcellus,serif">
+            <div style="width:31px;height:31px;flex:none;border-radius:50%;background:{{ m.btn }};box-shadow:0 0 0 2px #8c7a5a,0 0 0 3px #000;display:flex;align-items:center;justify-content:center;font-size:9px;color:#f2d9b0">BP</div>
+            <div style="min-width:190px;padding:8px 10px;border-radius:4px;background:rgba(6,6,10,.94);box-shadow:0 0 0 1px #6a6a6a;display:flex;flex-direction:column;gap:2px;font-size:12px">
+              <span style="font-size:14px;color:#fff">BP EPGP v3.2.0</span>
+              <sc-if value="{{ m.test }}" hint-placeholder-val="{{ false }}"><span style="color:#ff8000">TEST MODE</span></sc-if>
+              <span style="color:{{ m.syncColor }}">{{ m.sync }}</span>
+              <span style="color:#9d9d9d">{{ m.events }}</span>
+              <span style="margin-top:6px;color:#1eff00;font-size:11px">Left-click: open BP EPGP</span>
+              <span style="color:#1eff00;font-size:11px">Right-click: options</span>
+            </div>
+          </div>
+          <div style="font-family:'IBM Plex Mono',monospace;font-size:11px;color:#8a8494">{{ m.caption }}</div>
+        </div>
+      </sc-for>
+    </div>
+    <div style="display:flex;flex-wrap:wrap;gap:40px;align-items:flex-start">
+      <sc-for list="{{ popups }}" as="p" hint-placeholder-count="3">
+        <div style="display:flex;flex-direction:column;gap:14px">
+          <div style="width:320px;box-sizing:border-box;padding:16px 16px 14px;border-radius:8px;background:rgba(10,10,12,.95);box-shadow:0 0 0 1px #000,inset 0 0 0 2px #a8925a,inset 0 0 0 3px #2a2418;display:flex;flex-direction:column;align-items:center;gap:14px;font-family:Marcellus,serif">
+            <span style="font-size:13px;color:#fff;text-align:center;line-height:1.45;text-wrap:pretty">{{ p.text }}</span>
+            <div style="display:flex;gap:8px">
+              <div style="width:120px;height:22px;border-radius:3px;background:linear-gradient(#b4170f,#6b0905);box-shadow:0 0 0 1px #2a0000,inset 0 0 0 1px #8c6b2b;display:flex;align-items:center;justify-content:center;font-size:12px;color:#ffd100">{{ p.ok }}</div>
+              <div style="width:120px;height:22px;border-radius:3px;background:linear-gradient(#b4170f,#6b0905);box-shadow:0 0 0 1px #2a0000,inset 0 0 0 1px #8c6b2b;display:flex;align-items:center;justify-content:center;font-size:12px;color:#ffd100">Cancel</div>
+            </div>
+          </div>
+          <div style="font-family:'IBM Plex Mono',monospace;font-size:11px;color:#8a8494">{{ p.caption }}</div>
+        </div>
+      </sc-for>
+    </div>
+  </div>
+  </div>
+</section>
+
+<section id="components" style="display:flex;flex-direction:column;gap:20px">
+  <div style="display:flex;align-items:baseline;gap:16px"><span style="font-family:'IBM Plex Mono',monospace;color:#8a8273">08</span><h2 style="margin:0;font-family:Marcellus,serif;font-weight:400;font-size:30px;color:#f1e9da">Component list</h2></div>
+  <p style="margin:0;max-width:760px;font-size:13px;color:#8f877a">Sizes at 1× in UI units. Template and atlas names are from the current retail FrameXML; check each in <code style="font-family:'IBM Plex Mono',monospace;font-size:12px;color:#e6cc80">/tinspect</code> or the Texture Atlas Viewer before building, since some get renamed between patches.</p>
+  <div style="overflow-x:auto;border:1px solid #2a2622;border-radius:6px">
+    <div style="min-width:880px;display:grid;grid-template-columns:200px 150px 140px minmax(0,1fr);font-size:13px">
+      <div style="display:contents;font-family:'IBM Plex Mono',monospace;font-size:11px;color:#8a8273"><span style="padding:10px 14px;background:#151311;border-bottom:1px solid #2a2622">COMPONENT</span><span style="padding:10px 14px;background:#151311;border-bottom:1px solid #2a2622">SIZE</span><span style="padding:10px 14px;background:#151311;border-bottom:1px solid #2a2622">PADDING</span><span style="padding:10px 14px;background:#151311;border-bottom:1px solid #2a2622">TEMPLATE / ATLAS</span></div>
+      <sc-for list="{{ components }}" as="c" hint-placeholder-count="28">
+        <div style="display:contents"><span style="padding:8px 14px;border-bottom:1px solid #1e1b18;color:#e8e0d2">{{ c.n }}</span><span style="padding:8px 14px;border-bottom:1px solid #1e1b18;font-family:'IBM Plex Mono',monospace;font-size:12px">{{ c.s }}</span><span style="padding:8px 14px;border-bottom:1px solid #1e1b18;font-family:'IBM Plex Mono',monospace;font-size:12px">{{ c.p }}</span><span style="padding:8px 14px;border-bottom:1px solid #1e1b18;font-family:'IBM Plex Mono',monospace;font-size:12px;color:#e6cc80">{{ c.t }}</span></div>
+      </sc-for>
+    </div>
+  </div>
+</section>
+
+<section id="simplify" style="display:flex;flex-direction:column;gap:20px">
+  <div style="display:flex;align-items:baseline;gap:16px"><span style="font-family:'IBM Plex Mono',monospace;color:#8a8273">09</span><h2 style="margin:0;font-family:Marcellus,serif;font-weight:400;font-size:30px;color:#f1e9da">Simplify &amp; merge</h2></div>
+  <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(380px,1fr));gap:1px;background:#2a2622;border:1px solid #2a2622;border-radius:6px;overflow:hidden">
+    <div style="background:#100f0d;padding:20px;display:flex;flex-direction:column;gap:6px"><h3 style="margin:0;font-family:Marcellus,serif;font-weight:400;font-size:17px;color:#efe6d6">One Amount field, two buttons</h3><p style="margin:0;font-size:13px;text-wrap:pretty">EP and GP each had a field and a button. A single Amount + Reason with <em>Award EP</em> / <em>Charge GP</em> halves the inputs, and the Boss / On time / Prog presets make the most common action one click.</p></div>
+    <div style="background:#100f0d;padding:20px;display:flex;flex-direction:column;gap:6px"><h3 style="margin:0;font-family:Marcellus,serif;font-weight:400;font-size:17px;color:#efe6d6">“Act on” replaces Action context</h3><p style="margin:0;font-size:13px;text-wrap:pretty">The target sits at the top of the panel with the selected names listed under it, so officers can see who will be awarded before they click. Clicking rows switches it to Selected automatically.</p></div>
+    <div style="background:#100f0d;padding:20px;display:flex;flex-direction:column;gap:6px"><h3 style="margin:0;font-family:Marcellus,serif;font-weight:400;font-size:17px;color:#efe6d6">Undo instead of more confirmations</h3><p style="margin:0;font-size:13px;text-wrap:pretty">Keep StaticPopups only for raid-wide or roster-wide actions. A one-step Undo (it writes a reverting event) covers single mis-clicks without slowing every award.</p></div>
+    <div style="background:#100f0d;padding:20px;display:flex;flex-direction:column;gap:6px"><h3 style="margin:0;font-family:Marcellus,serif;font-weight:400;font-size:17px;color:#efe6d6">Audit becomes a History filter</h3><p style="margin:0;font-size:13px;text-wrap:pretty">Audit issues are events, so the same list with “Show audit issues” and a red count in the footer is enough. That drops a tab, and Settings moves in-window as the last tab, read-only for raiders.</p></div>
+    <div style="background:#100f0d;padding:20px;display:flex;flex-direction:column;gap:6px"><h3 style="margin:0;font-family:Marcellus,serif;font-weight:400;font-size:17px;color:#efe6d6">GP tiers prefill; the queue auto-advances</h3><p style="margin:0;font-size:13px;text-wrap:pretty">Fill the five tier fields from a slot × tier table in guild settings. After Award, the next queued item loads, so a boss's loot is Alt-click ×N → Start → Award → Start…</p></div>
+    <div style="background:#100f0d;padding:20px;display:flex;flex-direction:column;gap:6px"><h3 style="margin:0;font-family:Marcellus,serif;font-weight:400;font-size:17px;color:#efe6d6">Winner preselected, Enter awards</h3><p style="margin:0;font-size:13px;text-wrap:pretty">When the timer ends, select the top bid (highest tier, then PR, then roll), fill its value and focus Award. The officer only steps in to override. Remove on award is on by default.</p></div>
+    <div style="background:#100f0d;padding:20px;display:flex;flex-direction:column;gap:6px"><h3 style="margin:0;font-family:Marcellus,serif;font-weight:400;font-size:17px;color:#efe6d6">GP on the button, one row of tiers</h3><p style="margin:0;font-size:13px;text-wrap:pretty">With all five tiers in one row ordered by cost, you don't need a tooltip to see the price. Clicking a different tier replaces your bid, so Cancel is only for withdrawing.</p></div>
+    <div style="background:#100f0d;padding:20px;display:flex;flex-direction:column;gap:6px"><h3 style="margin:0;font-family:Marcellus,serif;font-weight:400;font-size:17px;color:#efe6d6">Fold Award and Trade into existing windows</h3><p style="margin:0;font-size:13px;text-wrap:pretty">Manual award can be the right-click “Award item” on Standings (it opens the 205 px window prefilled). The trade list can be an “Untraded” filter in Auction history. That leaves fewer windows to arrange before a raid.</p></div>
+    <div style="background:#100f0d;padding:20px;display:flex;flex-direction:column;gap:6px"><h3 style="margin:0;font-family:Marcellus,serif;font-weight:400;font-size:17px;color:#efe6d6">Timer docks by default</h3><p style="margin:0;font-size:13px;text-wrap:pretty">Show the countdown in the Bidding header (“14s left”). The separate bar is optional and draggable for people who close the window mid-auction; it reopens Bidding when clicked.</p></div>
+  </div>
+</section>
+
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;uiScale&quot;:{&quot;editor&quot;:&quot;range&quot;,&quot;default&quot;:1,&quot;min&quot;:0.64,&quot;max&quot;:1.15,&quot;step&quot;:0.01,&quot;tsType&quot;:&quot;number&quot;},&quot;testMode&quot;:{&quot;editor&quot;:&quot;boolean&quot;,&quot;default&quot;:false,&quot;tsType&quot;:&quot;boolean&quot;},&quot;gpOnButton&quot;:{&quot;editor&quot;:&quot;boolean&quot;,&quot;default&quot;:true,&quot;tsType&quot;:&quot;boolean&quot;}}">
+class Component extends DCLogic {
+  state = { sel: { Belzerock: true, Amitax: true }, myBid: 'Large' };
+  renderVals() {
+    const p = this.props;
+    const testMode = p.testMode ?? false;
+    const showCost = p.gpOnButton ?? true;
+    const zoom = p.uiScale ?? 1;
+    const CC = { WARRIOR:'#C69B6D', PALADIN:'#F48CBA', HUNTER:'#AAD372', ROGUE:'#FFF468', PRIEST:'#FFFFFF', DK:'#C41E3A', SHAMAN:'#0070DD', MAGE:'#3FC7EB', WARLOCK:'#8788EE', MONK:'#00FF98', DRUID:'#FF7C0A', DH:'#A330C9', EVOKER:'#33937F' };
+    const R = [['Belzerock','DH',2140,1020],['Cheatzone','DK',1890,980],['Amitax','DRUID',1510,830],['Dahrex','WARRIOR',1720,1035],['Holydone','PRIEST',1380,905],['Dêvchi','MONK',1250,830],['Questa','HUNTER',1640,1150],['Chandres','SHAMAN',1295,915],['Rawloqq','WARLOCK',1420,1060],['Musskatier','PALADIN',990,780],['Khateph','EVOKER',1180,960],['Uca','DH',1060,890],['Noctuà','DRUID',870,760],['Uglugnar','SHAMAN',940,850],['Drigoor','DK',760,710],['Bloedfeather','PALADIN',620,640],['Spanzie','MONK',540,600],['Saltiesham','SHAMAN',410,520]]
+      .map(([name,c,ep,gp]) => ({ name, color: CC[c], ep, gp, prn: ep/gp })).sort((a,b) => b.prn - a.prn)
+      .map((r,i) => ({ ...r, rank: i+1, pr: r.prn.toFixed(2), alt: i % 2 ? 'rgba(255,255,255,.035)' : 'transparent' }));
+    const sel = this.state.sel;
+    const officerRows = R.slice(0, 18).map(r => ({ ...r,
+      bg: sel[r.name] ? 'rgba(255,209,0,.15)' : r.alt,
+      edge: sel[r.name] ? 'inset 0 1px 0 rgba(255,209,0,.45), inset 0 -1px 0 rgba(255,209,0,.45)' : 'none',
+      toggle: () => this.setState(s => ({ sel: { ...s.sel, [r.name]: !s.sel[r.name] } })) }));
+    const selNamesArr = R.filter(r => sel[r.name]).map(r => r.name);
+    const raiderRows = R.filter(r => r.name !== 'Amitax').slice(0, 16).map((r,i) => ({ ...r, bg: i % 2 ? 'rgba(255,255,255,.035)' : 'transparent' }));
+    const col = n => (R.find(r => r.name === n) || {}).color || '#fff';
+
+    const H = [
+      ['21:48','GP','Belzerock','+300','[Signet of the Fallen King]','Cheatzone'],
+      ['21:47','EP','Raid (18)','+100','Boss kill: Fallen-King Salhadaar','Cheatzone'],
+      ['21:31','GP','Cheatzone','+200','[Averzian\'s Imperial Greaves]','Dahrex'],
+      ['21:30','GP','Holydone','+10','[Shroud of Endless Dusk] (OS)','Dahrex'],
+      ['21:29','EP','Raid (18)','+100','Boss kill: Vorasius','Dahrex'],
+      ['21:02','!','Rawloqq','+100','Duplicate EP event from Bloedfeather','Audit'],
+      ['20:58','EP','Raid (17)','+150','Progression: Imperator Averzian','Cheatzone'],
+      ['20:41','GP','Amitax','+200','[Pauldrons of the Sunwell Vigil]','Cheatzone'],
+      ['20:40','GP','Dêvchi','+120','[Voidbound Crown of the Spire]','Cheatzone'],
+      ['20:12','EP','Standby (3)','+50','On time','Cheatzone'],
+      ['20:12','EP','Raid (18)','+50','On time','Cheatzone'],
+      ['Tue','DEC','Roster (42)','−10 %','Weekly decay','Cheatzone'],
+      ['Tue','GP','Questa','+300','[Dawnblade of Quel\'Thalas]','Dahrex'],
+      ['Tue','EP','Raid (19)','+100','Boss kill: Crown of the Cosmos','Dahrex'],
+      ['Tue','GP','Khateph','+60','[Heart of the Midnight Falls]','Dahrex'],
+      ['Tue','EP','Raid (19)','+100','Boss kill: Lightblinded Vanguard','Dahrex'],
+      ['Tue','EP','Musskatier','+25','Late arrival adjustment','Cheatzone'],
+      ['Tue','GP','Chandres','−200','Revert: wrong winner','Cheatzone'],
+    ];
+    const typeC = { EP:'#1eff00', GP:'#ffd100', DEC:'#9d9d9d', '!':'#ff2020' };
+    const historyRows = H.map(([t,type,who,amt,reason,by],i) => ({ t, type, who, amt, reason, by,
+      typeColor: typeC[type], color: /\(/.test(who) ? '#fff' : col(who),
+      amtColor: type==='EP' ? '#1eff00' : type==='GP' ? '#ffd100' : type==='!' ? '#ff2020' : '#9d9d9d',
+      reasonColor: reason.startsWith('[') ? '#a335ee' : type==='!' ? '#ff6060' : '#fff',
+      byColor: by==='Audit' ? '#ff2020' : col(by),
+      bg: type==='!' ? 'rgba(255,32,32,.12)' : i % 2 ? 'rgba(255,255,255,.035)' : 'transparent' }));
+
+    const ghostRows = R.slice(0, 8);
+    const E = (hue,q='#a335ee') => ({ hue, q });
+    const B = [
+      ['Belzerock','Max',[E('#7a5bd0'),E('#3fa0b8','#0070dd')]],
+      ['Cheatzone','Large',[E('#c84a3a'),E('#7a5bd0')]],
+      ['Amitax','Large',[E('#3a8a5a','#0070dd'),E('#c8903a')]],
+      ['Dahrex','Medium',[E('#9a5f3a'),E('#4a6ac8')]],
+      ['Holydone','OS',[E('#d0c070'),E('#7a5bd0')]],
+      ['Uca','Pass',[E('#6a3a9a'),E('#3a8a5a','#0070dd')]],
+    ];
+    const bidC = { Max:'#ff8000', Large:'#a335ee', Medium:'#0070dd', Small:'#1eff00', Base:'#ffffff', OS:'#e6cc80', Pass:'#9d9d9d', Cancel:'#ff4040' };
+    const bidRow = (n,bid,eq,i,selected,roll) => ({ name:n, color: col(n), bid, bidColor: bidC[bid], pr: (R.find(r=>r.name===n)||{}).pr, roll: roll || '–', eq,
+      bg: selected ? 'rgba(255,209,0,.15)' : i % 2 ? 'rgba(255,255,255,.035)' : 'transparent',
+      edge: selected ? 'inset 0 1px 0 rgba(255,209,0,.5), inset 0 -1px 0 rgba(255,209,0,.5)' : 'none' });
+    const Q = (hue,border) => ({ hue, border });
+    const QL = '#40e0d0', QG = '#1eff00', QY = '#ffd100', QB = '#3f8cff', QR = '#ff2020', QN = '#3a3530';
+    const auctionStates = [
+      { label:'Idle — building list', labelColor:'#9d9d9d', timer:'—', pct:'0%', timerOpacity:.35, lock:1, startLabel:'Start', award:'', empty:true, bids:[],
+        queue:[Q('#3fa0b8',QL),Q('#c8903a',QN),Q('#2f5ed0',QN)], awardLabel:'Award', awardBg:'linear-gradient(#4a4642,#2a2724)', awardEdge:'#3a3633', awardColor:'#7a7570',
+        caption:'4a · Idle · 540×470 · queue built with Alt-click' },
+      { label:'Auction running', labelColor:'#40e0d0', timer:'14s', pct:'70%', timerOpacity:1, lock:.45, startLabel:'Stop', award:'', empty:false,
+        bids: B.slice(0,4).map((b,i) => bidRow(b[0],b[1],b[2],i,false)),
+        queue:[Q('#3fa0b8',QL),Q('#c8903a',QN),Q('#2f5ed0',QN)], awardLabel:'Award', awardBg:'linear-gradient(#4a4642,#2a2724)', awardEdge:'#3a3633', awardColor:'#7a7570',
+        caption:'4b · Running · inputs locked, Start → Stop' },
+      { label:'Finished — winner selected', labelColor:'#1eff00', timer:'0s', pct:'0%', timerOpacity:.6, lock:1, startLabel:'Start', award:'300', empty:false,
+        bids: B.map((b,i) => bidRow(b[0],b[1],b[2],i,i===0)),
+        queue:[Q('#3fa0b8',QG),Q('#c8903a',QL),Q('#2f5ed0',QN)], awardLabel:'Award', awardBg:'linear-gradient(#b4170f,#6b0905)', awardEdge:'#c9963d', awardColor:'#ffd100',
+        caption:'4c · Finished · top bid preselected, Enter awards' },
+    ];
+    const tiers = [['Max',300],['Large',200],['Medium',120],['Small',60],['Base',20]];
+    const tierFields = tiers.map(([name,gp]) => ({ name, gp }));
+    const my = this.state.myBid;
+    const pick = name => () => this.setState({ myBid: name });
+    const tierButtons = tiers.map(([name,gp]) => {
+      const on = my === name;
+      return { name, gp, pick: pick(name),
+        bg: on ? 'linear-gradient(#d42a18,#7d0c06)' : 'linear-gradient(#b4170f,#6b0905)',
+        edge: on ? '0 0 0 1px #000, inset 0 0 0 2px #ffd100, 0 0 6px rgba(255,209,0,.6)' : '0 0 0 1px #2a0000, inset 0 0 0 1px #8c6b2b',
+        text: on ? '#fff' : '#ffd100' };
+    });
+    const altDef = [['OS','10 GP','#e6cc80'],['Pass','','#fff'],['Cancel','','#fff']];
+    const altButtons = altDef.map(([name,sub,text]) => {
+      const on = my === name;
+      return { name, sub, text, pick: pick(name), bg: 'linear-gradient(#3a332c,#191511)',
+        edge: on ? '0 0 0 1px #000, inset 0 0 0 2px #ffd100' : '0 0 0 1px #000, inset 0 0 0 1px #6b5a3a' };
+    });
+    const gpOf = Object.fromEntries(tiers);
+    let statusText, statusColor;
+    if (gpOf[my]) { statusText = `✓ Bid accepted — ${my} · ${gpOf[my]} GP if you win`; statusColor = '#1eff00'; }
+    else if (my === 'OS') { statusText = '✓ Bid accepted — Off-spec · 10 GP if you win'; statusColor = '#1eff00'; }
+    else if (my === 'Pass') { statusText = 'Passed on this item'; statusColor = '#3f8cff'; }
+    else { statusText = 'Bid cancelled'; statusColor = '#3f8cff'; }
+    const openBids = B.map((b,i) => b[0]==='Amitax' ? { ...bidRow(b[0], my==='Cancel' ? 'Cancel' : my, b[2], i, false), bg: 'rgba(255,209,0,.10)' } : bidRow(b[0],b[1],b[2],i,false));
+    const bidQueueA = [Q('#3c2f78',QB),Q('#3fa0b8',QL),Q('#c8903a',QG),Q('#d9a640',QR)];
+    const bidQueueB = [Q('#3fa0b8',QY),Q('#c8903a',QL),Q('#2f5ed0',QB),Q('#9a5f3a',QN)];
+    const compactTiers = tiers.map(([name,gp]) => ({ name: name==='Medium' ? 'Med' : name, gp, bg:'linear-gradient(#b4170f,#6b0905)', edge: name==='Max' ? '0 0 0 1px #000, inset 0 0 0 2px #ffd100' : '0 0 0 1px #2a0000, inset 0 0 0 1px #8c6b2b', text:'#ffd100' }));
+    const compactBids = B.slice(0,5).map((b,i) => ({ ...bidRow(b[0],b[1],b[2],i,false), eq0: b[2][0].hue }));
+    const legend = [['Current item',QL],['Bid accepted',QG],['Bid denied',QY],['Passed / cancelled',QB],['Can\'t use',QR]].map(([label,c]) => ({ label, c }));
+    const toasts = [
+      { title:'Bid accepted', color:'#1eff00', sub:'Large on [Signet of the Fallen King]', hue:'#3fa0b8', ring:'#a335ee' },
+      { title:'Bid denied', color:'#ffd100', sub:'Minimum 500 EP not reached', hue:'#c8903a', ring:'#a335ee' },
+      { title:'You received 100 EP', color:'#fff', sub:'Boss kill: Fallen-King Salhadaar', hue:'#c3261b', ring:'#b8913f' },
+    ];
+    const auctionHistory = [
+      { item:'[Signet of the Fallen King]', hue:'#3fa0b8', winner:'Belzerock', price:'300 GP · Max', t:'21:48', caret:'▾',
+        bids: B.slice(0,4).map(b => ({ name:b[0], color: col(b[0]), bid:b[1], bidColor: bidC[b[1]], pr:(R.find(r=>r.name===b[0])||{}).pr })) },
+      { item:'[Averzian\'s Imperial Greaves]', hue:'#9a5f3a', winner:'Cheatzone', price:'200 GP · Large', t:'21:31', caret:'▸', bids:[] },
+      { item:'[Shroud of Endless Dusk]', hue:'#3c2f78', winner:'Holydone', price:'10 GP · OS', t:'21:30', caret:'▸', bids:[] },
+      { item:'[Pauldrons of the Sunwell Vigil]', hue:'#c8903a', winner:'Amitax', price:'200 GP · Large', t:'20:41', caret:'▸', bids:[] },
+      { item:'[Voidbound Crown of the Spire]', hue:'#7a45c8', winner:'Dêvchi', price:'120 GP · Medium', t:'20:40', caret:'▸', bids:[] },
+      { item:'[Dawnblade of Quel\'Thalas]', hue:'#d9a640', winner:'Questa', price:'300 GP · Max', t:'Tue', caret:'▸', bids:[] },
+      { item:'[Heart of the Midnight Falls]', hue:'#2f5ed0', winner:'Khateph', price:'60 GP · Small', t:'Tue', caret:'▸', bids:[] },
+      { item:'[Ring of the Void-Touched Spire]', hue:'#4aa0b0', winner:'Uglugnar', price:'20 GP · Base', t:'Tue', caret:'▸', bids:[] },
+    ].map((a,i) => ({ ...a, color: col(a.winner), bg: i===2 ? 'rgba(255,209,0,.12)' : 'transparent' }));
+    const tradeRows = [
+      ['[Signet of the Fallen King]','#3fa0b8','Belzerock','1h 58m'],
+      ['[Averzian\'s Imperial Greaves]','#9a5f3a','Cheatzone','1h 41m'],
+      ['[Shroud of Endless Dusk]','#3c2f78','Holydone','1h 40m'],
+      ['[Pauldrons of the Sunwell Vigil]','#c8903a','Amitax','0h 51m'],
+      ['[Voidbound Crown of the Spire]','#7a45c8','Dêvchi','0h 12m'],
+    ].map(([item,hue,winner,left],i) => ({ item, hue, winner, left, color: col(winner), timeColor: left.startsWith('0h 1') ? '#ff2020' : '#9d9d9d', bg: i===1 ? 'rgba(80,140,255,.18)' : i % 2 ? 'rgba(255,255,255,.035)' : 'transparent' }));
+    const logo = 'radial-gradient(circle at 40% 35%,#c3261b,#4a0806 60%,#120202)';
+    const minimapStates = [
+      { btn: logo, test:false, sync:'In-Sync', syncColor:'#1eff00', events:'1284 events', caption:'7a · Normal · LibDBIcon 31×31 + GameTooltip' },
+      { btn: logo, test:false, sync:'Sync ongoing', syncColor:'#ffd100', events:'412 / 980 events', caption:'7b · Syncing' },
+      { btn: 'radial-gradient(circle at 40% 35%,#ff9a2a,#8a3a04 60%,#1a0802)', test:true, sync:'Incoherent state', syncColor:'#ff2020', events:'1291 events', caption:'7c · Test mode (orange tint) + incoherent' },
+    ];
+    const popups = [
+      { text:'Award 100 EP to everyone in raid?\n18 players · Boss kill: Fallen-King Salhadaar', ok:'Award', caption:'7d · StaticPopup · raid-wide confirm' },
+      { text:'Switch to test mode? The UI will reload.', ok:'Reload', caption:'7e · StaticPopup · reload' },
+      { text:'Your class can\'t use [Dawnblade of Quel\'Thalas]. Bid Large (200 GP) anyway?', ok:'Bid', caption:'7f · Only confirm in bidding: unusable item' },
+    ];
+    const swatches = [
+      ['Labels, headers','#ffd100','NORMAL_FONT_COLOR'],['Values, body','#ffffff','HIGHLIGHT_FONT_COLOR'],['Meta, disabled','#9d9d9d','GRAY_FONT_COLOR'],
+      ['EP, success, In-Sync','#1eff00','GREEN_FONT_COLOR'],['Error, can\'t use','#ff2020','RED_FONT_COLOR'],['Test mode','#ff8000','ORANGE_FONT_COLOR'],
+      ['Current item','#40e0d0','custom 0.25, 0.88, 0.82'],['Passed / cancelled','#3f8cff','custom 0.25, 0.55, 1'],['Item quality','#a335ee','ITEM_QUALITY_COLORS'],
+      ['Player names','#FF7C0A','RAID_CLASS_COLORS'],['Off-spec bid','#e6cc80','ITEM_QUALITY_COLORS[6]'],['Primary button','#9a120b','UIPanelButtonTemplate'],
+    ].map(([role,c,k]) => ({ role, c, k }));
+    const components = [
+      ['Main window','720×480 (raider 520×440)','inset 8; top band 60','PortraitFrameTemplate · SetPortraitToAsset'],
+      ['Auctioning window','540×470','8','PortraitFrameTemplate'],
+      ['Bidding — comfortable','480×440','8','PortraitFrameTemplate'],
+      ['Bidding — compact','330×300','6','DefaultPanelFlatTemplate'],
+      ['Award window','300×205','12','DefaultPanelFlatTemplate'],
+      ['Auction history','265×400','6','DefaultPanelFlatTemplate'],
+      ['Trade list','350×230','6','DefaultPanelFlatTemplate'],
+      ['Close button','24×24','—','UIPanelCloseButtonDefaultAnchors'],
+      ['Bottom tabs','h 32, min w 80','text ±16','PanelTabButtonTemplate · PanelTemplates_SetTab'],
+      ['Content well','fill','4 inner','InsetFrameTemplate'],
+      ['Scrolling list','row 20 / 16 compact','4 h','WowScrollBoxList · MinimalScrollBar · CreateScrollBoxListLinearView'],
+      ['Column headers','h 20','6 h','ColumnDisplayTemplate'],
+      ['Row hover / selected','row','—','Interface\\QuestFrame\\UI-QuestTitleHighlight (ADD)'],
+      ['Class icon','14×14','gap 4 to name','atlas classicon-<class>'],
+      ['Item button (queue)','36×36 / 24×24','gap 6','ItemButtonTemplate · SetItemButtonQuality'],
+      ['Queue state border','icon + 4','—','Interface\\Buttons\\UI-ActionButton-Border · SetVertexColor'],
+      ['Equipped-item icon','16×16 (max 5)','gap 3','Texture + GameTooltip:SetHyperlink'],
+      ['Primary / secondary button','h 22, min w 72','12 h','UIPanelButtonTemplate'],
+      ['Bid tier button','74×40 / 52×32','2 FontStrings','UIPanelButtonTemplate + GameFontHighlightSmall'],
+      ['Roll / icon button','24×24','—','UIPanelSquareButton · UI-GroupLoot-Dice-Up'],
+      ['Numeric input','h 20, w 30–64','6 h','InputBoxTemplate · SetNumeric(true)'],
+      ['Item link input','h 20, fill','6 h','InputBoxTemplate · hooks ChatEdit_InsertLink'],
+      ['Search','h 20, w 150','—','SearchBoxTemplate'],
+      ['Dropdown','h 22, w 96–180','8 h','WowStyle1DropdownTemplate'],
+      ['Checkbox','24×24 (16 art)','gap 4','UICheckButtonTemplate'],
+      ['Section divider','h 1–8','12 v','atlas Options_HorizontalDivider'],
+      ['Timer bar','270×24, bar 18','icon 24','StatusBar · UI-StatusBar · UI-CastingBar-Border-Small'],
+      ['Alert toast','276×72','14 h','AlertFrame:AddQueuedAlertFrameSubSystem · LootWonAlertFrameTemplate art'],
+      ['Context menu','auto','—','MenuUtil.CreateContextMenu'],
+      ['Tooltip','auto','—','GameTooltip · GameTooltip_AddColoredLine'],
+      ['Popup','320 w','—','StaticPopupDialogs · StaticPopup_Show'],
+      ['Syncing overlay','fill inset','—','LoadingSpinnerTemplate + StatusBar'],
+      ['Minimap button','31×31','—','LibDBIcon-1.0 · LibDataBroker-1.1'],
+    ].map(([n,s,pp,t]) => ({ n, s, p: pp, t }));
+    return {
+      testMode, showCost, zoom, officerRows, raiderRows, historyRows, ghostRows, auctionStates, tierFields,
+      selLabel: selNamesArr.length ? `Selected (${selNamesArr.length})` : 'Raid',
+      selNames: selNamesArr.length ? selNamesArr.join(', ') : '18 players in raid',
+      tierButtons, altButtons, statusText, statusColor, openBids, bidQueueA, bidQueueB, compactTiers, compactBids,
+      tierH: showCost ? '42px' : '30px', tierHc: showCost ? '32px' : '24px',
+      legend, toasts, auctionHistory, tradeRows, minimapStates, popups, swatches, components,
+    };
+  }
+}
+</script>
+</body>
+</html>

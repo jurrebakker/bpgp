@@ -309,12 +309,14 @@ Each phase ends with: luacheck clean, `/reload` without Lua errors, and the rele
 - [x] Sync sending is re-evaluated on `GUILD_ROSTER_UPDATE`, so promotions/demotions take effect without `/reload` (L2). Officer-only UI still needs a `/reload`.
 - ⏸ In-game test postponed to Phase 10 (2026-10-16): needs a second account for sync; run it together with the full checklist.
 
-### Phase 9 — Main window & settings tabs ([features/ui-overhaul.md](features/ui-overhaul.md))
-- [ ] Remove all Options → AddOns pages (`AddToBlizOptions`) and the minimap "Configuration" menu item; add `/bpepgp config`.
-- [ ] Resizable main window (min size fits 9 tabs on one row, ~1050 px), size remembered per character; tables reflow.
-- [ ] New tab kind *page* in `UnifiedGUI`; hand-built pages for **Settings**, **Guild settings**, **Gear values**, **Advanced**.
-- [ ] Guild settings / Gear values / officer parts of Advanced: visible to all, editable by officers only.
-- [ ] Apply the K/F/D decisions per setting (fixed values hard-coded, dropped settings removed). Check whether LibSharedMedia and its AceGUI widgets can be dropped.
+### Phase 9 — UI redesign: native Blizzard windows ([features/ui-redesign.md](features/ui-redesign.md), [features/ui-overhaul.md](features/ui-overhaul.md))
+Built from the Claude Design spec (`docs/design/`). Decisions R1-R11 in ui-redesign.md; all windows move from AceGUI/lib-st to Blizzard templates.
+- [ ] **9a** Shared UI pieces in `Modules/UI/`: window factory (portrait/flat, saved position, test-mode tint), bottom tabs, ScrollBox list with column headers and selection, buttons, inputs, dropdown, checkbox, MenuUtil context menus, item buttons.
+- [ ] **9b** Main window (min 720×480, resizable): Standings (officer + raider view), History, Raids, Roster, Audit, empty/syncing states, right-click *Award item*.
+- [ ] **9c** One Settings tab (Personal, Guild, Gear values, Advanced); remove all Options → AddOns pages; `/bpepgp config`. Guild/Gear values visible to all, editable by officers. Apply the K/F/D decisions per setting.
+- [ ] **9d** Auctioning and Bidding windows: docked countdown, optional timer bar, winner preselected + Enter awards, auto-advance to the next item.
+- [ ] **9e** Award, Auction history, Trade list, alert toasts, minimap tooltip, popups.
+- [ ] **9f** Remove AceGUI, AceConfigDialog, lib-st, LibUIDropDownMenu and unused LibSharedMedia widgets; update `Libs/README.md` and licences.
 
 ### Phase 10 — Testing (see §7)
 - [ ] Phase 8 sync hardening in-game test (postponed): two clients in test mode sync EP awards, undo and week catch-up; minimap shows In-Sync; a non-officer can't push entries; auctions only accepted from an officer raid lead.
