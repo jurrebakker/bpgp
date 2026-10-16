@@ -7,6 +7,8 @@ Usage: python scripts/check_addon.py [addon_folder]
 2. No packager-only markers (@do-not-package@, @debug@, @non-debug@) remain in
    our own Lua/XML/TOC files. Code inside those blocks behaves differently in a
    git clone than in a packaged build (see docs/sync-and-security.md, C1).
+3. Our Lua files have balanced blocks (function/if/do/repeat vs end/until) and
+   brackets. Not a parser, but it catches most broken edits without Lua installed.
 """
 import re
 import sys
@@ -18,6 +20,10 @@ XML_REF = re.compile(r'<(?:Script|Include)\s+file="([^"]+)"')
 XML_COMMENT = re.compile(r"<!--.*?-->", re.DOTALL)
 # Packager markers inside third-party libraries are not ours to remove.
 SKIP_MARKER_DIRS = {"Libs"}
+
+
+def rel(path: Path):
+    return path.relative_to(ROOT) if path.is_relative_to(ROOT) else path
 
 
 def exists_exact_case(path: Path) -> bool:
@@ -47,7 +53,7 @@ def check_refs(addon: Path) -> list[str]:
             return
         seen.add(key)
         if not exists_exact_case(file.resolve()):
-            errors.append(f"missing: {file.relative_to(ROOT) if file.is_relative_to(ROOT) else file} (from {referrer})")
+            errors.append(f"missing: {rel(file)} (from {referrer})")
             return
         if file.suffix.lower() == ".xml":
             text = XML_COMMENT.sub("", file.read_text(encoding="utf-8", errors="replace"))
@@ -72,7 +78,57 @@ def check_markers(addon: Path) -> list[str]:
             continue
         for n, line in enumerate(file.read_text(encoding="utf-8", errors="replace").splitlines(), 1):
             if MARKERS.search(line):
-                errors.append(f"packager marker: {file.relative_to(ROOT)}:{n}: {line.strip()}")
+                errors.append(f"packager marker: {rel(file)}:{n}: {line.strip()}")
+    return errors
+
+
+LUA_TOKEN = re.compile(
+    r"""--\[(?P<cl>=*)\[.*?\](?P=cl)\]"""   # long comment
+    r"""|--[^\n]*"""                         # line comment
+    r"""|\[(?P<sl>=*)\[.*?\](?P=sl)\]"""     # long string
+    r"""|"(?:\\.|[^"\\\n])*\""""            # "string"
+    r"""|'(?:\\.|[^'\\\n])*'"""              # 'string'
+    r"""|(?P<word>[A-Za-z_][A-Za-z0-9_]*)"""
+    r"""|(?P<br>[(){}\[\]])""",
+    re.DOTALL,
+)
+OPENERS = {"function", "if", "do", "repeat"}
+CLOSERS = {"end", "until"}
+PAIRS = {")": "(", "}": "{", "]": "["}
+
+
+def check_lua_balance(addon: Path) -> list[str]:
+    """Cheap syntax guard without a Lua interpreter: block keywords and brackets must balance.
+    `for`/`while` are counted through their `do`."""
+    errors = []
+    for file in addon.rglob("*.lua"):
+        if "Libs" in file.relative_to(addon).parts and "LibEventSourcing" not in file.parts:
+            continue
+        text = file.read_text(encoding="utf-8", errors="replace")
+        depth, stack, problem = 0, [], None
+        for m in LUA_TOKEN.finditer(text):
+            line = text.count("\n", 0, m.start()) + 1
+            word, br = m.group("word"), m.group("br")
+            if word in OPENERS:
+                depth += 1
+            elif word in CLOSERS:
+                depth -= 1
+                if depth < 0:
+                    problem = f"unexpected '{word}' at line {line}"
+                    break
+            elif br and br in "({[":
+                stack.append((br, line))
+            elif br:
+                if not stack or stack[-1][0] != PAIRS[br]:
+                    problem = f"unmatched '{br}' at line {line}"
+                    break
+                stack.pop()
+        if problem is None and depth != 0:
+            problem = f"{depth} block(s) not closed with 'end'"
+        if problem is None and stack:
+            problem = f"'{stack[-1][0]}' from line {stack[-1][1]} not closed"
+        if problem:
+            errors.append(f"lua balance: {rel(file)}: {problem}")
     return errors
 
 
@@ -84,6 +140,7 @@ def main() -> int:
     for addon in addons:
         errors += check_refs(addon)
         errors += check_markers(addon)
+        errors += check_lua_balance(addon)
     for e in errors:
         print(e)
     print(f"{len(errors)} problem(s) in {', '.join(a.name for a in addons)}")

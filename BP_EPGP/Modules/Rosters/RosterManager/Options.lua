@@ -69,18 +69,6 @@ function RosterManagerOptions:Initialize()
             self.copy_source_name = value
         end),
         -- Bonuses
-        general_boss_kill_bonus_get = (function(name)
-            return GetRosterOption(name, "bossKillBonus")
-        end),
-        general_boss_kill_bonus_set = (function(name, value)
-            SetRosterOption(name, "bossKillBonus", value)
-        end),
-        general_boss_kill_bonus_value_get = (function(name)
-            return tostring(GetRosterOption(name, "bossKillBonusValue"))
-        end),
-        general_boss_kill_bonus_value_set = (function(name, value)
-            SetRosterOption(name, "bossKillBonusValue", value)
-        end),
         general_on_time_bonus_get = (function(name)
             return GetRosterOption(name, "onTimeBonus")
         end),
@@ -92,36 +80,6 @@ function RosterManagerOptions:Initialize()
         end),
         general_on_time_bonus_value_set = (function(name, value)
             SetRosterOption(name, "onTimeBonusValue", value)
-        end),
-        general_raid_completion_bonus_get = (function(name)
-            return GetRosterOption(name, "raidCompletionBonus")
-        end),
-        general_raid_completion_bonus_set = (function(name, value)
-            SetRosterOption(name, "raidCompletionBonus", value)
-        end),
-        general_raid_completion_bonus_value_get = (function(name)
-            return tostring(GetRosterOption(name, "raidCompletionBonusValue"))
-        end),
-        general_raid_completion_bonus_value_set = (function(name, value)
-            SetRosterOption(name, "raidCompletionBonusValue", value)
-        end),
-        general_interval_bonus_get = (function(name)
-            return GetRosterOption(name, "intervalBonus")
-        end),
-        general_interval_bonus_set = (function(name, value)
-            SetRosterOption(name, "intervalBonus", value)
-        end),
-        general_interval_bonus_value_get = (function(name)
-            return tostring(GetRosterOption(name, "intervalBonusValue"))
-        end),
-        general_interval_bonus_value_set = (function(name, value)
-            SetRosterOption(name, "intervalBonusValue", value)
-        end),
-        general_interval_bonus_time_get = (function(name)
-            return tostring(GetRosterOption(name, "intervalBonusTime"))
-        end),
-        general_interval_bonus_time_set = (function(name, value)
-            SetRosterOption(name, "intervalBonusTime", value)
         end),
         general_weekly_reset_timezone_get = (function(name)
             return GetRosterOption(name, "weeklyReset")
@@ -674,109 +632,6 @@ local function item_value_overrides(self, roster)
     return args
 end
 
-local function generateBossKillAwardValueInputField(self, roster, info, instanceName, name, difficultyId, order, isHardMode, fields)
-    local nameModified = CLM.DifficultyIDsMap[difficultyId] .. (isHardMode and (" " .. CLM.UTILS.ColorCodeText(CLM.L["Hard Mode"], "ee4444")) or "")
-    local width
-    fields = tonumber(fields)
-    if fields == nil or fields <= 1 then
-        width = "full"
-    else
-        width = 3/fields
-    end
-    return {
-        name = nameModified,
-        desc = instanceName .. " - " .. info.name,
-        type = "input",
-        width = width,
-        order = order,
-        set = (function(i, v)
-            if self.readOnly then return end
-            CLM.MODULES.RosterManager:SetRosterBossKillBonusValue(name, info.id, difficultyId, isHardMode, v)
-        end),
-        get = (function(i)
-            return tostring(roster:GetBossKillBonusValue(info.id, difficultyId, isHardMode))
-        end)
-    }
-end
-
-local expansionInfoMap = {
-    [LE_EXPANSION_CLASSIC or 1]                 = { name = CLM.L["Classic"],                offset =  10000 },
-    [LE_EXPANSION_BURNING_CRUSADE or 2]         = { name = CLM.L["The Burning Crusade"],    offset =  20000 },
-    [LE_EXPANSION_WRATH_OF_THE_LICH_KING or 3]  = { name = CLM.L["Wrath of the Lich King"], offset =  30000 },
-    [LE_EXPANSION_CATACLYSM or 4]               = { name = CLM.L["Cataclysm"],              offset =  40000 },
-    [LE_EXPANSION_MISTS_OF_PANDARIA or 5]       = { name = CLM.L["Mists of Pandaria"],      offset =  50000 },
-    [LE_EXPANSION_DRAGONFLIGHT or 9]           = { name = CLM.L["Dragonflight"],           offset = 100000 },
-    [LE_EXPANSION_WAR_WITHIN or 10]             = { name = CLM.L["The War Within"],         offset = 110000 },
-    [LE_EXPANSION_MIDNIGHT or 11]               = { name = CLM.L["Midnight"],               offset = 120000 },
-    ["SOD"]                                     = { name = CLM.L["Season of Discovery"],    offset = 990000 },
-}
-
-local function boss_kill_award_values(self, roster, name)
-    local args = {}
-    -- Common
-    local order
-    for expansion, encounters in pairs(CLM.EncounterIDs) do
-        local expansion_key = "e" .. tostring(expansion)
-        order = expansionInfoMap[expansion].offset
-        if not args[expansion_key] then
-            args[expansion_key] = {
-                type = "group",
-                name = expansionInfoMap[expansion].name,
-                args = {},
-                order = order,
-                childGroups = "select",
-            }
-        end
-        -- For each instance
-        for _, instanceData in ipairs(encounters) do
-            order = order + 1
-            args[expansion_key].args[instanceData.name] = {
-                type = "group",
-                name = instanceData.name,
-                args = {},
-                order = order,
-            }
-            -- For each boss
-            local numDifficultyLevels = #instanceData.difficulty
-            for _, info in ipairs(instanceData.data) do
-                order = order + 1
-                -- Header
-                local instanceName = instanceData.name
-                if info.name == nil then
-                    print(instanceName, info.id, info.name)
-                end
-                args[expansion_key].args[instanceData.name].args["encounter_header_" .. info.name] = {
-                    name = info.name or "???",
-                    type = "header",
-                    order = order,
-                    width = "full"
-                }
-                -- For each difficulty
-                for _,difficultyId in ipairs(instanceData.difficulty) do
-                    local hardmode = CLM.EncounterHasHardMode[info.id] and true or false
-                    order = order + 1
-                    args[expansion_key].args[instanceData.name].args["encounter" .. info.id .. difficultyId] =
-                        generateBossKillAwardValueInputField(
-                            self, roster, info,
-                            instanceName, name, difficultyId,
-                            order, false, numDifficultyLevels + (hardmode and numDifficultyLevels or 0)
-                        )
-                    if hardmode then
-                        order = order + 1
-                        args[expansion_key].args[instanceData.name].args["encounter" .. info.id .. difficultyId .. "hm"] =
-                        generateBossKillAwardValueInputField(
-                            self, roster, info,
-                            instanceName, name, difficultyId,
-                            order, true, numDifficultyLevels + (hardmode and numDifficultyLevels or 0)
-                        )
-                    end
-                end
-            end
-        end
-    end
-    return args
-end
-
 local function award_multipliers(self, roster)
     local args = {}
 
@@ -924,21 +779,6 @@ function RosterManagerOptions:GenerateRosterOptions(name)
                         order = 4,
                         width = "full"
                     },
-                    boss_kill_bonus = {
-                        name = CLM.L["Boss Kill Bonus"],
-                        type = "toggle",
-                        order = 5,
-                        disabled = disableManage,
-                        width = 1
-                    },
-                    boss_kill_bonus_value = {
-                        name = CLM.L["Default Boss Kill Bonus Value"],
-                        type = "input",
-                        order = 8,
-                        pattern = CONSTANTS.REGEXP_FLOAT_POSITIVE,
-                        disabled = disableManage,
-                        width = 1
-                    },
                     on_time_bonus = {
                         name = CLM.L["On Time Bonus"],
                         type = "toggle",
@@ -953,45 +793,6 @@ function RosterManagerOptions:GenerateRosterOptions(name)
                         pattern = CONSTANTS.REGEXP_FLOAT_POSITIVE,
                         disabled = disableManage,
                         width = 1
-                    },
-                    raid_completion_bonus = {
-                        name = CLM.L["Raid Completion Bonus"],
-                        type = "toggle",
-                        order = 7,
-                        disabled = disableManage,
-                        width = 1
-                    },
-                    raid_completion_bonus_value = {
-                        name = CLM.L["Raid Completion Value"],
-                        type = "input",
-                        order = 10,
-                        pattern = CONSTANTS.REGEXP_FLOAT_POSITIVE,
-                        disabled = disableManage,
-                        width = 1
-                    },
-                    interval_bonus = {
-                        name = CLM.L["Interval Bonus"],
-                        type = "toggle",
-                        order = 11,
-                        disabled = disableManage,
-                        width = 1
-                    },
-                    interval_bonus_time = {
-                        name = CLM.L["Interval Time"],
-                        desc = CLM.L["Interval in [minutes] to award bonus points"],
-                        type = "input",
-                        order = 12,
-                        pattern = CONSTANTS.REGEXP_FLOAT_POSITIVE,
-                        disabled = disableManage,
-                        -- width = 0.6
-                    },
-                    interval_bonus_value = {
-                        name = CLM.L["Interval Value"],
-                        type = "input",
-                        order = 13,
-                        pattern = CONSTANTS.REGEXP_FLOAT_POSITIVE,
-                        disabled = disableManage,
-                        -- width = 0.6
                     },
                     auto_award_include_bench =  {
                         name = CLM.L["Include bench"],
@@ -1259,14 +1060,6 @@ function RosterManagerOptions:GenerateRosterOptions(name)
                 order = 6,
                 args = dynamic_item_values(self, roster, equationGet, equationSet, expvarGet, expvarSet, multiplierGet, multiplierSet, slotGet, slotSet, tierGet, tierSet)
             },
-            boss_kill_award_values = {
-                name = CLM.L["Boss kill award values"],
-                type = "group",
-                order = 7,
-                -- childGroups = "tab",
-                childGroups = "select",
-                args = boss_kill_award_values(self, roster, name)
-            }
         }
     }
     options.args.auction.args.auction_type = {

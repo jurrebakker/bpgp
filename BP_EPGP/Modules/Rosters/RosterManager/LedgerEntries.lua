@@ -71,13 +71,6 @@ local RosterUpdateProfiles          = LogEntry:extend("R9")
 ---@field o boolean copy overrides
 ---@field p boolean copy profiles
 local RosterCopyData                = LogEntry:extend("RC")
----@class RosterBossKillBonus
----@field r number rosterUid
----@field e number encounterId
----@field v number value
----@field d number difficultyId
----@field h boolean isHardMode
-local RosterBossKillBonus           = LogEntry:extend("RB")
 ---@class RosterFieldRename
 ---@field r number rosterUid
 ---@field i any tier
@@ -522,55 +515,6 @@ function RosterCopyData:fields()
     return RosterCopyDataFields
 end
 
--- -------------------- --
--- RosterBossKillBonus --
--- -------------------- --
----@param rosterUid number
----@param encounterId number
----@param difficultyId number
----@param isHardMode boolean
----@param value number
----@return RosterBossKillBonus
-function RosterBossKillBonus:new(rosterUid, encounterId, difficultyId, isHardMode, value)
-    local o = LogEntry.new(self);
-    o.r = tonumber(rosterUid) or 0
-    o.e = tonumber(encounterId) or 0
-    o.v = tonumber(value) or 0
-    o.d = tonumber(difficultyId) or -1
-    o.h = isHardMode and true or false
-    return o
-end
-
----@return number
-function RosterBossKillBonus:rosterUid()
-    return self.r
-end
-
----@return number
-function RosterBossKillBonus:encounterId()
-    return self.e
-end
-
----@return number
-function RosterBossKillBonus:difficultyId()
-    return (self.d or -1)
-end
-
----@return boolean
-function RosterBossKillBonus:isHardMode()
-    return self.h
-end
-
----@return number
-function RosterBossKillBonus:value()
-    return self.v
-end
-
-local RosterBossKillBonusFields = mergeLists(LogEntry:fields(), {"r", "e", "v", "d", "h"})
-function RosterBossKillBonus:fields()
-    return RosterBossKillBonusFields
-end
-
 -- ------------------------- --
 -- RosterFieldRename --
 -- ------------------------- --
@@ -812,7 +756,6 @@ CLM.MODELS.LEDGER.ROSTER = {
     RemoveOverrides                 = RosterRemoveOverrides,
     UpdateProfiles                  = RosterUpdateProfiles,
     CopyData                        = RosterCopyData,
-    BossKillBonus                   = RosterBossKillBonus,
     FieldRename                     = RosterFieldRename,
     AwardMultiplier                 = RosterAwardMultiplier,
     DynamicItemValueEquation        = RosterDynamicItemValueEquation,

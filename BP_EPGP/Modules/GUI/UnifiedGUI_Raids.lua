@@ -82,13 +82,6 @@ local function GenerateAssistantOptions(self)
             name = CLM.L["Overrides"],
             order = 30
         },
-        boss_kill_bonus = {
-            name = CLM.L["Boss Kill Bonus"],
-            type = "toggle",
-            set = (function(i, v) SetRaidConfigurationOption(self, "bossKillBonus", v) end),
-            get = (function() return GetRaidConfigurationOption(self, "bossKillBonus") end),
-            order = 31,
-        },
         on_time_bonus = {
             name = CLM.L["On Time Bonus"],
             type = "toggle",
@@ -103,44 +96,6 @@ local function GenerateAssistantOptions(self)
             get = (function() return tostring(GetRaidConfigurationOption(self, "onTimeBonusValue")) end),
             pattern = CONSTANTS.REGEXP_FLOAT_POSITIVE,
             order = 33,
-        },
-        raid_completion_bonus = {
-            name = CLM.L["Raid Completion Bonus"],
-            type = "toggle",
-            set = (function(i, v) SetRaidConfigurationOption(self, "raidCompletionBonus", v) end),
-            get = (function() return GetRaidConfigurationOption(self, "raidCompletionBonus") end),
-            order = 34,
-        },
-        raid_completion_bonus_value = {
-            name = CLM.L["Raid Completion Value"],
-            type = "input",
-            set = (function(i, v) SetRaidConfigurationOption(self, "raidCompletionBonusValue", tonumber(v)) end),
-            get = (function() return tostring(GetRaidConfigurationOption(self, "raidCompletionBonusValue")) end),
-            pattern = CONSTANTS.REGEXP_FLOAT_POSITIVE,
-            order = 35,
-        },
-        interval_bonus = {
-            name = CLM.L["Interval Bonus"],
-            type = "toggle",
-            set = (function(i, v) SetRaidConfigurationOption(self, "intervalBonus", v) end),
-            get = (function() return GetRaidConfigurationOption(self, "intervalBonus") end),
-            order = 36,
-        },
-        interval_time = {
-            name = CLM.L["Interval Time"],
-            type = "input",
-            set = (function(i, v) SetRaidConfigurationOption(self, "intervalBonusTime", tonumber(v)) end),
-            get = (function() return tostring(GetRaidConfigurationOption(self, "intervalBonusTime")) end),
-            pattern = CONSTANTS.REGEXP_FLOAT_POSITIVE,
-            order = 37,
-        },
-        interval_bonus_value = {
-            name = CLM.L["Interval Value"],
-            type = "input",
-            set = (function(i, v) SetRaidConfigurationOption(self, "intervalBonusValue", tonumber(v)) end),
-            get = (function() return tostring(GetRaidConfigurationOption(self, "intervalBonusValue")) end),
-            pattern = CONSTANTS.REGEXP_FLOAT_POSITIVE,
-            order = 38,
         },
         auto_award_include_bench =  {
             name = CLM.L["Include bench"],
@@ -241,22 +196,10 @@ end
 local function FillConfigurationTooltip(configuration, tooltip)
     tooltip:AddDoubleLine(CLM.L["Auction Time"], configuration:Get("auctionTime"))
     tooltip:AddDoubleLine(CLM.L["Anti-snipe"], configuration:Get("antiSnipe"))
-    tooltip:AddDoubleLine(CLM.L["Boss Kill Bonus"], configuration:Get("bossKillBonus") and GreenYes or RedNo)
     local onTimeBonus = configuration:Get("onTimeBonus")
     tooltip:AddDoubleLine(CLM.L["On Time Bonus"], onTimeBonus and GreenYes or RedNo)
     if onTimeBonus then
         tooltip:AddDoubleLine(CLM.L["On Time Bonus Value"], configuration:Get("onTimeBonusValue"))
-    end
-    local raidCompletionBonus = configuration:Get("raidCompletionBonus")
-    tooltip:AddDoubleLine(CLM.L["Raid Completion Bonus"], raidCompletionBonus and GreenYes or RedNo)
-    if raidCompletionBonus then
-        tooltip:AddDoubleLine(CLM.L["Raid Completion Bonus Value"], configuration:Get("raidCompletionBonusValue"))
-    end
-    local intervalBonus = configuration:Get("intervalBonus")
-    tooltip:AddDoubleLine(CLM.L["Interval Bonus"], intervalBonus and GreenYes or RedNo)
-    if intervalBonus then
-        tooltip:AddDoubleLine(CLM.L["Interval Time"], configuration:Get("intervalBonusTime"))
-        tooltip:AddDoubleLine(CLM.L["Interval Value"], configuration:Get("intervalBonusValue"))
     end
 end
 

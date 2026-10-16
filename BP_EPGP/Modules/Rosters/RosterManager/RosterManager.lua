@@ -280,20 +280,6 @@ function RosterManager:Initialize()
         end))
 
     CLM.MODULES.LedgerManager:RegisterEntryType(
-        CLM.MODELS.LEDGER.ROSTER.BossKillBonus,
-        (function(entry)
-            LOG:TraceAndCount("mutator(RosterBossKillBonus)")
-            local rosterUid = entry:rosterUid()
-
-            local roster = self:GetRosterByUid(rosterUid)
-            if not roster then
-                LOG:Debug("Updating non-existent roster [%s]", rosterUid)
-                return
-            end
-            roster:SetBossKillBonusValue(entry:encounterId(), entry:difficultyId(), entry:isHardMode(), entry:value())
-        end))
-
-    CLM.MODULES.LedgerManager:RegisterEntryType(
         CLM.MODELS.LEDGER.ROSTER.FieldRename,
         (function(entry)
             LOG:TraceAndCount("mutator(RosterRenameField)")
@@ -955,43 +941,6 @@ function RosterManager:SetRosterItemTierValue(nameOrRoster, itemId, tier, value)
         return
     end
     CLM.MODULES.LedgerManager:Submit(CLM.MODELS.LEDGER.ROSTER.UpdateOverridesSingle:new(roster:UID(), itemId, tier, value), true)
-end
-
----@param nameOrRoster string|Roster
----@param encounterId number
----@param difficultyId number
----@param isHardMode boolean
----@param value number
-function RosterManager:SetRosterBossKillBonusValue(nameOrRoster, encounterId, difficultyId, isHardMode, value)
-    LOG:Trace("RosterManager:SetRosterBossKillBonusValue()")
-    local roster
-    if UTILS.typeof(nameOrRoster, CLM.MODELS.Roster) then
-        roster = nameOrRoster
-    else
-        roster = self:GetRosterByName(nameOrRoster)
-    end
-    if not roster then
-        LOG:Error("RosterManager:SetRosterBossKillBonusValue(): Invalid roster object or name")
-        return nil
-    end
-    if not tonumber(encounterId) then
-        LOG:Error("RosterManager:SetRosterBossKillBonusValue(): Missing encounterId")
-        return
-    end
-    if not tonumber(difficultyId) then
-        LOG:Error("RosterManager:SetRosterBossKillBonusValue(): Missing difficultyId")
-        return
-    end
-    if not tonumber(value) then
-        LOG:Error("RosterManager:SetRosterBossKillBonusValue(): Missing value")
-        return
-    end
-    local currentBonus = roster:GetBossKillBonusValue(encounterId, difficultyId, isHardMode)
-    if currentBonus == value then
-        LOG:Debug("RosterManager:SetRosterBossKillBonusValue(): No change to value. Skipping.")
-        return
-    end
-    CLM.MODULES.LedgerManager:Submit(CLM.MODELS.LEDGER.ROSTER.BossKillBonus:new(roster:UID(), encounterId, difficultyId, isHardMode, value), true)
 end
 
 ---@param roster Roster

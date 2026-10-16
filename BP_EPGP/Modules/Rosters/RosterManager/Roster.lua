@@ -37,13 +37,11 @@ end
 ---@class Roster
 ---@field uid integer
 ---@field pointType any
----@field bossKillBonusValues table
 ---@field classMultipliers table
 ---@field configuration RosterConfiguration
 ---@field defaultSlotValues table
 ---@field disenchantedLoot table
 ---@field fieldNames table
----@field hardModeBossKillBonusValues table
 ---@field inRoster table
 ---@field itemValues table
 ---@field pointHistory table
@@ -79,14 +77,6 @@ function Roster:New(uid, pointType, raidsForFullAttendance, attendanceWeeksWindo
     fillSlotsArray(o.defaultSlotValues[GLOBAL_FAKE_INVENTORY_SLOT])
     o.fieldNames = {}
     o.itemValues = {}
-    -- Boss Kill Bonus values
-    o.bossKillBonusValues = {}
-    o.hardModeBossKillBonusValues = {}
-    for id,_ in pairs(CLM.DifficultyIDsMap) do
-        o.bossKillBonusValues[id] = {}
-            -- Hard Modes Boss Kill Bonus values
-        o.hardModeBossKillBonusValues[id] = {}
-    end
     -- Multipliers
     o.classMultipliers = {}
     for _, class in ipairs(UTILS.GetClassList()) do
@@ -782,31 +772,6 @@ end
  *******************
 ]]--
 
----@param encounterId number
----@param difficultyId number
----@param isHardMode boolean
----@param value number
-function Roster:SetBossKillBonusValue(encounterId, difficultyId, isHardMode, value)
-    LOG:Debug("Roster:SetBossKillBonusValue() Trying to set encounterId: %s difficultyId: %s value: %s (HM: %s)", encounterId, difficultyId, value, isHardMode)
-    if isHardMode then
-        self.hardModeBossKillBonusValues[difficultyId][encounterId] = tonumber(value)
-    else
-        self.bossKillBonusValues[difficultyId][encounterId] = tonumber(value)
-    end
-end
-
----@param encounterId number
----@param difficultyId? number
----@param isHardMode boolean
----@return number
-function Roster:GetBossKillBonusValue(encounterId, difficultyId, isHardMode)
-    if isHardMode then
-        return self.hardModeBossKillBonusValues[difficultyId or -1][encounterId] or self.configuration._.bossKillBonusValue
-    else
-        return self.bossKillBonusValues[difficultyId or -1][encounterId] or self.configuration._.bossKillBonusValue
-    end
-end
-
 --[[
  ***********
  * Copying *
@@ -826,8 +791,6 @@ end
 ---@param s Roster
 function Roster:CopyConfiguration(s)
     self.configuration = CLM.MODELS.RosterConfiguration:New(UTILS.DeepCopy(s.configuration))
-    self.bossKillBonusValues = UTILS.DeepCopy(s.bossKillBonusValues)
-    self.hardModeBossKillBonusValues = UTILS.DeepCopy(s.hardModeBossKillBonusValues)
     self.classMultipliers = UTILS.DeepCopy(s.classMultipliers)
     self.fieldNames = UTILS.DeepCopy(s.fieldNames)
     -- TODO: calculator coefficients copy?

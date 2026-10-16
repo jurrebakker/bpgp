@@ -76,32 +76,11 @@ local configDecodeFunctions = {
     allowNegativeBidders = (function(value)
         return CLM.L["Allow bidding below minimum points"], boolToString(value)
     end),
-    bossKillBonus = (function(value)
-        return CLM.L["Boss Kill Bonus"], boolToString(value)
-    end),
-    bossKillBonusValue = (function(value)
-        return CLM.L["Default Boss Kill Bonus value"], safeToString(value)
-    end),
     onTimeBonus = (function(value)
         return CLM.L["On Time Bonus"], boolToString(value)
     end),
     onTimeBonusValue = (function(value)
         return CLM.L["On Time Bonus value"], safeToString(value)
-    end),
-    raidCompletionBonus = (function(value)
-        return CLM.L["Raid Completion Bonus"], boolToString(value)
-    end),
-    raidCompletionBonusValue = (function(value)
-        return CLM.L["Raid Completion Bonus value"], safeToString(value)
-    end),
-    intervalBonus = (function(value)
-        return CLM.L["Interval Bonus"], boolToString(value)
-    end),
-    intervalBonusTime = (function(value)
-        return CLM.L["Interval Bonus time"], safeToString(value)
-    end),
-    intervalBonusValue = (function(value)
-        return CLM.L["Interval Value"], safeToString(value)
     end),
     hardCap = (function(value)
         return CLM.L["Hard cap"], safeToString(value)
@@ -169,24 +148,6 @@ local function decodeItemValueOverrideSingle(entry)
     return safeItemIdToLink(entry:itemId()), safeToString(CONSTANTS.SLOT_VALUE_TIERS_GUI[entry:tier()]) .. ": " .. safeToString(entry:value())
 end
 
-local function decodeBossKillBonus(encounterId, difficultyId, value)
-    local encounter = CLM.L["Unknown"]
-    value = tonumber(value) or 0
-    if value == 0 then
-        return encounter, "", ""
-    end
-    for _, expack in pairs(CLM.EncounterIDs) do
-        for _,instance in ipairs(expack) do
-            for _,encounterInfo in ipairs(instance.data) do
-                if encounterInfo.id == encounterId then
-                    return safeToString(encounterInfo.name), safeToString(CLM.DifficultyIDsMap[difficultyId]), safeToString(value)
-                end
-            end
-        end
-    end
-    return "", safeToString(CLM.DifficultyIDsMap[difficultyId]), safeToString(value)
-end
-
 local nameFunctions  = {
     -- Default
     ["-"] = (function(entry)
@@ -238,9 +199,6 @@ local nameFunctions  = {
     end),
     ["RC"] = (function(entry)
         return CLM.L["[Roster Copy]: "]
-    end),
-    ["RB"] = (function(entry)
-        return CLM.L["[Roster Boss Kill Bonus]: "]
     end),
     ["RF"] = (function(entry)
         return CLM.L["[Roster Field Rename]: "]
@@ -407,14 +365,6 @@ local describeFunctions  = {
             (entry:defaults() and CLM.L["[slot defaults] "] or "") ..
             (entry:overrides() and CLM.L["[item values] "] or "") ..
             (entry:profiles() and CLM.L["[profiles] "] or "")
-
-    end),
-    ["RB"] = (function(entry)
-        local name = CLM.MODULES.RosterManager:GetRosterNameByUid(entry:rosterUid())
-        local encounter, difficulty, value = decodeBossKillBonus(entry:encounterId(), entry:difficultyId(), entry:value())
-        return
-            "<" .. UTILS.ColorCodeText(name or entry:rosterUid(), "ebb434") .. "> " ..
-            encounter .. " - ".. difficulty .. ": " .. value
 
     end),
     ["RF"] = (function(entry)

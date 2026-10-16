@@ -2,24 +2,8 @@ local name, CLM = ...
 
 local GuildRoster = GuildRoster or C_GuildInfo.GuildRoster
 
--- Define missing expansion constants for older WoW versions
-if not LE_EXPANSION_MIDNIGHT then
-    LE_EXPANSION_MIDNIGHT = 11
-end
-
 _G["BPEPGP"] = CLM
 
-
--- BP EPGP is retail only. These stay until the boss-kill bonus code (Phase 3) is removed.
----@return number
-function CLM.GetExpansion()
-    return floor(select(4, GetBuildInfo())/10000) - 1
-end
-
-function CLM.IsClassicEra() return false end
-function CLM.IsSoD() return false end
-function CLM.IsHardcore() return false end
-function CLM.IsMainline() return true end
 
 CLM.CORE = LibStub("AceAddon-3.0"):NewAddon(name, "AceEvent-3.0", "AceBucket-3.0")
 
@@ -172,7 +156,6 @@ function CORE:_InitializeFeatures()
     MODULES.AutoAssign:Initialize()
     MODULES.BiddingManager:Initialize()
     MODULES.ProfileInfoManager:Initialize()
-    MODULES.AutoAwardManager:Initialize()
     MODULES.AuctionHistoryManager:Initialize()
     -- Globals
     CLM.GlobalConfigs:Initialize() -- Initialize global configs

@@ -426,18 +426,6 @@ function RaidManager:EndRaid(raid)
         return
     end
     self:HandleRosterUpdateEvent()
-    -- Raid completion bonus
-    local config = raid:Configuration()
-    local roster = raid:Roster()
-    if roster then
-        if not config then
-            config = roster.configuration
-        end
-        local raidCompletionBonusValue = config:Get("raidCompletionBonusValue")
-        if config:Get("raidCompletionBonus") and raidCompletionBonusValue > 0 then
-            CLM.MODULES.PointManager:UpdateRaidPoints(raid, raidCompletionBonusValue, CONSTANTS.POINT_CHANGE_REASON.RAID_COMPLETION_BONUS, CONSTANTS.POINT_MANAGER_ACTION.MODIFY, nil, CONSTANTS.POINT_CHANGE_TYPE.POINTS)
-        end
-    end
     -- End raid
     CLM.MODULES.LedgerManager:Submit(CLM.MODELS.LEDGER.RAID.End:new(raid:UID()), true)
 
@@ -618,40 +606,11 @@ function RaidManager:HandleRosterUpdateEvent()
     reentrance = true
     -- Update wow raid information
     self:UpdateGameRaidInformation()
-    -- Auto award handling removal in case of raid owner change
-    self:DisableAutoAwarding()
     -- Handle roster update
     if self:IsRaidOwner() and self:IsInProgressingRaid() then
         self:UpdateRaiderList()
-        self:EnableAutoAwarding()
     end
     reentrance = false
-end
-
-function RaidManager:EnableAutoAwarding()
-    LOG:Trace("RaidManager:EnableAutoAwarding()")
-    local config = self:GetRaid():Configuration()
-    local bossKillBonus = config:Get("bossKillBonus")
-    local intervalBonus = config:Get("intervalBonus")
-
-    if bossKillBonus or intervalBonus then
-        CLM.MODULES.AutoAwardManager:Enable()
-    end
-
-    if bossKillBonus then
-        CLM.MODULES.AutoAwardManager:EnableBossKillBonusAwarding()
-    end
-
-    if intervalBonus then
-        CLM.MODULES.AutoAwardManager:EnableIntervalBonusAwarding()
-    end
-end
-
-function RaidManager:DisableAutoAwarding()
-    LOG:Trace("RaidManager:DisableAutoAwarding()")
-    CLM.MODULES.AutoAwardManager:DisableBossKillBonusAwarding()
-    CLM.MODULES.AutoAwardManager:DisableIntervalBonusAwarding()
-    CLM.MODULES.AutoAwardManager:Disable()
 end
 
 function RaidManager:UpdateGameRaidInformation()

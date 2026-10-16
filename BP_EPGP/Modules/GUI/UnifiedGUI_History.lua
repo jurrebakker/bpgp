@@ -234,10 +234,6 @@ local function buildPointTooltip(tooltip, history)
     end
     local note = history:Note()
     if note ~= "" then
-        local numNote = tonumber(note)
-        if numNote then
-            note = CLM.EncounterIDsMap[numNote] or note
-        end
         tooltip:AddDoubleLine(CLM.L["Note"] .. "", note)
     end
     local profile = CLM.MODULES.ProfileManager:GetProfileByGUID(UTILS.getGuidFromInteger(history:Creator()))
