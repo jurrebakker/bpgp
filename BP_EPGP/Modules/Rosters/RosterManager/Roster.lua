@@ -37,7 +37,6 @@ end
 ---@class Roster
 ---@field uid integer
 ---@field pointType any
----@field classMultipliers table
 ---@field configuration RosterConfiguration
 ---@field defaultSlotValues table
 ---@field fieldNames table
@@ -54,7 +53,6 @@ end
 ---@field recentRaidPointHistoryCacheSeconds number?
 ---@field standings table
 ---@field weeklyGains table
----@field calculator ItemValueCalculator
 local Roster = {}
 ---@param uid integer
 ---@param pointType any
@@ -73,12 +71,6 @@ function Roster:New(uid, pointType)
     fillSlotsArray(o.defaultSlotValues[GLOBAL_FAKE_INVENTORY_SLOT])
     o.fieldNames = {}
     o.itemValues = {}
-    -- Multipliers
-    o.classMultipliers = {}
-    for _, class in ipairs(UTILS.GetClassList()) do
-        o.classMultipliers[class] = {}
-    end
-
     -- END CONFIGURATION --
 
     -- ROSTER STATE --
@@ -90,7 +82,6 @@ function Roster:New(uid, pointType)
     o.raidLoot = {}             -- Loot received in the roster (list). Time descending
     o.profileLoot = {}          -- Loot received by players (dict of lists). Time descending per player
     o.weeklyGains = {}          -- Weekly point gains per player
-    o.calculator = CLM.MODELS.ItemValueCalculator:New() -- Dynamic item value calculator
     -- END ROSTER STATE --
 
     return o
@@ -99,11 +90,6 @@ end
 ---@return any
 function Roster:GetPointType()
     return self.pointType
-end
-
----@return table
-function Roster:GetCalculator()
-    return self.calculator
 end
 
 ---@param GUID string
@@ -341,12 +327,6 @@ function Roster:DecayTotal(GUID, value)
 end
 
 --[[
- *************
- * Mirroring *
- *************
-]]--
-
---[[
  ***************
  * Slot Values *
  ***************
@@ -456,16 +436,9 @@ function Roster:ClearItemValues(itemId)
     self.itemValues[itemId] = nil
 end
 
-local function GetItemValuesProxy(self, itemInfoInput, itemId, calculateCallback)
+local function GetItemValuesProxy(self, itemInfoInput, itemId)
     local itemValues = self.itemValues[itemId]
     if itemValues == nil then
-        if self.configuration._.dynamicValue then
-            local dynamicValues = self.calculator[calculateCallback](self.calculator, itemInfoInput, self.configuration._.roundDecimals)
-            if dynamicValues then
-                return dynamicValues
-            end
-        end
-
         local _, _, _, itemEquipLoc, _, classID, subclassID = UTILS.GetItemInfoInstant(itemInfoInput)
         local equipLoc = UTILS.WorkaroundEquipLoc(classID, subclassID, itemEquipLoc)
         return self:GetDefaultSlotValues(CLM.IndirectMap.slot[itemId] or equipLoc)
@@ -476,45 +449,15 @@ end
 ---@param itemId number
 ---@return table
 function Roster:GetItemValues(itemId)
-    return GetItemValuesProxy(self, itemId, itemId, "CalculateFromId")
+    return GetItemValuesProxy(self, itemId, itemId)
 end
 
 ---@param itemLink string
 ---@return table
 function Roster:GetItemValuesFromItemLink(itemLink)
-    return GetItemValuesProxy(self, itemLink, UTILS.GetItemIdFromLink(itemLink), "CalculateFromLink")
+    return GetItemValuesProxy(self, itemLink, UTILS.GetItemIdFromLink(itemLink))
 end
 
----@param class string
----@param slot string
----@return number
-function Roster:GetSlotClassMultiplierValue(class, slot)
-    return self.classMultipliers[class][slot] or self.classMultipliers[class][GLOBAL_FAKE_INVENTORY_SLOT] or 1
-end
-
----@param class string
----@param slot string
----@param value number
-function Roster:SetSlotClassMultiplierValue(class, slot, value)
-    LOG:Debug("Set Default Class Slot Value: [%s] [%s]: [%s] for roster [%s]", class, slot, value, self:UID())
-    if not self.classMultipliers[class] then return end
-    if not slot or not CONSTANTS.INVENTORY_TYPES_SET[slot] then return end
-    self.classMultipliers[class][slot] = tonumber(value)
-    if slot ~= GLOBAL_FAKE_INVENTORY_SLOT then
-        if self.classMultipliers[class][slot] == self.classMultipliers[class][GLOBAL_FAKE_INVENTORY_SLOT] then
-            self.classMultipliers[class][slot] = nil
-        end
-    end
-end
-
----@param class string
----@param itemId number
----@return number
-function Roster:GetClassItemMultiplierValue(class, itemId)
-    local _, _, _, itemEquipLoc, _, classID, subclassID = UTILS.GetItemInfoInstant(itemId)
-    local equipLoc = UTILS.WorkaroundEquipLoc(classID, subclassID, itemEquipLoc)
-    return self:GetSlotClassMultiplierValue(class, CLM.IndirectMap.slot[itemId] or equipLoc)
-end
 --[[
  *****************
  * Configuration *
@@ -721,9 +664,7 @@ end
 ---@param s Roster
 function Roster:CopyConfiguration(s)
     self.configuration = CLM.MODELS.RosterConfiguration:New(UTILS.DeepCopy(s.configuration))
-    self.classMultipliers = UTILS.DeepCopy(s.classMultipliers)
     self.fieldNames = UTILS.DeepCopy(s.fieldNames)
-    -- TODO: calculator coefficients copy?
 end
 
 ---@param s Roster

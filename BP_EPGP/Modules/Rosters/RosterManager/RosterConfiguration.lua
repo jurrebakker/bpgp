@@ -59,8 +59,6 @@ function RosterConfiguration:New(i)
     o._.minGP = 1
     -- Named Buttons Mode
     o._.namedButtons = false
-    -- Dynamic item value
-    o._.dynamicValue = false
     -- OS
     o._.useOS = true
     -- Always allow bidding base
@@ -114,7 +112,6 @@ function RosterConfiguration:fields()
         "minimumPoints",
         "minGP",
         "namedButtons",
-        "dynamicValue",
         "useOS",
         "roundPR",
         "baseAlways",
@@ -156,7 +153,6 @@ local TRANSFORMS = {
     minimumPoints = transform_number,
     minGP = transform_number,
     namedButtons = transform_boolean,
-    dynamicValue = transform_boolean,
     useOS = transform_boolean,
     baseAlways = transform_boolean,
     allInAlways = transform_boolean,
@@ -258,7 +254,6 @@ function RosterConfiguration._validate_tax(value) value = tonumber(value); retur
 function RosterConfiguration._validate_minimumPoints(value) return IsNumeric(tonumber(value)) end
 function RosterConfiguration._validate_minGP(value) value = tonumber(value); return IsNumeric(value) and IsPositive(value) end
 function RosterConfiguration._validate_namedButtons(value) return IsBoolean(value) end
-function RosterConfiguration._validate_dynamicValue(value) return IsBoolean(value) end
 function RosterConfiguration._validate_useOS(value) return IsBoolean(value) end
 function RosterConfiguration._validate_baseAlways(value) return IsBoolean(value) end
 function RosterConfiguration._validate_allInAlways(value) return IsBoolean(value) end

@@ -56,16 +56,11 @@ end
 
 local function UpdateAwardPrice(self)
     local auction = CLM.MODULES.AuctionManager:GetCurrentAuctionInfo()
-    self.awardPrice = UTILS.round((self.awardValue * self.awardMultiplier) + (auction:GetTax() or 0), auction:GetRounding())
+    self.awardPrice = UTILS.round(self.awardValue + (auction:GetTax() or 0), auction:GetRounding())
 end
 
 local function SetInputAwardValue(self, value)
     self.awardValue = tonumber(value) or 1
-    UpdateAwardPrice(self)
-end
-
-local function SetInputAwardMultiplier(self, value)
-    self.awardMultiplier = tonumber(value) or 1
     UpdateAwardPrice(self)
 end
 
@@ -294,15 +289,6 @@ local function GenerateAwardOptions(self)
             width = 0.8,
             order = 1,
         },
-        award_multiplier = {
-            name = CLM.L["Multiplier"],
-            type = "input",
-            set = (function(i,v) SetInputAwardMultiplier(self, v) end),
-            get = (function(i) return tostring(self.awardMultiplier) end),
-            disabled = genericDisable,
-            width = 0.4,
-            order = 3
-        },
         award_value = {
             name = CLM.L["Value"],
             type = "input",
@@ -365,10 +351,6 @@ local function CreateAwardOptions(self, width)
     AceConfigDialog:Open(AWARD_REGISTRY, AwardOptionsGroup)
 
     return AwardOptionsGroup
-end
-
-local function ST_GetPlayerClass(row)
-    return row.cols[1].value
 end
 
 local function ST_GetPlayerName(row)
@@ -439,8 +421,6 @@ local function CreateBidList(self)
             local selected = table:GetRow(selection)
             if selected then
                 self.awardPlayer = ST_GetPlayerName(selected)
-                local multiplier = CLM.MODULES.AuctionManager:GetCurrentAuctionInfo():GetAwardMultiplier(ST_GetPlayerClass(selected), self.auctionItem:GetItemID())
-                SetInputAwardMultiplier(self, multiplier)
                 UpdateBids(self, ST_GetPlayerBidValue(selected), ST_GetPlayerBidType(selected))
                 self:Refresh()
             end
@@ -654,7 +634,6 @@ local function Create(self)
     self.item = nil
     self.note = ""
     self.awardValue = 0
-    self.awardMultiplier = 1
     self.awardPrice = 0
     self.removeOnAward = CLM.MODULES.AuctionManager:GetDefaultRemoveOnAward()
 
@@ -708,7 +687,6 @@ end
 ---@field awardPlayer string?
 ---@field awardPrice number?
 ---@field awardValue number?
----@field awardMultiplier number?
 ---@field note string?
 ---@field removeOnAward boolean
 ---@field dataWidth number

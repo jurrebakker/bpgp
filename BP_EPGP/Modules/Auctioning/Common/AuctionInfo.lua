@@ -618,13 +618,6 @@ function AuctionInfo:GetFieldName(tier)
     return self.roster:GetFieldName(tier)
 end
 
----@param class string
----@param itemId number
----@return number
-function AuctionInfo:GetAwardMultiplier(class, itemId)
-    return self.roster:GetClassItemMultiplierValue(class, itemId)
-end
-
 ---@return Roster
 function AuctionInfo:GetRoster()
     return self.roster

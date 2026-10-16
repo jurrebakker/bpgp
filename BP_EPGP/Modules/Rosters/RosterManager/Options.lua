@@ -137,12 +137,6 @@ function RosterManagerOptions:Initialize()
         auction_item_value_mode_set = (function(name, value)
             SetRosterOption(name, "itemValueMode", value)
         end),
-        auction_dynamic_item_values_get = (function(name)
-            return GetRosterOption(name, "dynamicValue")
-        end),
-        auction_dynamic_item_values_set = (function(name, value)
-            SetRosterOption(name, "dynamicValue", value)
-        end),
         auction_base_always_get = (function(name)
             return GetRosterOption(name, "baseAlways")
         end),
@@ -357,40 +351,6 @@ local valuesWithDesc = {
     }
 }
 
-local function generateDynamicItemValuesHandlers(roster)
-    local equationGet = (function()
-        return roster:GetCalculator():GetEquation()
-    end)
-    local equationSet = (function(value)
-        CLM.MODULES.RosterManager:SetRosterDynamicItemValueEquation(roster, value)
-    end)
-    local expvarGet = (function()
-        return roster:GetCalculator():GetExpvar()
-    end)
-    local expvarSet = (function(value)
-        CLM.MODULES.RosterManager:SetRosterDynamicItemValueExpvar(roster, value)
-    end)
-    local multiplierGet = (function()
-        return roster:GetCalculator():GetMultiplier()
-    end)
-    local multiplierSet = (function(value)
-        CLM.MODULES.RosterManager:SetRosterDynamicItemValueMultiplier(roster, value)
-    end)
-    local slotGet = (function(slot)
-        return roster:GetCalculator():GetSlotMultiplier(slot)
-    end)
-    local slotSet = (function(slot, value)
-        CLM.MODULES.RosterManager:SetRosterDynamicItemValueSlotMultiplier(roster, slot, value)
-    end)
-    local tierGet = (function(tier)
-        return roster:GetCalculator():GetTierMultiplier(tier)
-    end)
-    local tierSet = (function(tier, value)
-        CLM.MODULES.RosterManager:SetRosterDynamicItemValueTierMultiplier(roster, tier, value)
-    end)
-    return equationGet, equationSet, expvarGet, expvarSet, multiplierGet, multiplierSet, slotGet, slotSet, tierGet, tierSet
-end
-
 local function default_slot_values(self, roster)
     local args = {}
     local order = 0
@@ -430,113 +390,6 @@ local function default_slot_values(self, roster)
             }
             order = order + 1
         end
-    end
-    return args
-end
-
-local function dynamic_item_values(self, roster, equationGet, equationSet, expvarGet, expvarSet, multiplierGet, multiplierSet, slotGet, slotSet, tierGet, tierSet)
-    local args = {}
-    local order = 0
-    local prefix
-    args["equation_header"] = {
-        type = "header",
-        order = order,
-        name = CLM.L["Equation"]
-    }
-    order = order + 1
-    local wowpedia = "WoWpedia: |c43eeee00[Multiplier] * [item value]^[Exponent] * [slot multiplier]|r\n\n"
-    local epgpweb = "EPGPWeb: |c43eeee00[Multiplier] * [Base]^(ilvl/26 + (rarity - 4)) * [slot multiplier]|r\n\n"
-    local equationNote = "|c43ee4444Changing this will reset slot multipliers to default values.|r"
-    args["equation_multiplier"] = {
-        type = "input",
-        desc = CLM.L["Multiplier used by the equations"],
-        order = order,
-        width = 0.5,
-        get = (function(i) return tostring(multiplierGet()) end),
-        set = (function(i, v)
-            if self.readOnly then return end
-            multiplierSet(tonumber(v))
-        end),
-        name = CLM.L["Multiplier"],
-        pattern = CONSTANTS.REGEXP_FLOAT,
-    }
-    order = order + 1
-    args["equation_expvar"] = {
-        type = "input",
-        desc = CLM.L["Exponential scaling value used by the equations (Base for EPGPWeb, or Exponent for WoWpedia)"],
-        order = order,
-        width = 0.5,
-        get = (function(i) return tostring(expvarGet()) end),
-        set = (function(i, v)
-            if self.readOnly then return end
-            expvarSet(tonumber(v))
-        end),
-        name = CLM.L["Exponent / Base"],
-        pattern = CONSTANTS.REGEXP_FLOAT,
-    }
-    order = order + 1
-    args["equation_select"] = {
-        type = "select",
-        style = "dropdown",
-        desc = epgpweb .. wowpedia .. equationNote,
-        order = order,
-        values = CONSTANTS.ITEM_VALUE_EQUATIONS_GUI,
-        sorting = CONSTANTS.ITEM_VALUE_EQUATIONS_ORDERED,
-        set = (function(i, v)
-            if self.readOnly then return end
-            equationSet(tonumber(v))
-        end),
-        get = (function(i) return equationGet() end),
-        name = CLM.L["Select equation"]
-    }
-    order = order + 1
-    args["slot_multipliers_header"] = {
-        type = "header",
-        order = order,
-        name = CLM.L["Slot multipliers"]
-    }
-    order = order + 1
-    for _, slot in ipairs(CONSTANTS.INVENTORY_TYPES_SORTED) do
-        prefix = slot.type
-        if CONSTANTS.ITEM_SLOT_MULTIPLIERS[prefix] then
-            args[prefix .. "_"] = {
-                type = "input",
-                order = order,
-                width = 0.5,
-                get = (function(i) return tostring(slotGet(slot.type)) end),
-                set = (function(i, v)
-                    if self.readOnly then return end
-                    slotSet(slot.type, tonumber(v))
-                end),
-                name = slot.name,
-                pattern = CONSTANTS.REGEXP_FLOAT,
-            }
-            order = order + 1
-        end
-    end
-    args["tier_multipliers_header"] = {
-        type = "header",
-        order = order,
-        name = CLM.L["Tier multipliers"]
-    }
-    order = order + 1
-    for _, ivalues in ipairs(valuesWithDesc) do
-        -- local tierName = (CONSTANTS.SLOT_VALUE_TIERS_GUI[ivalues.type] or "")
-        local tierName = UTILS.GetRosterConditionalFieldName(ivalues.type, roster)
-        args[prefix .. "_" .. ivalues.type] = {
-            type = "input",
-            order = order,
-            desc = string.format(CLM.L["Multiplier for tier %s (if used by the auction type)."], tierName),
-            width = 0.6,
-            get = (function(i) return tostring(tierGet(ivalues.type)) end),
-            set = (function(i, v)
-                if self.readOnly then return end
-                tierSet(ivalues.type, tonumber(v))
-            end),
-            name = tierName,
-            pattern = CONSTANTS.REGEXP_FLOAT,
-        }
-        order = order + 1
     end
     return args
 end
@@ -596,41 +449,6 @@ local function item_value_overrides(self, roster)
     return args
 end
 
-local function award_multipliers(self, roster)
-    local args = {}
-
-    for i, class in ipairs(UTILS.GetClassList()) do
-        args[class] = {
-            type = "group",
-            name = UTILS.ColorCodeAndLocalizeClass(class),
-            order = i,
-            args = {}
-        }
-        local order = 0
-        local prefix
-        for _, slot in ipairs(CONSTANTS.INVENTORY_TYPES_SORTED) do
-            prefix = slot.type:lower()
-            order = order + 1
-            args[class].args[prefix .. "_value"] = {
-                type = "input",
-                order = order,
-                width = 0.5,
-                get = (function()
-                    return tostring(roster:GetSlotClassMultiplierValue(class, slot.type))
-                end),
-                set = (function(_, v)
-                    if self.readOnly then return end
-                    CLM.MODULES.RosterManager:SetSlotClassMultiplierValue(roster, class, slot.type, tonumber(v))
-                end),
-                name = slot.name,
-                pattern = CONSTANTS.REGEXP_FLOAT,
-            }
-            order = order + 1
-        end
-    end
-    return args
-end
-
 function RosterManagerOptions:GenerateRosterOptions(name)
     local roster = CLM.MODULES.RosterManager:GetRosterByName(name)
     if not roster then
@@ -642,7 +460,6 @@ function RosterManagerOptions:GenerateRosterOptions(name)
     local isEPGP = (roster:GetPointType() == CONSTANTS.POINT_TYPE.EPGP)
     local disableManage = (function() return not isManager end)
 
-    local equationGet, equationSet, expvarGet, expvarSet, multiplierGet, multiplierSet, slotGet, slotSet, tierGet, tierSet = generateDynamicItemValuesHandlers(roster)
 
     local options = {
         type = "group",
@@ -861,13 +678,6 @@ function RosterManagerOptions:GenerateRosterOptions(name)
                         order = 5,
                         values = CONSTANTS.ITEM_VALUE_MODES_GUI
                     },
-                    dynamic_item_values = {
-                        name = CLM.L["Dynamic Item values"],
-                        type = "toggle",
-                        order = 6,
-                        disabled = disableManage,
-                        width = 1
-                    },
                     bidding_header = {
                         name = CLM.L["Bidding"],
                         type = "header",
@@ -948,24 +758,11 @@ function RosterManagerOptions:GenerateRosterOptions(name)
                 order = 3,
                 args = default_slot_values(self, roster)
             },
-            award_multipliers = {
-                name = CLM.L["Award"] .. " " .. CLM.L["Multiplier"],
-                type = "group",
-                order = 4,
-                childGroups = "tab",
-                args = award_multipliers(self, roster)
-            },
             item_value_overrides = {
                 name = CLM.L["Item value overrides"],
                 type = "group",
                 order = 5,
                 args = item_value_overrides(self, roster)
-            },
-            dynamic_item_values = {
-                name = CLM.L["Dynamic Item values"],
-                type = "group",
-                order = 6,
-                args = dynamic_item_values(self, roster, equationGet, equationSet, expvarGet, expvarSet, multiplierGet, multiplierSet, slotGet, slotSet, tierGet, tierSet)
             },
         }
     }

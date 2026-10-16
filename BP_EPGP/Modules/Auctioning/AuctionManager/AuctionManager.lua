@@ -792,13 +792,9 @@ function AuctionManager:StartAuction()
         end
     end
 
-    -- TODO update this when fixing dynamic value mode
-    local autoItemValueOverride = not auction.roster:GetConfiguration("dynamicValue")
-
-    if autoItemValueOverride then
-        for id, auctionItem in pairs(auction:GetItems()) do
-            CLM.MODULES.RosterManager:SetRosterItemValues(auction.roster, id, auctionItem:GetValues())
-        end
+    -- Store the auctioned values as item overrides
+    for id, auctionItem in pairs(auction:GetItems()) do
+        CLM.MODULES.RosterManager:SetRosterItemValues(auction.roster, id, auctionItem:GetValues())
     end
 
     auction:Start()
