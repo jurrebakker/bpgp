@@ -315,7 +315,6 @@ local function GenerateAwardOptions(self)
                 self:Refresh()
             end),
             confirm = (function()
-                local roster = CLM.MODULES.AuctionManager:GetCurrentAuctionInfo():GetRoster()
                 return string.format(
                     CLM.L["Are you sure, you want to award %s to %s for %s %s?"],
                     self.auctionItem:GetItemLink(),

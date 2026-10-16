@@ -18,10 +18,6 @@ local function ST_GetRaid(row)
     return row.cols[4].value
 end
 
-local function refreshFn(...)
-    CLM.GUI.Unified:Refresh(...)
-end
-
 ---@class UnifiedGUI_Raids
 ---@field configuration RosterConfiguration
 ---@field roster string?
