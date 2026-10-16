@@ -48,8 +48,9 @@ function RosterManager:Initialize()
             LOG:TraceAndCount("mutator(RosterCreate)")
             local uid = entry:rosterUid()
             local name = entry:name()
-            if self.cache.rosters[name] or self.cache.rostersUidMap[uid] then
-                LOG:Debug("Roster [%s:%s] already exists. Verify data integrity with other officers.", name, uid)
+            if next(self.cache.rosters) then
+                -- BP EPGP has a single roster; the first one created wins on every client
+                LOG:Debug("Roster [%s:%s] ignored, a roster already exists.", name, uid)
                 return
             end
             local roster = CLM.MODELS.Roster:New(uid)
@@ -271,6 +272,13 @@ function RosterManager:Initialize()
 end
 
 
+-- BP EPGP has a single roster
+---@return Roster?
+function RosterManager:GetRoster()
+    local _, roster = next(self.cache.rosters)
+    return roster
+end
+
 ---@return table
 function RosterManager:GetRosters()
     return self.cache.rosters
@@ -303,6 +311,10 @@ end
 ---@param name string?
 function RosterManager:NewRoster(name)
     LOG:Trace("RosterManager:NewRoster()")
+    if self:GetRoster() then
+        LOG:Message(CLM.L["BP EPGP already has a roster."])
+        return
+    end
 
     name = name or self:GenerateName()
     while self.cache.rosters[name] ~= nil do

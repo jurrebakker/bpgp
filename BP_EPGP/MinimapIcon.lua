@@ -162,8 +162,8 @@ function Minimap:Initialize()
 
     dropdown = CLM.UTILS.GenerateDropDownMenu(
         options,
-        CLM.MODULES.ACL:CheckLevel(CLM.CONSTANTS.ACL.LEVEL.ASSISTANT),
-        CLM.MODULES.ACL:CheckLevel(CLM.CONSTANTS.ACL.LEVEL.MANAGER)
+        CLM.MODULES.ACL:CheckLevel(CLM.CONSTANTS.ACL.LEVEL.OFFICER),
+        CLM.MODULES.ACL:CheckLevel(CLM.CONSTANTS.ACL.LEVEL.OFFICER)
     )
 
     -- Create Minimap Icon

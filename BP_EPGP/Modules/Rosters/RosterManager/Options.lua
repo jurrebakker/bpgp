@@ -16,11 +16,9 @@ local CBTYPE = {
 }
 
 ---@class RosterManagerOptions
----@field copy_source_name string?
 ---@field externalOptions table
 ---@field handlers table
 ---@field readOnly boolean
----@field rosterName string
 local RosterManagerOptions = { externalOptions = {} }
 
 local function GetRosterOption(name, option)
@@ -35,15 +33,8 @@ end
 
 ---@return nil
 function RosterManagerOptions:Initialize()
-    self.rosterName = CLM.MODULES.RosterManager:GenerateName()
-    self.readOnly = not CLM.MODULES.ACL:CheckLevel(CONSTANTS.ACL.LEVEL.MANAGER)
+    self.readOnly = not CLM.MODULES.ACL:CheckLevel(CONSTANTS.ACL.LEVEL.OFFICER)
     self.handlers = {
-        general_name_get = (function(name)
-            return name
-        end),
-        general_name_set = (function(old, new)
-            CLM.MODULES.RosterManager:RenameRoster(old, new)
-        end),
         general_remove_execute = (function(name)
             CLM.MODULES.RosterManager:DeleteRosterByName(name)
         end),
@@ -55,16 +46,6 @@ function RosterManagerOptions:Initialize()
             end
             local roster = CLM.MODULES.RosterManager:GetRosterByName(name)
             CLM.MODULES.RosterManager:AddProfilesToRoster(roster, profileList)
-        end),
-        general_copy_execute = (function(name)
-            if self.copy_source_name == nil then return end
-            CLM.MODULES.RosterManager:Copy(self.copy_source_name, name, true, true, true, false)
-        end),
-        general_copy_source_get = (function(name)
-            return self.copy_source_name
-        end),
-        general_copy_source_set = (function(name, value)
-            self.copy_source_name = value
         end),
         -- Bonuses
         general_on_time_bonus_get = (function(name)
@@ -381,9 +362,9 @@ function RosterManagerOptions:GenerateRosterOptions(name)
         LOG:Debug("RosterManagerOptions:GenerateRosterOptions(): Unknown roster %s", tostring(name))
         return
     end
-    local isManager = CLM.MODULES.ACL:CheckLevel(CONSTANTS.ACL.LEVEL.MANAGER)
+    local isOfficer = CLM.MODULES.ACL:CheckLevel(CONSTANTS.ACL.LEVEL.OFFICER)
 
-    local disableManage = (function() return not isManager end)
+    local disableManage = (function() return not isOfficer end)
 
 
     local options = {
@@ -403,13 +384,6 @@ function RosterManagerOptions:GenerateRosterOptions(name)
                 type = "group",
                 order = 1,
                 args = {
-                    name = {
-                        name = CLM.L["Name"],
-                        desc = CLM.L["Change roster name."],
-                        type = "input",
-                        width = 1,
-                        order = 0
-                    },
                     round_decimals = {
                         name = CLM.L["Rounding"],
                         desc = CLM.L["Round to selected number of decimals"],
@@ -419,35 +393,6 @@ function RosterManagerOptions:GenerateRosterOptions(name)
                         disabled = disableManage,
                         order = 2,
                         values = CONSTANTS.ALLOWED_ROUNDINGS_GUI
-                    },
-                    copy_header = {
-                        name = CLM.L["Copy settings"],
-                        type = "header",
-                        order = 97,
-                        width = "full"
-                    },
-                    copy = {
-                        name = CLM.L["Copy settings"],
-                        desc = CLM.L["Copy settings from selected roster."],
-                        type = "execute",
-                        confirm = true,
-                        disabled = disableManage,
-                        order = 98
-                    },
-                    copy_source = {
-                        name = CLM.L["Copy source"],
-                        desc = CLM.L["Copy settings from selected roster."],
-                        type = "select",
-                        values = (function()
-                            local v = {}
-                            local r = CLM.MODULES.RosterManager:GetRosters()
-                            for n, _r in pairs(r) do
-                                v[n] = n
-                            end
-                            return v
-                        end),
-                        disabled = disableManage,
-                        order = 99
                     },
                     remove_header = {
                         name = CLM.L["Remove roster"],
@@ -675,23 +620,6 @@ end
 
 function RosterManagerOptions:UpdateOptions()
     local options = {
-        new = { -- Global options -> Create New Roster
-            name = CLM.L["Create"],
-            desc = CLM.L["Creates new roster with default configuration"],
-            type = "execute",
-            func = function() CLM.MODULES.RosterManager:NewRoster(self.rosterName); self.rosterName = CLM.MODULES.RosterManager:GenerateName() end,
-            disabled = (function() return not CLM.MODULES.ACL:CheckLevel(CONSTANTS.ACL.LEVEL.MANAGER) end),
-            order = 1
-        },
-        roster_name = {
-            name = CLM.L["Roster name"],
-            desc = CLM.L["Roster Name"],
-            type = "input",
-            set = (function(i, v) self.rosterName = v end),
-            get = (function(i) return self.rosterName end),
-            disabled = (function() return not CLM.MODULES.ACL:CheckLevel(CONSTANTS.ACL.LEVEL.MANAGER) end),
-            order = 2,
-        },
     }
     for _, name in pairs(CLM.MODULES.RosterManager:GetRostersUidMap()) do
         options[name] = self:GenerateRosterOptions(name)

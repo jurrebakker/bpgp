@@ -266,7 +266,7 @@ function RaidManager:CreateRaid(roster, name, config)
         LOG:Error("RaidManager:CreateRaid(): Missing valid configuration")
         return
     end
-    if not CLM.MODULES.ACL:CheckLevel(CONSTANTS.ACL.LEVEL.ASSISTANT) then
+    if not CLM.MODULES.ACL:CheckLevel(CONSTANTS.ACL.LEVEL.OFFICER) then
         LOG:Message(CLM.L["You are not allowed to create raids."])
         return
     end
@@ -284,7 +284,7 @@ function RaidManager:StartRaid(raid)
         LOG:Message(CLM.L["Missing valid raid"])
         return
     end
-    if not CLM.MODULES.ACL:CheckLevel(CONSTANTS.ACL.LEVEL.ASSISTANT) then
+    if not CLM.MODULES.ACL:CheckLevel(CONSTANTS.ACL.LEVEL.OFFICER) then
         LOG:Message(CLM.L["You are not allowed to start raid."])
         return
     end
@@ -340,7 +340,7 @@ function RaidManager:EndRaid(raid)
         LOG:Message(CLM.L["Missing valid raid"])
         return
     end
-    if not CLM.MODULES.ACL:CheckLevel(CONSTANTS.ACL.LEVEL.ASSISTANT) then
+    if not CLM.MODULES.ACL:CheckLevel(CONSTANTS.ACL.LEVEL.OFFICER) then
         LOG:Message(CLM.L["You are not allowed to start raid."])
         return
     end
@@ -364,7 +364,7 @@ function RaidManager:JoinRaid(raid)
         LOG:Message(CLM.L["Missing valid raid"])
         return
     end
-    if not CLM.MODULES.ACL:CheckLevel(CONSTANTS.ACL.LEVEL.ASSISTANT) then
+    if not CLM.MODULES.ACL:CheckLevel(CONSTANTS.ACL.LEVEL.OFFICER) then
         LOG:Message(CLM.L["You are not allowed to join raid."])
         return
     end
@@ -496,7 +496,7 @@ function RaidManager:IsRaidOwner(name)
         LOG:Debug("Player in PvP")
         return false
     end
-    if not CLM.MODULES.ACL:CheckLevel(CONSTANTS.ACL.LEVEL.ASSISTANT, name) then
+    if not CLM.MODULES.ACL:CheckLevel(CONSTANTS.ACL.LEVEL.OFFICER, name) then
         isOwner = false
         LOG:Debug("Not Assistant")
     else
@@ -534,7 +534,7 @@ function RaidManager:IsAllowedToAuction(name, relaxed)
     name = name or UTILS.whoami()
 
     if not relaxed then -- Relaxed requirements: doesn't need to be assitant (for out of guild checks)
-        if not CLM.MODULES.ACL:CheckLevel(CONSTANTS.ACL.LEVEL.ASSISTANT, name) then
+        if not CLM.MODULES.ACL:CheckLevel(CONSTANTS.ACL.LEVEL.OFFICER, name) then
             LOG:Debug("Not Assistant")
             return false
         end

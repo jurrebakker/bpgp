@@ -134,23 +134,13 @@ local function GenerateAssistantOptions(self)
             confirm = true,
             order = 24
         },
-        select_roster = {
-            name = CLM.L["Select roster"],
-            desc = CLM.L["Select roster to add profiles to."],
-            type = "select",
-            width = "full",
-            values = CLM.MODULES.RosterManager:GetRostersUidMap(),
-            set = function(i, v) self.roster = v end,
-            get = function(i) return self.roster end,
-            order = 31
-        },
         add_to_roster = {
             name = CLM.L["Add to roster"],
-            desc = CLM.L["Adds selected players to the selected roster (from dropdown)."],
+            desc = CLM.L["Adds selected players to the roster."],
             type = "execute",
             width = "full",
             func = (function(i)
-                CLM.MODULES.RosterManager:AddProfilesToRoster(CLM.MODULES.RosterManager:GetRosterByUid(self.roster), self:GetSelection())
+                CLM.MODULES.RosterManager:AddProfilesToRoster(CLM.MODULES.RosterManager:GetRoster(), self:GetSelection())
             end),
             confirm = true,
             order = 32
@@ -164,7 +154,7 @@ local function verticalOptionsFeeder()
         args = {}
     }
     UTILS.mergeDictsInline(options.args, GenerateUntrustedOptions(UnifiedGUI_Profiles))
-    if CLM.MODULES.ACL:CheckLevel(CONSTANTS.ACL.LEVEL.ASSISTANT) then
+    if CLM.MODULES.ACL:CheckLevel(CONSTANTS.ACL.LEVEL.OFFICER) then
         UTILS.mergeDictsInline(options.args, GenerateAssistantOptions(UnifiedGUI_Profiles))
     end
     return options
@@ -220,10 +210,8 @@ local function tableDataFeeder()
         local rank = ""
         if CLM.MODULES.ACL:CheckLevel(CONSTANTS.ACL.LEVEL.GUILD_MASTER, name) then
             rank = CLM.L["GM"]
-        elseif CLM.MODULES.ACL:CheckLevel(CONSTANTS.ACL.LEVEL.MANAGER, name) then
-            rank = CLM.L["Manager"]
-        elseif CLM.MODULES.ACL:CheckLevel(CONSTANTS.ACL.LEVEL.ASSISTANT, name) then
-            rank = CLM.L["Assistant"]
+        elseif CLM.MODULES.ACL:CheckLevel(CONSTANTS.ACL.LEVEL.OFFICER, name) then
+            rank = CLM.L["Officer"]
         end
         local profile = CLM.MODULES.ProfileManager:GetProfileByName(name)
         local highlight
@@ -263,8 +251,8 @@ local function initializeHandler()
                 color = "cc0000"
             },
         },
-        CLM.MODULES.ACL:CheckLevel(CONSTANTS.ACL.LEVEL.ASSISTANT),
-        CLM.MODULES.ACL:CheckLevel(CONSTANTS.ACL.LEVEL.MANAGER)
+        CLM.MODULES.ACL:CheckLevel(CONSTANTS.ACL.LEVEL.OFFICER),
+        CLM.MODULES.ACL:CheckLevel(CONSTANTS.ACL.LEVEL.OFFICER)
     )
 end
 
@@ -275,7 +263,6 @@ local function beforeShowHandler()
         UnifiedGUI_Profiles.alreadyDisplayed = true
     end
     if CLM.MODULES.RaidManager:IsInRaid() then
-        UnifiedGUI_Profiles.roster = CLM.MODULES.RaidManager:GetRaid():UID()
         UnifiedGUI_Profiles.filter:SetFilterValue(CONSTANTS.FILTER.IN_RAID, true)
     else
         UnifiedGUI_Profiles.filter:SetFilterValue(CONSTANTS.FILTER.IN_RAID, false)

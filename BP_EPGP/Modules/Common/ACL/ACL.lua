@@ -17,7 +17,7 @@ end
 ---@param name string?
 ---@return boolean
 function ACL:IsTrusted(name)
-    return self:CheckLevel(CONSTANTS.ACL.LEVEL.ASSISTANT, name) or false
+    return self:CheckLevel(CONSTANTS.ACL.LEVEL.OFFICER, name) or false
 end
 
 ---@param level number?
@@ -36,37 +36,28 @@ function ACL:CheckLevel(level, name)
         name = UTILS.whoami()
     end
     local isGuildMaster = (info.guildMaster == name) or false
-    local isManager = info.managers[name] or false
-    local isAssistant = info.assistants[name] or false
-    -- Check for Guild Master
     if level >= CONSTANTS.ACL.LEVEL.GUILD_MASTER then
         return isGuildMaster
     end
-    -- Check for Officer
-    if level >= CONSTANTS.ACL.LEVEL.MANAGER then
-        return isManager or isGuildMaster
+    if level >= CONSTANTS.ACL.LEVEL.OFFICER then
+        return isGuildMaster or (info.officers[name] or false)
     end
-    -- Check for Managers
-    if level >= CONSTANTS.ACL.LEVEL.ASSISTANT then
-        return isAssistant or isManager or isGuildMaster
-    end
-    -- Check for unauthorized
     return true
 end
 
 ---@diagnostic disable-next-line: missing-fields
 CONSTANTS.ACL = {}
+-- Officer = a guild rank with "Is Officer" (rank permission flags 11/12, view/edit officer note).
+-- See docs/sync-and-security.md, decisions S1/S2.
 CONSTANTS.ACL.LEVEL = {
     PLEBS = 0,
-    ASSISTANT = 1,
-    MANAGER = 2,
-    GUILD_MASTER = 3
+    OFFICER = 1,
+    GUILD_MASTER = 2
 }
 
 CONSTANTS.ACL.LEVELS = UTILS.Set({
     CONSTANTS.ACL.LEVEL.PLEBS,
-    CONSTANTS.ACL.LEVEL.ASSISTANT,
-    CONSTANTS.ACL.LEVEL.MANAGER,
+    CONSTANTS.ACL.LEVEL.OFFICER,
     CONSTANTS.ACL.LEVEL.GUILD_MASTER
 })
 

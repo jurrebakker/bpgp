@@ -108,17 +108,17 @@ end
 
 local function GenerateUntrustedOptions(self)
     local options = {}
-    options.roster = {
-        name = CLM.L["Roster"],
-        type = "select",
-        values = CLM.MODULES.RosterManager:GetRostersUidMap(),
-        set = function(i, v)
-            -- self.roster = v
-            HandleRosterChange(v)
-            self.context = CONSTANTS.ACTION_CONTEXT.ROSTER
+    options.setup_roster = {
+        name = CLM.L["Set up BP EPGP"],
+        desc = CLM.L["Create the guild's EPGP roster with default settings. Only needed once."],
+        type = "execute",
+        func = function()
+            CLM.MODULES.RosterManager:NewRoster("BP EPGP")
             refreshFn()
         end,
-        get = function(i) return self.roster end,
+        hidden = function()
+            return CLM.MODULES.RosterManager:GetRoster() ~= nil or not CLM.MODULES.ACL:CheckLevel(CONSTANTS.ACL.LEVEL.OFFICER)
+        end,
         width = "full",
         order = 0
     }
@@ -368,10 +368,10 @@ local function verticalOptionsFeeder()
         args = {}
     }
     UTILS.mergeDictsInline(options.args, GenerateUntrustedOptions(UnifiedGUI_Standings))
-    if CLM.MODULES.ACL:CheckLevel(CONSTANTS.ACL.LEVEL.ASSISTANT) then
+    if CLM.MODULES.ACL:CheckLevel(CONSTANTS.ACL.LEVEL.OFFICER) then
         UTILS.mergeDictsInline(options.args, GenerateAssistantOptions(UnifiedGUI_Standings))
     end
-    if CLM.MODULES.ACL:CheckLevel(CONSTANTS.ACL.LEVEL.MANAGER) then
+    if CLM.MODULES.ACL:CheckLevel(CONSTANTS.ACL.LEVEL.OFFICER) then
         UTILS.mergeDictsInline(options.args, GenerateManagerOptions(UnifiedGUI_Standings))
     end
     return options
@@ -547,8 +547,8 @@ local function initializeHandler()
                 color = "cc0000"
             },
         },
-        CLM.MODULES.ACL:CheckLevel(CONSTANTS.ACL.LEVEL.ASSISTANT),
-        CLM.MODULES.ACL:CheckLevel(CONSTANTS.ACL.LEVEL.MANAGER)
+        CLM.MODULES.ACL:CheckLevel(CONSTANTS.ACL.LEVEL.OFFICER),
+        CLM.MODULES.ACL:CheckLevel(CONSTANTS.ACL.LEVEL.OFFICER)
     )
 end
 
@@ -572,26 +572,18 @@ end
 
 local function storeHandler()
     LOG:Trace("UnifiedGUI_Standings storeHandler()")
-    local storage = CLM.GUI.Unified:GetStorage(UnifiedGUI_Standings.name)
-    storage.roster = UnifiedGUI_Standings.roster
 end
 
 local function restoreHandler()
     LOG:Trace("UnifiedGUI_Standings restoreHandler()")
-    local storage = CLM.GUI.Unified:GetStorage(UnifiedGUI_Standings.name)
-    HandleRosterChange(storage.roster)
+    local roster = CLM.MODULES.RosterManager:GetRoster()
+    HandleRosterChange(roster and roster:UID())
 end
 
 local function dataReadyHandler()
     LOG:Trace("UnifiedGUI_Standings dataReadyHandler()")
-    if not CLM.MODULES.RosterManager:GetRosterByUid(UnifiedGUI_Standings.roster) then
-        local _, roster = next(CLM.MODULES.RosterManager:GetRosters())
-        if roster then
-            HandleRosterChange(roster:UID())
-        end
-    else
-        HandleRosterChange(UnifiedGUI_Standings.roster) -- force update of data relying on roster
-    end
+    local roster = CLM.MODULES.RosterManager:GetRoster()
+    HandleRosterChange(roster and roster:UID()) -- force update of data relying on roster
 end
 
 CONSTANTS.ACTION_CONTEXT = {

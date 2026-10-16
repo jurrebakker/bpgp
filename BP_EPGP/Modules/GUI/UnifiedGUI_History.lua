@@ -118,17 +118,6 @@ local function GenerateUntrustedOptions(self)
     end
     table.sort(profileList)
 
-    options.roster = {
-        name = CLM.L["Roster"],
-        type = "select",
-        values = CLM.MODULES.RosterManager:GetRostersUidMap(),
-        set = function(i, v)
-            self.roster = v
-            refreshFn()
-        end,
-        get = function(i) return self.roster end,
-        order = 0
-    }
     options.player = {
         name = CLM.L["Player"],
         type = "select",
@@ -462,8 +451,8 @@ local function initializeHandler()
                 color = "cc0000"
             }
         },
-        CLM.MODULES.ACL:CheckLevel(CONSTANTS.ACL.LEVEL.ASSISTANT),
-        CLM.MODULES.ACL:CheckLevel(CONSTANTS.ACL.LEVEL.MANAGER)
+        CLM.MODULES.ACL:CheckLevel(CONSTANTS.ACL.LEVEL.OFFICER),
+        CLM.MODULES.ACL:CheckLevel(CONSTANTS.ACL.LEVEL.OFFICER)
     )
 end
 
@@ -475,24 +464,18 @@ end
 
 local function storeHandler()
     LOG:Trace("UnifiedGUI_History storeHandler()")
-    local storage = CLM.GUI.Unified:GetStorage(UnifiedGUI_History.name)
-    storage.roster = UnifiedGUI_History.roster
 end
 
 local function restoreHandler()
     LOG:Trace("UnifiedGUI_History restoreHandler()")
-    local storage = CLM.GUI.Unified:GetStorage(UnifiedGUI_History.name)
-    UnifiedGUI_History.roster = storage.roster
+    local roster = CLM.MODULES.RosterManager:GetRoster()
+    UnifiedGUI_History.roster = roster and roster:UID()
 end
 
 local function dataReadyHandler()
     LOG:Trace("UnifiedGUI_History dataReadyHandler()")
-    if not CLM.MODULES.RosterManager:GetRosterByUid(UnifiedGUI_History.roster) then
-        local _, roster = next(CLM.MODULES.RosterManager:GetRosters())
-        if roster then
-            UnifiedGUI_History.roster = roster:UID()
-        end
-    end
+    local roster = CLM.MODULES.RosterManager:GetRoster()
+    UnifiedGUI_History.roster = roster and roster:UID()
 end
 
 -- CONSTANTS.HISTORY_TYPES = UTILS.Set({

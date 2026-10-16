@@ -53,9 +53,9 @@ function UnifiedGUI_Raids:GetSelection()
     return raid
 end
 
-local function UpdateRaid(self, name)
+local function UpdateRaid(self)
     LOG:Trace("UnifiedGUI_Raids UpdateRaid()")
-    local roster = CLM.MODULES.RosterManager:GetRosterByName(name)
+    local roster = CLM.MODULES.RosterManager:GetRoster()
     if roster then
         self.configuration = CLM.MODELS.RosterConfiguration:New(UTILS.DeepCopy(roster.configuration))
         return true
@@ -97,27 +97,6 @@ local function GenerateAssistantOptions(self)
             pattern = CONSTANTS.REGEXP_FLOAT_POSITIVE,
             order = 33,
         },
-        select_roster = {
-            name = CLM.L["Select roster"],
-            desc = CLM.L["Select roster to create raid for."],
-            type = "select",
-            width = "full",
-            values = (function()
-                local rosters = CLM.MODULES.RosterManager:GetRosters()
-                local values = {}
-                for name,_ in pairs(rosters) do
-                    values[name] = name
-                end
-                return values
-            end),
-            set = (function(i, v)
-                self.roster = v
-                UpdateRaid(self, self.roster)
-            end),
-            get = function(i) return self.roster end,
-            disabled = (function() return CLM.MODULES.RaidManager:IsInActiveRaid() end),
-            order = 9
-        },
         name_raid = {
             name = CLM.L["Raid Name"],
             desc = CLM.L["Set raid name"],
@@ -134,7 +113,7 @@ local function GenerateAssistantOptions(self)
             type = "execute",
             width = "full",
             func = (function(i)
-                CLM.MODULES.RaidManager:CreateRaid(CLM.MODULES.RosterManager:GetRosterByName(self.roster), self.raidName, self.configuration)
+                CLM.MODULES.RaidManager:CreateRaid(CLM.MODULES.RosterManager:GetRoster(), self.raidName, self.configuration)
             end),
             disabled = (function() return CLM.MODULES.RaidManager:IsInActiveRaid() end),
             confirm = true,
@@ -157,10 +136,10 @@ local function verticalOptionsFeeder()
         args = {}
     }
     -- UTILS.mergeDictsInline(options.args, GenerateUntrustedOptions(UnifiedGUI_Raids))
-    if CLM.MODULES.ACL:CheckLevel(CONSTANTS.ACL.LEVEL.ASSISTANT) then
+    if CLM.MODULES.ACL:CheckLevel(CONSTANTS.ACL.LEVEL.OFFICER) then
         UTILS.mergeDictsInline(options.args, GenerateAssistantOptions(UnifiedGUI_Raids))
     end
-    -- if CLM.MODULES.ACL:CheckLevel(CONSTANTS.ACL.LEVEL.MANAGER) then
+    -- if CLM.MODULES.ACL:CheckLevel(CONSTANTS.ACL.LEVEL.OFFICER) then
     --     UTILS.mergeDictsInline(options.args, GenerateManagerOptions(UnifiedGUI_Raids))
     -- end
     -- if CLM.MODULES.ACL:CheckLevel(CONSTANTS.ACL.LEVEL.GUILD_MASTER) then
@@ -334,8 +313,8 @@ local function initializeHandler()
                 color = "cc0000"
             }
         },
-        CLM.MODULES.ACL:CheckLevel(CONSTANTS.ACL.LEVEL.ASSISTANT),
-        CLM.MODULES.ACL:CheckLevel(CONSTANTS.ACL.LEVEL.MANAGER)
+        CLM.MODULES.ACL:CheckLevel(CONSTANTS.ACL.LEVEL.OFFICER),
+        CLM.MODULES.ACL:CheckLevel(CONSTANTS.ACL.LEVEL.OFFICER)
     )
 end
 
@@ -347,26 +326,16 @@ end
 
 local function storeHandler()
     LOG:Trace("UnifiedGUI_Raids storeHandler()")
-    local storage = CLM.GUI.Unified:GetStorage(UnifiedGUI_Raids.name)
-    storage.roster = UnifiedGUI_Raids.roster
 end
 
 local function restoreHandler()
     LOG:Trace("UnifiedGUI_Raids restoreHandler()")
-    local storage = CLM.GUI.Unified:GetStorage(UnifiedGUI_Raids.name)
-    UnifiedGUI_Raids.roster = storage.roster
+    UpdateRaid(UnifiedGUI_Raids)
 end
 
 local function dataReadyHandler()
     LOG:Trace("UnifiedGUI_Raids dataReadyHandler()")
-    if not CLM.MODULES.RosterManager:GetRosterByName(UnifiedGUI_Raids.roster) then
-        local _, roster = next(CLM.MODULES.RosterManager:GetRosters())
-        if roster then
-            UnifiedGUI_Raids.roster = roster:UID()
-        end
-    end
-
-    UpdateRaid(UnifiedGUI_Raids, UnifiedGUI_Raids.roster)
+    UpdateRaid(UnifiedGUI_Raids)
 end
 
 CLM.GUI.Unified:RegisterTab(

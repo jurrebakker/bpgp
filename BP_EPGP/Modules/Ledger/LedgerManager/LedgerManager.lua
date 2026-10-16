@@ -18,7 +18,7 @@ local STATUS_UNKNOWN_TYPE = "unknown_type"
 
 local function registerReceiveCallback(callback)
     CLM.MODULES.Comms:Register(CLM.COMM_CHANNEL.LEDGER.SYNC, callback, CONSTANTS.ACL.LEVEL.PLEBS)
-    CLM.MODULES.Comms:Register(CLM.COMM_CHANNEL.LEDGER.DATA, callback, CONSTANTS.ACL.LEVEL.ASSISTANT)
+    CLM.MODULES.Comms:Register(CLM.COMM_CHANNEL.LEDGER.DATA, callback, CONSTANTS.ACL.LEVEL.OFFICER)
 end
 
 local function createLedger(self, database)
@@ -29,7 +29,7 @@ local function createLedger(self, database)
         end), -- send
         registerReceiveCallback, -- registerReceiveHandler
         (function(entry, sender)
-            return CLM.MODULES.ACL:CheckLevel(CONSTANTS.ACL.LEVEL.ASSISTANT, UTILS.Disambiguate(sender))
+            return CLM.MODULES.ACL:CheckLevel(CONSTANTS.ACL.LEVEL.OFFICER, UTILS.Disambiguate(sender))
         end), -- authorizationHandler
         (function(data, distribution, target, progressCallback)
             return CLM.MODULES.Comms:Send(CLM.COMM_CHANNEL.LEDGER.DATA, data, distribution, target, "NORMAL")
@@ -85,7 +85,7 @@ function LedgerManager:Enable()
         LedgerManager:Cutoff()
         LOG:Message("Ledger synchronisation was disabled. Use this at your own risk.")
     else
-        if CLM.MODULES.ACL:CheckLevel(CONSTANTS.ACL.LEVEL.ASSISTANT) then
+        if CLM.MODULES.ACL:CheckLevel(CONSTANTS.ACL.LEVEL.OFFICER) then
             self.activeLedger.enableSending()
         end
     end

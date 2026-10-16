@@ -40,13 +40,9 @@ function TrustInfoProvider:BuildRankCache()
     for i=1,GuildControlGetNumRanks() do
         local rankInfo = C_GuildInfo.GuildControlGetRankFlags(i)
         self.cache.ranks[i] = {}
-        -- 11 View Officer Note
-        self.cache.ranks[i].isAssistant = rankInfo[11]
-        -- 12 Edit Officer Note
-        self.cache.ranks[i].isManager = rankInfo[12]
+        -- 11 View Officer Note / 12 Edit Officer Note. On Midnight both follow "Is Officer".
+        self.cache.ranks[i].isOfficer = (rankInfo[11] and rankInfo[12]) and true or false
     end
-    -- Add GM
-    -- self.cache.ranks[0] = { isManager = true, isAssistant = true}
 end
 
 function TrustInfoProvider:BuildGuildCache()
@@ -63,11 +59,8 @@ function TrustInfoProvider:BuildGuildCache()
             self.cache.guildies[name] = rankIndex
             if self.cache.ranks[rankIndex] then
                 self.cache.ranks[rankIndex].name = rankName
-                if self.cache.ranks[rankIndex].isAssistant then
-                    self.cache.assistants[name] = true
-                end
-                if self.cache.ranks[rankIndex].isManager then
-                    self.cache.managers[name] = true
+                if self.cache.ranks[rankIndex].isOfficer then
+                    self.cache.officers[name] = true
                 end
             end
             if rankIndex == 1 then
@@ -97,7 +90,7 @@ end
 
 function TrustInfoProvider:WipeAll()
     LOG:Trace("TrustInfoProvider:WipeAll()")
-    self.cache = { guildMaster = "", managers = {}, assistants = {}, ranks = {}, guildies = {} }
+    self.cache = { guildMaster = "", officers = {}, ranks = {}, guildies = {} }
 end
 
 
