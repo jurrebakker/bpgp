@@ -26,16 +26,6 @@ local Award          = LogEntry:extend("IA")
 ---@field v number value
 ---@field e string extra
 local RaidAward      = LogEntry:extend("II")
----@class Disenchant
----@field r number rosterUid
----@field i number itemId
----@field e string extra
-local Disenchant     = LogEntry:extend("ID")
----@class RaidDisenchant
----@field r string raidUid
----@field i number itemId
----@field e string extra
-local RaidDisenchant = LogEntry:extend("IE")
 
 ---@param rosterUid number
 ---@param profile Profile|number
@@ -129,73 +119,7 @@ function RaidAward:fields()
     return raidAwardFields
 end
 
----@param rosterUid number
----@param itemId number
----@param extra? string
----@return Disenchant
-function Disenchant:new(rosterUid, itemId, extra)
-    local o = LogEntry.new(self);
-    o.r = tonumber(rosterUid) or 0
-    o.i = tonumber(itemId) or 0
-    o.e = extra and tostring(extra) or extra
-    return o
-end
-
----@return number
-function Disenchant:rosterUid()
-    return self.r
-end
-
----@return number
-function Disenchant:item()
-    return self.i
-end
-
----@return string
-function Disenchant:extra()
-    return self.e or ""
-end
-
-local disenchantFields = mergeLists(LogEntry:fields(), {"r", "i", "e"})
-function Disenchant:fields()
-    return disenchantFields
-end
-
----@param raidUid string
----@param itemId number
----@param extra? string
----@return RaidDisenchant
-function RaidDisenchant:new(raidUid, itemId, extra)
-    local o = LogEntry.new(self);
-    o.r = raidUid or ""
-    o.i = tonumber(itemId) or 0
-    o.e = extra and tostring(extra) or extra
-    return o
-end
-
----@return string
-function RaidDisenchant:raidUid()
-    return self.r
-end
-
----@return number
-function RaidDisenchant:item()
-    return self.i
-end
-
----@return string
-function RaidDisenchant:extra()
-    return self.e or ""
-end
-
-local raidDisenchantFields = mergeLists(LogEntry:fields(), {"r", "i", "e"})
-function RaidDisenchant:fields()
-    return raidDisenchantFields
-end
-
 CLM.MODELS.LEDGER.LOOT = {
     Award = Award,
     RaidAward = RaidAward,
-    Disenchant = Disenchant,
-    RaidDisenchant = RaidDisenchant,
 }

@@ -40,7 +40,6 @@ end
 ---@field classMultipliers table
 ---@field configuration RosterConfiguration
 ---@field defaultSlotValues table
----@field disenchantedLoot table
 ---@field fieldNames table
 ---@field inRoster table
 ---@field itemValues table
@@ -90,7 +89,6 @@ function Roster:New(uid, pointType)
     o.profilePointHistory = {}  -- Point changes in to players in roster (dict of lists)
     o.raidLoot = {}             -- Loot received in the roster (list). Time descending
     o.profileLoot = {}          -- Loot received by players (dict of lists). Time descending per player
-    o.disenchantedLoot = {}     -- Loot disenchanted
     o.weeklyGains = {}          -- Weekly point gains per player
     o.calculator = CLM.MODELS.ItemValueCalculator:New() -- Dynamic item value calculator
     -- END ROSTER STATE --
@@ -654,16 +652,6 @@ end
 ---@return table
 function Roster:GetProfileLootByGUID(GUID)
     return self.profileLoot[GUID] or {}
-end
-
----@param loot table
-function Roster:AddDisenchanted(loot)
-    self.disenchantedLoot[#self.disenchantedLoot+1] = loot
-end
-
----@return table
-function Roster:GetDisenchantedLoot()
-    return self.disenchantedLoot or {}
 end
 
 ---@param history table

@@ -60,7 +60,6 @@ function GlobalConfigs:Initialize()
             loot = true,
             commands = false
         },
-        disenchanters = "",
         loot_roll = {
             rollOnLoot = CONSTANTS.LOOT_ROLL_TYPE_IGNORE,
             includeLegendary = false,
@@ -215,20 +214,6 @@ Thank you patrons!
             set = function(i, v) self:SetAnnounceLootToRaidLevel(v) end,
             get = function(i) return self:GetAnnounceLootToRaidLevel() end,
             order = 8
-        },
-        de_header = {
-            type = "header",
-            name = CLM.L["Disenchanters"],
-            order = 80
-        },
-        de_list = {
-            type = "input",
-            -- name = "",
-            name = CLM.L["Comma-separated (CSV) list of disenchanter names. Case insensitive. Player-RealmName."],
-            get = (function(i) return self:GetDisenchanterCSV() end),
-            set = (function(i,v) self:SetDisenchanterCSV(v) end),
-            width = "full",
-            order = 81
         },
         rw_header = {
             type = "header",
@@ -548,28 +533,6 @@ end
 ---@return number
 function GlobalConfigs:GetUIScale()
     return self.db.uiscale
-end
-
----@param v string?
-function GlobalConfigs:SetDisenchanterCSV(v)
-    self.db.disenchanters = v or ""
-    self.deList = nil
-end
-
----@return string
-function GlobalConfigs:GetDisenchanterCSV()
-    return self.db.disenchanters
-end
-
----@return table
-function GlobalConfigs:GetDisenchanterList()
-    if not self.deList then
-        self.deList = {}
-        for _, deName in ipairs({strsplit(",", self.db.disenchanters)}) do
-            self.deList[#self.deList+1] = UTILS.Trim(deName)
-        end
-    end
-    return self.deList
 end
 
 CONSTANTS.MODIFIER_COMBINATION = {

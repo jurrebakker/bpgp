@@ -342,32 +342,6 @@ local function GenerateAwardOptions(self)
             order = 5,
             disabled = (function() return genericDisable() or not self.awardPlayer end),
         },
-        disenchant = {
-            name = CLM.L["Disenchant"],
-            type = "execute",
-            func = (function()
-                CLM.MODULES.AuctionManager:Disenchant(self.auctionItem)
-                self.BidList:ClearSelection()
-                if self.removeOnAward then
-                    self.auctionItem:DecrementTotal()
-                    if self.auctionItem:GetTotal() == 0 then
-                        CLM.MODULES.AuctionManager:RemoveItemFromCurrentAuction(self.auctionItem)
-                        self.auctionItem = nil
-                    end
-                end
-                self.awardPlayer = nil
-                self:Refresh()
-            end),
-            confirm = (function()
-                return string.format(CLM.L["Are you sure, you want to disenchant %s?"], self.auctionItem:GetItemLink())
-            end),
-            control = "BPEPGPIconNoLabel",
-            width = 0.2,
-            order = 6,
-            image = "Interface\\Buttons\\UI-GroupLoot-DE-Up",
-            -- image = CLM.MEDIA_PATH .. "Buttons\\delete2.tga",
-            disabled = genericDisable,
-        }
     }
     return options
 end

@@ -357,25 +357,18 @@ local function tableDataFeeder()
     if UnifiedGUI_History.historyType ~= CONSTANTS.HISTORY_TYPE.POINT then
         local isProfileLoot = (profile and roster:IsProfileInRoster(profile:GUID()))
         local lootList
-        local disenchantedList
         -- player loot
         if isProfileLoot then
             lootList = roster:GetProfileLootByGUID(profile:GUID())
-            disenchantedList = {}
         else -- raid loot
             lootList = roster:GetRaidLoot()
-            disenchantedList = roster:GetDisenchantedLoot()
         end
 
-        local displayedLoot, displayedDe = {}, {}
+        local displayedLoot = {}
         UnifiedGUI_History.pendingLoot = false
 
         for _,loot in ipairs(lootList) do
             fillLootList(displayedLoot, loot)
-        end
-
-        for _,loot in ipairs(disenchantedList) do
-            fillLootList(displayedDe, loot)
         end
 
         if UnifiedGUI_History.pendingLoot then
@@ -403,20 +396,6 @@ local function tableDataFeeder()
             data[#data + 1] =  row
         end
 
-        for _,lootData in ipairs(displayedDe) do
-            local loot = lootData[1]
-            local row = {cols = {
-                {value = lootData[2]},
-                {value = lootData[2]}, -- itemLink
-                {value = ""},
-                {value = date(CLM.L["%Y/%m/%d %H:%M:%S (%A)"], loot:Timestamp())},
-                {value = lootData[3], color = lootData[4]}, -- owner
-                -- Not visible
-                {value = true}, -- is Loot
-                {value = loot} -- Loot Object
-            }}
-            data[#data + 1] =  row
-        end
     end
 
     if UnifiedGUI_History.historyType ~= CONSTANTS.HISTORY_TYPE.LOOT then

@@ -14,15 +14,12 @@ local function notEmptyiGUID(iGUID)
 end
 
 ---@class ProfileManager
----@field _deProfile Profile
 ---@field cache table
 ---@field db table
 ---@field _initialized boolean
 local ProfileManager = {}
 function ProfileManager:Initialize()
     LOG:Trace("ProfileManager:Initialize()")
-
-    self._deProfile = CLM.MODELS.Profile:New(nil, CLM.L["Disenchanted"])
 
     self.cache = {
         profilesGuidMap = {},
@@ -270,11 +267,6 @@ end
 ---@return Profile?
 function ProfileManager:GetProfileByName(name)
     return self.cache.profiles[self.cache.profilesGuidMap[strlower(name)]]
-end
-
----@return Profile
-function ProfileManager:GetDisenchanterProfile()
-    return self._deProfile
 end
 
 -- Publis API

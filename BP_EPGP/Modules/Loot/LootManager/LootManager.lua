@@ -51,16 +51,6 @@ local function mutateLootAward(entry, roster)
     end
 end
 
-local function mutateLootDisenchant(entry, roster)
-    if not roster then
-        LOG:Debug("mutateLootAward(): Roster does not exist")
-        return
-    end
-    local loot = CLM.MODELS.Loot:New(entry, CLM.MODULES.ProfileManager:GetDisenchanterProfile())
-    CLM.MODULES.RosterManager:AddDisenchantedToRoster(roster, loot)
-    UTILS.GetItemInfo(loot:Id())
-end
-
 ---@class LootManager
 local LootManager = {}
 function LootManager:Initialize()
@@ -89,31 +79,6 @@ function LootManager:Initialize()
             end
             mutateLootAward(entry, raid:Roster())
         end))
-
-        CLM.MODULES.LedgerManager:RegisterEntryType(
-            CLM.MODELS.LEDGER.LOOT.Disenchant,
-            (function(entry)
-                LOG:TraceAndCount("mutator(LootDisenchant)")
-                local roster = CLM.MODULES.RosterManager:GetRosterByUid(entry:rosterUid())
-                if not roster then
-                    LOG:Debug("PointManager mutator(): Unknown roster uid %s", entry:rosterUid())
-                    return
-                end
-                mutateLootDisenchant(entry, roster)
-            end))
-
-        CLM.MODULES.LedgerManager:RegisterEntryType(
-            CLM.MODELS.LEDGER.LOOT.RaidDisenchant,
-            (function(entry)
-                LOG:TraceAndCount("mutator(LootRaidDisenchant)")
-                local raid = CLM.MODULES.RaidManager:GetRaidByUid(entry:raidUid())
-                if not raid then
-                    LOG:Debug("PointManager mutator(): Unknown raid uid %s", entry:raidUid())
-                    return
-                end
-                mutateLootDisenchant(entry, raid:Roster())
-            end))
-
 end
 
 ---@param raidOrRoster Raid|Roster
@@ -180,53 +145,6 @@ function LootManager:AwardItem(raidOrRoster, name, itemLink, itemId, extra, valu
         LOG:Error("LootManager:AwardItem(): Unknown profile guid [%s] in roster [%s]", profile:GUID(), roster:UID())
     end
     return false
-end
-
----@param raidOrRoster Raid|Roster
----@param itemLink string
----@param forceInstant boolean?
----@return boolean, string?
-function LootManager:DisenchantItem(raidOrRoster, itemLink, forceInstant)
-    LOG:Trace("LootManager:DisenchantItem()")
-    local isRaid = true
-    if not UTILS.typeof(raidOrRoster, CLM.MODELS.Raid) then
-        isRaid = false
-        if not UTILS.typeof(raidOrRoster, CLM.MODELS.Roster) then
-            LOG:Error("raidOrRoster:DisenchantItem(): Missing valid raid / roster")
-            return false
-        end
-    end
-    local itemId, extra = UTILS.GetItemIdFromLink(itemLink)
-    if type(itemId) ~= "number" then
-        LOG:Error("LootManager:DisenchantItem(): Invalid ItemId")
-        return false
-    end
-    if not UTILS.GetItemInfoInstant(itemId) then
-        LOG:Error("LootManager:DisenchantItem(): Item does not exist")
-        return false
-    end
-    if type(extra) == "string" then
-        extra = string.gsub(extra, "[^%d:]+", "")
-    elseif extra ~= nil then
-        LOG:Error("LootManager:DisenchantItem(): Invalid extra payload data")
-        return false
-    end
-    local roster = isRaid and raidOrRoster:Roster() or raidOrRoster
-    local entry
-    if isRaid then
-        entry = CLM.MODELS.LEDGER.LOOT.RaidDisenchant:new(raidOrRoster:UID(), itemId, extra)
-    else
-        entry = CLM.MODELS.LEDGER.LOOT.Disenchant:new(roster:UID(), itemId, extra)
-    end
-    CLM.MODULES.LedgerManager:Submit(entry, forceInstant)
-    if CLM.GlobalConfigs:GetLootWarning() then
-        local message = CLM.L["Disenchanted"] .. " " .. itemLink
-        UTILS.SendChatMessage(message, CHAT_MESSAGE_CHANNEL)
-        if CLM.GlobalConfigs:GetAnnounceAwardToGuild() then
-            UTILS.SendChatMessage(message, "GUILD")
-        end
-    end
-    return true, entry:uuid()
 end
 
 ---@param loot Loot

@@ -383,21 +383,6 @@ function RaidManager:JoinRaid(raid)
     CLM.MODULES.LedgerManager:Submit(CLM.MODELS.LEDGER.RAID.Update:new(raid:UID(), {}, {CLM.MODULES.ProfileManager:GetMyProfile()}), true)
 end
 
----@return string?
-function RaidManager:GetDisenchanter()
-    if not self:IsInActiveRaid() then return end
-    local raid = self:GetRaid()
-    local disenchanters = CLM.GlobalConfigs:GetDisenchanterList()
-    for _, disenchanter in ipairs(disenchanters) do
-        local deProfile = CLM.MODULES.ProfileManager:GetProfileByName(disenchanter)
-        if deProfile and raid.players[deProfile:GUID()] then
-            return deProfile:Name()
-        end
-    end
-
-    return nil
-end
-
 function RaidManager:RegisterEventHandling()
     if self.isEventHandlingRegistered then return end
     CLM.MODULES.EventManager:RegisterWoWBucketEvent({"RAID_ROSTER_UPDATE", "GROUP_ROSTER_UPDATE", "READY_CHECK"}, 3, (function(...)

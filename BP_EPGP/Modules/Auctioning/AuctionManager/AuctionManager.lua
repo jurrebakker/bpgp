@@ -115,14 +115,6 @@ local function GetRemoveOnNoBids(self)
     return self.db.removeOnNoBids
 end
 
-local function SetDisenchantAutoRemoved(self, value)
-    self.db.disenchantAutoRemoved = value and true or false
-end
-
-local function GetDisenchantAutoRemoved(self)
-    return self.db.disenchantAutoRemoved
-end
-
 local function SetPostAllBidsOnAward(self, value)
     self.db.postAllBidsOnAward = value and true or false
 end
@@ -481,21 +473,12 @@ local function CreateConfigurationOptions(self)
         },
         auction_remove_on_no_bids = {
             name = CLM.L["Remove items without bids"],
-            desc = CLM.L["Remove items without bids from auction list. This will make marking items as disenchanted not possible."],
+            desc = CLM.L["Remove items without bids from the auction list when the auction ends."],
             type = "toggle",
             set = function(i, v) SetRemoveOnNoBids(self, v) end,
             get = function(i) return GetRemoveOnNoBids(self) end,
             width = "double",
             order = 40,
-        },
-        auction_disenchant_autoremoved = {
-            name = CLM.L["Disenchant removed items"],
-            desc = CLM.L["Automatically mark auto-removed items as disenchanted"],
-            type = "toggle",
-            set = function(i, v) SetDisenchantAutoRemoved(self, v) end,
-            get = function(i) return GetDisenchantAutoRemoved(self) end,
-            width = 1,
-            order = 41,
         },
         loot_queue_ignore_classes = {
             name = CLM.L["Ignore"],
@@ -674,9 +657,6 @@ local function EndAuction(self)
         if GetRemoveOnNoBids(self) then
             if not item:HasValidBids() then
                 self:RemoveItemFromCurrentAuction(item)
-                if GetDisenchantAutoRemoved(self) then
-                    self:Disenchant(item)
-                end
             end
         end
     end
@@ -1226,19 +1206,6 @@ function AuctionManager:Award(item, name, price)
         end
         CLM.MODULES.AutoAssign:Handle(item:GetItemLink(), name)
         RevalidateBids(self)
-    end
-end
-
----@param item AuctionItem
-function AuctionManager:Disenchant(item)
-    LOG:Trace("AuctionManager:Disenchant()")
-    local success, uuid = CLM.MODULES.LootManager:DisenchantItem(self.currentAuction:GetRaid(), item:GetItemLink(), true)
-    if success then
-        CLM.MODULES.AuctionHistoryManager:CorrelateWithLoot(item:GetItemLink(), self.currentAuction:GetEndTime(), uuid)
-        local disenchanter = CLM.MODULES.RaidManager:GetDisenchanter()
-        if disenchanter then
-            CLM.MODULES.AutoAssign:Handle(item:GetItemLink(), disenchanter)
-        end
     end
 end
 
