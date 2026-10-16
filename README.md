@@ -21,5 +21,8 @@ BP EPGP is a fork of [Core Loot Manager](https://github.com/CoreLootManager/Core
 
 ## License
 
-Apache License 2.0. See [LICENSE](LICENSE) and [NOTICE](NOTICE).
-Based on Core Loot Manager by Lantis and contributors; see [CREDITS.md](CREDITS.md).
+Apache License 2.0, see [LICENSE](LICENSE). Based on Core Loot Manager, heavily modified; all files were changed for BP EPGP.
+
+Copyright 2021-2023 Lantis and the Classic Loot Manager contributors (original Core Loot Manager).
+Modifications copyright 2026 Jurre Bakker.
+Third-party libraries in `BP_EPGP/Libs` are subject to their own licenses.

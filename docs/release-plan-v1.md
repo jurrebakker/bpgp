@@ -367,13 +367,14 @@ There is no automated test harness for WoW UI code; luacheck catches syntax/glob
 ## 8. Licensing & rebranding checklist (Apache 2.0)
 
 - [ ] Keep `LICENSE` unchanged.
-- [ ] Keep `NOTICE` and add: `BP EPGP — modified by Jurre Bakker, 2026. Based on Core Loot Manager.`
-- [ ] README: "Based on Core Loot Manager by Lantis and contributors, heavily modified."
-- [ ] Mark modified files (short header comment or a note in NOTICE/README that all files were modified).
+- [x] No `NOTICE` file (removed 2026-10-16). The original copyright line and ours are in the README's License section, which satisfies Apache §4(d) (attribution "within the Source form or documentation").
+- [x] README: "Based on Core Loot Manager, heavily modified" plus the copyright lines.
+- [x] Mark modified files: the README says all files were changed for BP EPGP.
 - [ ] Don't use the names "Core Loot Manager" / "CLM" or the CLM logo as our branding (Apache §6 trademarks). Icons in `Media/Icons` are replaced by `bp-epgp-32.png` (done); in-game "CLM" strings remain.
 - [ ] Remove CLM's Patreon, Discord, Curse/Wago IDs, "Created by Lantis" in-game strings → move credit to an About/credits line instead. (In-game settings header done: logo + "BP EPGP <version>".)
 - [ ] Keep each vendored library's own license file.
-- [ ] Update `CREDITS.md` (keep original credits, add ours).
+- [x] No `CREDITS.md` (removed 2026-10-16); attribution is in the README.
+- [ ] The packaged addon (`BP_EPGP` folder only) must also carry `LICENSE` and the attribution: copy both into the package (see §10).
 
 ---
 
