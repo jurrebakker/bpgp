@@ -265,14 +265,14 @@ Each phase ends with: luacheck clean, `/reload` without Lua errors, and the rele
 - [x] Delete GlobalUIHandlers (auto-roll), Tooltips.lua.
 
 ### Phase 3 — EPGP only
-- [ ] Remove DKP point type: collapse every `POINT_TYPE` branch to the EPGP path; remove zero-sum bank, caps, weekly caps, tax, allow-below-min.
-- [ ] Remove dynamic item values (ItemValueCalculator + V* entries), class multipliers (RM).
-- [ ] Remove AutoAwardManager and encounter tables; keep on-time bonus in RaidManager.
-- [ ] Remove bench/standby (StandbyStagingManager, standby lists in raids, bench multiplier, auto-bench leavers, STANDBY comm channel).
-- [ ] Remove alt-main linking (P2), profile locking (P3), spec/role tracking, pruning, attendance tracker, disenchant (ID/IE).
-- [ ] Trim `RosterConfiguration` fields and Options to what's left; set defaults: EPGP, Open, Tiered, named buttons on.
-- [ ] Single roster: auto-select the only roster everywhere; hide roster dropdowns; block creating a second roster. First-time creation via a "Set up BP EPGP" button ([ui-overhaul](features/ui-overhaul.md) D7).
-- [ ] One officer level: collapse ASSISTANT/MANAGER checks into a single *officer* check ("Is Officer" rank, verified via rank flags 11/12 on 12.x). See [sync-and-security.md](sync-and-security.md) S1/S2.
+- [x] Remove DKP point type: collapse every `POINT_TYPE` branch to the EPGP path; remove zero-sum bank, caps, weekly caps, tax, allow-below-min.
+- [x] Remove dynamic item values (ItemValueCalculator + V* entries), class multipliers (RM).
+- [x] Remove AutoAwardManager and encounter tables; keep on-time bonus in RaidManager.
+- [x] Remove bench/standby (StandbyStagingManager, standby lists in raids, bench multiplier, auto-bench leavers, STANDBY comm channel).
+- [x] Remove alt-main linking (P2), profile locking (P3), spec/role tracking, pruning, attendance tracker, disenchant (ID/IE).
+- [x] Trim `RosterConfiguration` fields and Options to what's left; set defaults: EPGP, Open, Tiered, named buttons on.
+- [x] Single roster: auto-select the only roster everywhere; hide roster dropdowns; block creating a second roster. First-time creation via a "Set up BP EPGP" button ([ui-overhaul](features/ui-overhaul.md) D7).
+- [x] One officer level: collapse ASSISTANT/MANAGER checks into a single *officer* check ("Is Officer" rank, verified via rank flags 11/12 on 12.x). See [sync-and-security.md](sync-and-security.md) S1/S2.
 
 ### Phase 4 — Test mode ([features/test-mode.md](features/test-mode.md))
 - [ ] Test mode switch (Advanced tab + `/bpepgp test`): separate test ledger section, `BPEPT…` comm prefix, local `[TEST]` chat output, TEST MODE banner. No "apply" to live.
