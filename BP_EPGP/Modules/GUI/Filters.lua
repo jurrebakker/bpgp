@@ -18,8 +18,6 @@ local supportedFilters = {
     "inRaid",
     "inGuild",
     "external",
-    "main",
-    "locked",
     "online",
     "rank"
 }
@@ -43,8 +41,6 @@ local supportedOptions = {
 ---@field inRaid boolean
 ---@field inGuild boolean
 ---@field external boolean
----@field main boolean
----@field locked boolean
 ---@field online boolean
 ---@field rank boolean
 ---@field buttons boolean
@@ -91,18 +87,14 @@ CONSTANTS.FILTER = {
     IN_RAID      = 100,
     ONLINE       = 101,
     IN_GUILD     = 103,
-    NOT_IN_GUILD = 104,
-    MAINS_ONLY   = 105,
-    LOCKED_ONLY  = 106
+    NOT_IN_GUILD = 104
 }
 
 CONSTANTS.FILTERS_GUI = {
     [CONSTANTS.FILTER.IN_RAID] = CLM.L["In Raid"],
     [CONSTANTS.FILTER.ONLINE] = CLM.L["Online"],
     [CONSTANTS.FILTER.IN_GUILD] = CLM.L["In Guild"],
-    [CONSTANTS.FILTER.NOT_IN_GUILD] = CLM.L["External"],
-    [CONSTANTS.FILTER.MAINS_ONLY] = CLM.L["Mains"],
-    [CONSTANTS.FILTER.LOCKED_ONLY] = CLM.L["Locked"]
+    [CONSTANTS.FILTER.NOT_IN_GUILD] = CLM.L["External"]
 }
 
 local color = "FFD100"
@@ -110,9 +102,7 @@ local parameterToConstantMap = {
     inRaid = CONSTANTS.FILTER.IN_RAID,
     inGuild = CONSTANTS.FILTER.IN_GUILD,
     external = CONSTANTS.FILTER.NOT_IN_GUILD,
-    main = CONSTANTS.FILTER.MAINS_ONLY,
     online = CONSTANTS.FILTER.ONLINE,
-    locked = CONSTANTS.FILTER.LOCKED_ONLY,
 }
 
 local function SelectClasses(self, isSelect)
@@ -288,22 +278,11 @@ function Filters:Filter(playerName, playerClass, searchFieldsList)
     end
 
     local profile = CLM.MODULES.ProfileManager:GetProfileByName(playerName)
-    if self.main and self.filters[CONSTANTS.FILTER.MAINS_ONLY] then
-        if profile then
-            status = status and (profile:Main() == "")
-        end
-    end
     local guildies = CLM.MODULES.TrustInfoProvider:GetGuildies()
     local inGuild = (guildies[playerName] ~= nil)
     if self.rank and self.inGuild then
         if inGuild then
             status = status and self.filters[guildies[playerName] + 1000]
-        end
-    end
-
-    if self.locked and self.filters[CONSTANTS.FILTER.LOCKED_ONLY] then
-        if profile then
-            status = status and profile:IsLocked()
         end
     end
 

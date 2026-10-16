@@ -10,16 +10,13 @@ local UTILS     = CLM.UTILS
 ---@class Profile
 ---@field _GUID string
 ---@field _versionString string
----@field locked boolean
----@field main string
 local Profile = {}
 
 ---@param entry table?
 ---@param name string?
 ---@param class string?
----@param main string?
 ---@return Profile
-function Profile:New(entry, name, class, main)
+function Profile:New(entry, name, class)
     local o = {}
 
     setmetatable(o, self)
@@ -29,15 +26,12 @@ function Profile:New(entry, name, class, main)
     o.entry = entry
     o.name  = (name ~= nil) and tostring(name) or ""
     o.class = (class ~= nil) and tostring(class) or ""
-    o.main  = (main ~= nil) and tostring(main) or ""
     o.version = {
         major = 0,
         minor = 0,
         patch = 0,
         changeset = ""
     }
-    o.alts = {}
-    o.locked = false
 
     o._versionString = CLM.L["Unknown"]
 
@@ -64,44 +58,6 @@ function Profile:ClassInternal()
     return UTILS.NumberToClass(self.entry:ingameClass())
 end
 
----@return string
-function Profile:Main()
-    return self.main
-end
-
----@param main string
-function Profile:SetMain(main)
-    self.main = main
-end
-
-function Profile:ClearMain()
-    self.main = ""
-end
-
----@return table
-function Profile:Alts()
-    return self.alts
-end
-
----@return boolean
-function Profile:HasAlts()
-    return not rawequal(next(self.alts), nil)
-end
-
----@param GUID string
-function Profile:AddAlt(GUID)
-    if not self.alts[GUID] then
-        self.alts[GUID] = true
-    end
-end
-
----@param GUID string
-function Profile:RemoveAlt(GUID)
-    if self.alts[GUID] then
-        self.alts[GUID] = nil
-    end
-end
-
 ---@param GUID string
 function Profile:SetGUID(GUID)
     self._GUID = GUID
@@ -110,19 +66,6 @@ end
 ---@return string
 function Profile:GUID()
     return self._GUID
-end
-
-function Profile:Lock()
-    self.locked = true
-end
-
-function Profile:Unlock()
-    self.locked = false
-end
-
----@return boolean
-function Profile:IsLocked()
-    return self.locked
 end
 
 ---@param major number

@@ -32,23 +32,14 @@ local function update_profile_standings(mutate, roster, targets, value, reason, 
         getGUID = (function(i) return getGuidFromInteger(i) end)
     end
     for _,target in ipairs(targets) do
-        local mainProfile = nil
         local GUID = getGUID(target)
         if not roster:IsProfileInRoster(GUID) then
             LOG:Debug("PointManager update_profile_standings(): Unknown profile guid [%s] in roster [%s]", GUID, roster:UID())
         else
             local targetProfile = CLM.MODULES.ProfileManager:GetProfileByGUID(GUID)
-            if targetProfile and not targetProfile:IsLocked() then
+            if targetProfile then
                 if roster:IsProfileInRoster(GUID) and pointHistoryEntry then
                     roster:AddProfilePointHistory(pointHistoryEntry, targetProfile)
-                end
-                -- Check if we have main-alt linking
-                if targetProfile:Main() == "" then -- is main
-                    if targetProfile:HasAlts() then -- has alts
-                        mainProfile = targetProfile
-                    end
-                else -- is alt
-                    mainProfile = CLM.MODULES.ProfileManager:GetProfileByGUID(targetProfile:Main())
                 end
                 -- Check if we should schedule it for alert
                 CLM.MODULES.EventManager:DispatchEvent(
@@ -59,22 +50,9 @@ local function update_profile_standings(mutate, roster, targets, value, reason, 
                         changeType = changeType,
                         rosterType = roster:GetPointType()
                     }, timestamp, GUID)
-                -- If we have a linked case then we alter the GUID to mains guid
-                if mainProfile then
-                    GUID = mainProfile:GUID()
-                end
-                if roster:IsProfileInRoster(GUID) then
-                    if not alreadyApplied[GUID] then
-                        mutate(roster, GUID, value, timestamp)
-                        alreadyApplied[GUID] = true
-                        if mainProfile then
-                            -- if we have a linked case then we need to mirror the change to all alts
-                            roster:MirrorStandings(GUID, mainProfile:Alts(), true)
-                        end
-                    end
-                else
-                    LOG:Debug("PointManager apply_mutator(): Unknown profile guid [%s] in roster [%s]", GUID, roster:UID())
-                    return
+                if not alreadyApplied[GUID] then
+                    mutate(roster, GUID, value, timestamp)
+                    alreadyApplied[GUID] = true
                 end
             end
         end

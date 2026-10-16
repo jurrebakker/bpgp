@@ -24,22 +24,6 @@ local function mutateLootAward(entry, roster)
         local loot = CLM.MODELS.Loot:New(entry, profile)
         CLM.MODULES.RosterManager:AddLootToRoster(roster, loot, profile)
 
-        local main
-        if profile:Main() == "" then -- is main
-            if profile:HasAlts() then -- has alts
-                main = profile
-            end
-        else -- is alt
-            main = CLM.MODULES.ProfileManager:GetProfileByGUID(profile:Main())
-        end
-        if main then
-            -- points are already awarded to alt in AddLoot
-            -- mirror them from the alt to all other alts + main
-            local mirrorTargets = UTILS.keys(main:Alts())
-            tinsert(mirrorTargets, main:GUID())
-            roster:MirrorStandings(profile:GUID(), mirrorTargets)
-        end
-
         -- Force caching loot from server
         UTILS.GetItemInfo(loot:Id())
         CLM.MODULES.EventManager:DispatchEvent(CONSTANTS.EVENTS.USER_RECEIVED_ITEM, { link = loot:String() }, entry:time(), GUID)

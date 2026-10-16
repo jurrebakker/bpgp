@@ -145,12 +145,6 @@ local nameFunctions  = {
     ["P1"] = (function(entry)
         return CLM.L["[Remove Profile]: "]
     end),
-    ["P2"] = (function(entry)
-            return CLM.L["[Alt-Main Link]: "]
-    end),
-    ["P3"] = (function(entry)
-        return CLM.L["[Profile Lock]: "]
-    end),
     -- Roster
     ["R0"] = (function(entry)
         return CLM.L["[Create Roster]: "]
@@ -254,27 +248,6 @@ local describeFunctions  = {
         return
             UTILS.ColorCodeText(profile and profile:Name() or guid,
                           profile and UTILS.GetClassColor(profile:Class()).hex or "6699ff")
-    end),
-    ["P2"] = (function(entry)
-        local guid = UTILS.getGuidFromInteger(entry:GUID())
-        local mainGuid = UTILS.getGuidFromInteger(entry:main())
-        local profile = CLM.MODULES.ProfileManager:GetProfileByGUID(guid)
-        local mainProfile = CLM.MODULES.ProfileManager:GetProfileByGUID(mainGuid)
-        if entry:main() ~= 0 then
-            return
-                UTILS.ColorCodeText(profile and profile:Name() or guid,
-                            profile and UTILS.GetClassColor(profile:Class()).hex or "6699ff") ..
-                CLM.L[" alt of: "] ..
-                UTILS.ColorCodeText(mainProfile and mainProfile:Name() or mainGuid,
-                            mainProfile and UTILS.GetClassColor(mainProfile:Class()).hex or "6699ff")
-        else
-            return
-                UTILS.ColorCodeText(profile and profile:Name() or guid,
-                            profile and UTILS.GetClassColor(profile:Class()).hex or "6699ff")
-        end
-    end),
-    ["P3"] = (function(entry)
-        return safeToString(entry:lock())
     end),
     -- Roster
     ["R0"] = (function(entry)
@@ -483,9 +456,6 @@ local extendFunctions  = {
         return ""
     end),
     -- Profiles
-    ["P3"] = (function(entry)
-        return concatenateNameFromList(entry:targets())
-    end),
     -- Points
     ["DM"] = (function(entry)
         return concatenateNameFromList(entry:targets())

@@ -10,7 +10,6 @@ local UTILS     = CLM.UTILS
 local _, _, _, isElvUI = UTILS.GetAddOnInfo("ElvUI")
 
 local colorRed = {r = 0.93, g = 0.276, b = 0.27, a = 1.0}
-local colorRedTransparent = {r = 0.93, g = 0.276, b = 0.27, a = 0.3}
 local colorBlueTransparent = {r = 0.27, g = 0.276, b = 0.93, a = 0.3}
 local colorGreen = {r = 0.27, g = 0.93, b = 0.27, a = 1.0}
 
@@ -50,10 +49,6 @@ local function ST_GetEP(row)
     return row.cols[4].value
 end
 
-local function ST_GetIsLocked(row)
-    return row.cols[13].value
-end
-
 local function ST_GetHighlight(row)
     return row.cols[14].value
 end
@@ -63,7 +58,6 @@ local function ST_GetGP(row)
 end
 
 local highlightPlayer = UTILS.getHighlightMethod(colorBlueTransparent, true)
-local highlightLocked = UTILS.getHighlightMethod(colorRedTransparent, true)
 
 local function refreshFn(...)
     CLM.GUI.Unified:Refresh(...)
@@ -87,7 +81,7 @@ local UnifiedGUI_Standings = {
     (function() CLM.GUI.Unified:FilterScrollingTable() end),
     UTILS.Set({
         "class", "inRaid",
-        "inGuild", "external", "main", "rank", "locked"
+        "inGuild", "external", "rank"
     }),
     UTILS.Set({
         "buttons", "search"
@@ -478,9 +472,6 @@ local tableStructure = {
             if not tooltip then return end
             tooltip:SetOwner(rowFrame, "ANCHOR_RIGHT")
             local lockedString = ""
-            if ST_GetIsLocked(rowData) then
-                lockedString = "|c4eED3333" .. CLM.L["Locked"] .. "|r"
-            end
             local pointInfo = ST_GetPointInfo(rowData)
             local weeklyGain = ST_GetWeeklyGains(rowData)
             local weeklyCap = ST_GetWeeklyCap(rowData)
@@ -607,9 +598,7 @@ local function tableDataFeeder()
         end
         if profile then
             local highlight
-            if profile:IsLocked() then
-                highlight = highlightLocked
-            elseif profile:Name() == UTILS.whoami() then
+            if profile:Name() == UTILS.whoami() then
                 highlight = highlightPlayer
             end
             local classColor = UTILS.GetClassColor(profile:ClassInternal())
@@ -627,7 +616,7 @@ local function tableDataFeeder()
         --[[10]] {value = roster:GetProfileLootByGUID(GUID)},
         --[[11]] {value = roster:GetProfilePointHistoryByGUID(GUID)},
         --[[12]] {value = roster:GetPointType()},
-        --[[13]] {value = profile:IsLocked()},
+        --[[13]] {value = false},
         --[[14]] {value = highlight},
         --[[15]] {value = profile:Class()}
             },

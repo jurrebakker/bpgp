@@ -238,15 +238,8 @@ function RosterManager:Initialize()
             if entry:remove() then
                 for _, iGUID in ipairs(profiles) do
                     local GUID = UTILS.getGuidFromInteger(iGUID)
-                    local profile = CLM.MODULES.ProfileManager:GetProfileByGUID(GUID)
-                    if profile then
+                    if CLM.MODULES.ProfileManager:GetProfileByGUID(GUID) then
                         roster:RemoveProfileByGUID(GUID)
-                        -- If it is a main with linked alts - remove all alts
-                        if profile:HasAlts() then
-                            for altGUID, _ in pairs(profile:Alts()) do
-                                roster:RemoveProfileByGUID(altGUID)
-                            end
-                        end
                     end
                 end
             else
@@ -257,23 +250,8 @@ function RosterManager:Initialize()
                         initialize = true
                         roster:AddProfileByGUID(GUID)
                     end
-                    local profile = CLM.MODULES.ProfileManager:GetProfileByGUID(GUID)
-                    if profile then
-                        -- If it is an alt of a linked main - set its standings and gains from main
-                        if profile:Main() ~= "" then
-                            -- add main in case it isnt there
-                            if not roster:IsProfileInRoster(profile:Main()) then
-                                roster:AddProfileByGUID(profile:Main())
-                                initializePoints(entry, roster, profile:Main())
-                            end
-                            roster:MirrorStandings(profile:Main(), { GUID })
-                            roster:MirrorWeeklyGains(profile:Main(), { GUID })
-                            CLM.MODULES.PointManager:AddFakePointHistory(roster, { GUID }, roster:Standings(profile:Main()), CONSTANTS.POINT_CHANGE_REASON.LINKING_OVERRIDE, entry:time(), entry:creatorFull())
-                        else
-                            if initialize then
-                                initializePoints(entry, roster, GUID)
-                            end
-                        end
+                    if initialize and CLM.MODULES.ProfileManager:GetProfileByGUID(GUID) then
+                        initializePoints(entry, roster, GUID)
                     end
                 end
             end

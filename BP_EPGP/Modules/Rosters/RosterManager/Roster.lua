@@ -353,55 +353,6 @@ end
  *************
 ]]--
 
-local function mirrorStandings(self, source, target)
-    if source == target then return end -- to prevent circular updates
-    if not self.standings[target] then return end
-    self.standings[target] = self.standings[source]
-    self.pointInfo[target].spent = self.pointInfo[source].spent
-end
-
----@param source string
----@param targets table
----@param isArray boolean?
-function Roster:MirrorStandings(source, targets, isArray)
-    if isArray then
-        for target, _ in pairs(targets) do
-            mirrorStandings(self, source, target)
-        end
-    else
-        for _, target in ipairs(targets) do
-            mirrorStandings(self, source, target)
-        end
-    end
-end
-
-local function mirrorWeeklyGains(self, source, target)
-    if source == target then return end -- to prevent circular updates
-    if not self.standings[target] then return end
-    local gains = self:GetWeeklyGainsForPlayer(source)
-    if self.weeklyGains[target] then
-        for week, gain in ipairs(gains) do
-            self:GetWeeklyGainsForPlayerWeek(target, week)
-            self.weeklyGains[target][week] = gain
-        end
-    end
-end
-
----@param source string
----@param targets table
----@param isArray? boolean
-function Roster:MirrorWeeklyGains(source, targets, isArray)
-    if isArray then
-        for target, _ in pairs(targets) do
-            mirrorWeeklyGains(self, source, target)
-        end
-    else
-        for _, target in ipairs(targets) do
-            mirrorWeeklyGains(self, source, target)
-        end
-    end
-end
-
 --[[
  ***************
  * Slot Values *
@@ -674,7 +625,6 @@ function Roster:AddLoot(loot, profile)
     self.profileLoot[GUID][#self.profileLoot[GUID]+1] = loot
     self.raidLoot[#self.raidLoot+1] = loot
     self.recentRaidLootCache = nil
-    if profile:IsLocked() then return end
     self.pointInfo[GUID]:AddSpent(loot:Value())
     if self:GetPointType() == CONSTANTS.POINT_TYPE.DKP then
         -- Charging for the item
