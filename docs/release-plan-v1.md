@@ -274,11 +274,12 @@ Each phase ends with: luacheck clean, `/reload` without Lua errors, and the rele
 - [x] Single roster: auto-select the only roster everywhere; hide roster dropdowns; block creating a second roster. First-time creation via a "Set up BP EPGP" button ([ui-overhaul](features/ui-overhaul.md) D7).
 - [x] One officer level: collapse ASSISTANT/MANAGER checks into a single *officer* check ("Is Officer" rank, verified via rank flags 11/12 on 12.x). See [sync-and-security.md](sync-and-security.md) S1/S2.
 
-### Phase 4 — Test mode ([features/test-mode.md](features/test-mode.md))
+### Phase 4 — Test mode ✅ ([features/test-mode.md](features/test-mode.md))
 - [x] Test mode switch (`/bpepgp test`, and a *Test mode* section in the settings until the Advanced tab exists in Phase 9): separate test ledger section, `BPEPT…` comm prefix, local `[TEST]` chat output, TEST MODE title and orange minimap icon. No "apply" to live. Switching reloads the UI.
 - [x] Live ledger can't receive test data: separate ledger section and `BPEPT` comm prefix (see test-mode.md design notes). Checked in-game: live event count and hash unchanged after a test session.
 - [x] Simulation tools: simulated raid group (`/bpepgp testgroup N`), add item by ID/link (auction window input), solo auctions (group traffic is whispered to yourself), simulated bidders (*Simulate bids* in the auction window, `/bpepgp testbids`), reset test data. The bidding-window preview is the real bidding window of a solo auction.
 - **Done when:** a full raid evening (raid start → EP → auction → award → decay → undo) can be run solo in test mode, and the live ledger is byte-identical before and after.
+- ✅ Verified in-game 2026-10-16: solo raid evening with simulated group and bidders; live event count and hash unchanged.
 
 ### Phase 5 — Auctioning cleanup
 - [ ] Remove Sealed / Vickrey / Anonymous Open, Ascending mode, All-In, auto-update bid, Joke/AF.
