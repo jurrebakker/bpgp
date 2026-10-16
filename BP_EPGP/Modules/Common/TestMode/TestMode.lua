@@ -316,7 +316,7 @@ end
 
 function TestMode:Initialize()
     LOG:Trace("TestMode:Initialize()")
-    self.db = CLM.MODULES.Database:Personal('testMode', { group = {} })
+    self.db = CLM.MODULES.Database:Personal('testModeData', { group = {} })
     RegisterPopups(self)
     RegisterOptions(self)
     if self:IsOn() then
