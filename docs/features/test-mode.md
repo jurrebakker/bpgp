@@ -1,6 +1,6 @@
 # Test mode
 
-- **Status:** in progress (Phase 4a: switch and isolation done). Decisions made 2026-10-16 (T1-T5 at the bottom; ✅ = as recommended)
+- **Status:** implemented in Phase 4 (4a switch and isolation, 4b simulation tools). Decisions made 2026-10-16 (T1-T5 at the bottom; ✅ = as recommended)
 - **Target version:** v1.0
 
 ## Problem
@@ -56,6 +56,13 @@ Because test data lives on its own comm prefix, **several people can test togeth
 - **Comm prefix length:** WoW allows 16 characters. `BPEPT` + channel name must fit, so channel names stay ≤ 11 characters.
 - **Switching modes** reloads the UI. Switching during a running auction is blocked.
 - The simulation tools are normal, shipped code, guarded by `TestMode:IsOn()`, so they behave the same in a git clone and in a packaged build. That's the opposite of the CLM dev fakes, which only existed in unpackaged builds.
+
+### How the simulation works (Phase 4b)
+
+- **Simulated raid group:** `TestMode:GetSimulatedGroup()` returns you (raid leader) plus guild members, roster members first. `RaidManager` reads it instead of `GetRaidRosterInfo` / `IsInRaid()` while you're in test mode and not in a real group. It's stored in the personal DB, so it survives a reload.
+- **Solo auctions:** in test mode without a real group, `Comms:Send` turns RAID/PARTY traffic into a whisper to yourself, so your own bidding window receives the auction. Whispers to simulated players are dropped, so real guild members never receive test traffic.
+- **Simulated bidders:** each other raid member gets a random tier bid, off-spec bid, pass or no response per item. Bids are passed straight to `AuctionManager:HandleSubmitBid`, the same path as a received bid.
+- **In a real group** (several testers together), the real raid roster and real comms are used, on the `BPEPT` prefix.
 
 ## Effect on the feature list
 

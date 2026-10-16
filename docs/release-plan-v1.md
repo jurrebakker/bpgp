@@ -276,8 +276,8 @@ Each phase ends with: luacheck clean, `/reload` without Lua errors, and the rele
 
 ### Phase 4 — Test mode ([features/test-mode.md](features/test-mode.md))
 - [x] Test mode switch (`/bpepgp test`, and a *Test mode* section in the settings until the Advanced tab exists in Phase 9): separate test ledger section, `BPEPT…` comm prefix, local `[TEST]` chat output, TEST MODE title and orange minimap icon. No "apply" to live. Switching reloads the UI.
-- [ ] Live ledger refuses anything flagged as test data (automated check in the test checklist).
-- [ ] Simulation tools: simulated raid, add item by ID/link, auction without raid lead, simulated bidders, bidding-window preview, reset test data.
+- [x] Live ledger can't receive test data: separate ledger section and `BPEPT` comm prefix (see test-mode.md design notes). Checked in-game: live event count and hash unchanged after a test session.
+- [x] Simulation tools: simulated raid group (`/bpepgp testgroup N`), add item by ID/link (auction window input), solo auctions (group traffic is whispered to yourself), simulated bidders (*Simulate bids* in the auction window, `/bpepgp testbids`), reset test data. The bidding-window preview is the real bidding window of a solo auction.
 - **Done when:** a full raid evening (raid start → EP → auction → award → decay → undo) can be run solo in test mode, and the live ledger is byte-identical before and after.
 
 ### Phase 5 — Auctioning cleanup

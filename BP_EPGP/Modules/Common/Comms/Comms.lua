@@ -129,6 +129,14 @@ function Comms:Send(prefix, message, distribution, target, priority)
         LOG:Debug("Comms:Send(): Disabled")
         return false
     end
+    -- Test mode without a real group: group traffic goes to yourself, simulated players get nothing
+    if CLM.MODULES.Database:IsTestMode() and not IsInGroup() then
+        if distribution == CONSTANTS.COMMS.DISTRIBUTION.RAID or distribution == CONSTANTS.COMMS.DISTRIBUTION.PARTY then
+            distribution, target = CONSTANTS.COMMS.DISTRIBUTION.WHISPER, UTILS.whoami()
+        elseif distribution == CONSTANTS.COMMS.DISTRIBUTION.WHISPER and CLM.MODULES.TestMode:IsSimulatedPlayer(UTILS.Disambiguate(target or "")) then
+            return true
+        end
+    end
     -- Prefix
     prefix = _prefix(prefix)
     if type(self.callbacks[prefix]) ~= "function" then

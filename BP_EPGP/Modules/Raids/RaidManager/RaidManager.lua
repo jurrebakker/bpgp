@@ -19,6 +19,26 @@ local function IsPlayerInPvP()
 	return arena or (bg ~= nil)
 end
 
+-- The raid group: the WoW raid roster, or the simulated group in test mode (TestMode:GetSimulatedGroup)
+local function GroupIsInRaid()
+    if CLM.MODULES.TestMode:GetSimulatedGroup() then return true end
+    return IsInRaid()
+end
+
+---@param index number
+---@return string? name
+---@return number? rank 2 = leader, 1 = assistant, 0 = member
+local function GroupMemberInfo(index)
+    local group = CLM.MODULES.TestMode:GetSimulatedGroup()
+    if group then
+        local name = group[index]
+        if not name then return nil end
+        return name, (index == 1) and 2 or 0
+    end
+    local name, rank = GetRaidRosterInfo(index)
+    return name, rank
+end
+
 ---@class RaidManager
 ---@field RaidLeader string
 ---@field MasterLooter string
@@ -292,7 +312,7 @@ function RaidManager:StartRaid(raid)
         LOG:Message(CLM.L["You can only start a freshly created raid."])
         return
     end
-    if (self:GetRaid() ~= raid) or not IsInRaid() then
+    if (self:GetRaid() ~= raid) or not GroupIsInRaid() then
         LOG:Message(CLM.L["You are not in the raid."])
         return
     end
@@ -300,7 +320,7 @@ function RaidManager:StartRaid(raid)
     local players = {}
     local joining_players_guids = {}
     for i=1,MAX_RAID_MEMBERS do
-        local name = GetRaidRosterInfo(i)
+        local name = GroupMemberInfo(i)
         if name then
             local profile = CLM.MODULES.ProfileManager:GetProfileByName(UTILS.Disambiguate(name))
             if profile then
@@ -312,7 +332,7 @@ function RaidManager:StartRaid(raid)
 
     -- Start Raid
     CLM.MODULES.LedgerManager:Submit(CLM.MODELS.LEDGER.RAID.Start:new(raid:UID(), players), true)
-    if CLM.GlobalConfigs:GetRaidWarning() and IsInRaid() then
+    if CLM.GlobalConfigs:GetRaidWarning() and GroupIsInRaid() then
         UTILS.SendChatMessage(string.format(CLM.L["Raid [%s] started"], raid:Name()) , CHAT_MESSAGE_CHANNEL)
     end
     self:HandleRosterUpdateEvent()
@@ -349,7 +369,7 @@ function RaidManager:EndRaid(raid)
     -- End raid
     CLM.MODULES.LedgerManager:Submit(CLM.MODELS.LEDGER.RAID.End:new(raid:UID()), true)
 
-    if CLM.GlobalConfigs:GetRaidWarning() and IsInRaid() then
+    if CLM.GlobalConfigs:GetRaidWarning() and GroupIsInRaid() then
         UTILS.SendChatMessage(string.format(CLM.L["Raid [%s] ended"], raid:Name()) , CHAT_MESSAGE_CHANNEL)
     end
 end
@@ -395,7 +415,7 @@ local reentrance = false
 function RaidManager:HandleRosterUpdateEvent()
     LOG:Trace("RaidManager:HandleRosterUpdateEvent()")
     if reentrance then LOG:Debug("Reentrance!") return end
-    if not IsInRaid() then return end
+    if not GroupIsInRaid() then return end
     reentrance = true
     -- Update wow raid information
     self:UpdateGameRaidInformation()
@@ -426,7 +446,7 @@ function RaidManager:UpdateGameRaidInformation()
     end
 
     for i=1,MAX_RAID_MEMBERS do
-        local name, rank = GetRaidRosterInfo(i)
+        local name, rank = GroupMemberInfo(i)
         if name then
             name = UTILS.Disambiguate(name)
             if rank >= 1 then
@@ -454,7 +474,7 @@ function RaidManager:UpdateRaiderList()
     local current, joiners, leavers = {}, {}, {}
     -- Detect leavers; build current set
     for i=1,MAX_RAID_MEMBERS do
-        local name = GetRaidRosterInfo(i)
+        local name = GroupMemberInfo(i)
         if name then
             name = UTILS.Disambiguate(name)
             current[name] = true

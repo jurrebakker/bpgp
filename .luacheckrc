@@ -117,6 +117,7 @@ globals = {
 	"C_Timer.NewTicker",
 	"GetMaxLevelForPlayerExpansion",
 	"GetNumGuildMembers",
+	"IsInGroup",
 	"GetGuildRosterInfo",
 	"GetTime",
 	"IsAddOnLoaded",

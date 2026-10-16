@@ -443,6 +443,20 @@ local function GenerateAuctionOptions(self)
             desc = "",
             type = "description",
             width = 0.75+0.25,
+            hidden = (function() return CLM.MODULES.TestMode:IsOn() end),
+            order = 1,
+        },
+        test_bids = {
+            name = CLM.L["Simulate bids"],
+            desc = CLM.L["Test mode: other raid members place random bids."],
+            type = "execute",
+            func = (function()
+                CLM.MODULES.TestMode:SimulateBids()
+                self:Refresh()
+            end),
+            hidden = (function() return not CLM.MODULES.TestMode:IsOn() end),
+            disabled = (function() return not CLM.MODULES.AuctionManager:IsAuctionInProgress() end),
+            width = 0.75+0.25,
             order = 1,
         },
         time_auction = {
