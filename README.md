@@ -16,7 +16,8 @@ BP EPGP is a fork of [Core Loot Manager](https://github.com/CoreLootManager/Core
 - Link the addon folder into `World of Warcraft\_retail_\Interface\AddOns\` (a directory junction works on Windows) and use `/reload` in-game.
 - Install BugSack + !BugGrabber to see Lua errors.
 - Lint with [luacheck](https://github.com/lunarmodules/luacheck) (config in `.luacheckrc`).
-- `scripts/genxmls.py` regenerates the `_filelist.xml` load lists; `scripts/verify-dependencies.sh <file.toc>` checks every referenced file exists.
+- `python scripts/check_addon.py` checks that every file referenced from the TOC/XML exists and that no packager-only code remains. `scripts/genxmls.py` regenerates the `_filelist.xml` load lists.
+- All libraries are vendored in `Libs/` (see its README), so a git clone runs as-is.
 
 ## License
 
