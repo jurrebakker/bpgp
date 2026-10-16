@@ -805,8 +805,7 @@ local function BuildBidRow(name, response, roster, namedButtonMode, externalData
     end
     local bidTypeString
     if namedButtonMode then
-        bidTypeString = roster:GetFieldName(response:Type())
-        if not bidTypeString or bidTypeString == "" then bidTypeString = nil end
+        bidTypeString = CONSTANTS.SLOT_VALUE_TIERS[response:Type()] and roster:GetFieldDisplayName(response:Type()) or nil
     end
     local bidColor
     if response:Type() == CONSTANTS.BID_TYPE.OFF_SPEC then

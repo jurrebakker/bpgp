@@ -404,6 +404,15 @@ function Roster:GetFieldName(field)
     return self.fieldNames[field] or ""
 end
 
+-- Button name for display: the custom name, or the tier name (Base/Small/...) when it's left empty
+---@param field string
+---@return string
+function Roster:GetFieldDisplayName(field)
+    local name = self:GetFieldName(field)
+    if name == "" then name = CONSTANTS.SLOT_VALUE_TIERS_GUI[field] or "" end
+    return name
+end
+
 ---@param field string
 ---@param name string
 function Roster:SetFieldName(field, name)

@@ -718,6 +718,10 @@ local function GenerateNamedButtonsAuctionOptions(self, auction)
         for _,tier in ipairs(usedTiers) do
             local value = tonumber(values[tier]) or 0
             local name = auction:GetFieldName(tier)
+            -- Unnamed tier with a value: use the tier's own name instead of hiding the button
+            if (not name or name == "") and value > 0 then
+                name = CONSTANTS.SLOT_VALUE_TIERS_GUI[tier]
+            end
             if name and name ~= "" and (value >= 0) then
                 options[tier] = {
                     name = name,

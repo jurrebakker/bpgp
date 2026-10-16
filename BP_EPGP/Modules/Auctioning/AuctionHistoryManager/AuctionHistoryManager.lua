@@ -101,7 +101,7 @@ function AuctionHistoryManager:AddAuctionItem(auctionItem, uuid)
             -- TODO unify bid name sourcing globally in addon
             local bidName = CONSTANTS.BID_TYPE_NAMES[response:Type()]
             if namedButtonsMode then
-                bidName = bidName or roster:GetFieldName(response:Type())
+                bidName = bidName or roster:GetFieldDisplayName(response:Type())
             end
             bidNames[player] = bidName
             items[player] = response:Items()

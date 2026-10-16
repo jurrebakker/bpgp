@@ -301,7 +301,7 @@ end
 local function stringifyBidInfo(auction, item, response)
     local responseTypeName = CONSTANTS.BID_TYPE_NAMES[response:Type()]
     if auction:GetNamedButtonsMode() then
-        responseTypeName = responseTypeName or auction:GetFieldName(response:Type())
+        responseTypeName = responseTypeName or auction:GetFieldDisplayName(response:Type())
     else
         -- If its not named button mode but tier comes, display as MS
         responseTypeName = responseTypeName or CONSTANTS.BID_TYPE_NAMES[CONSTANTS.BID_TYPE.MAIN_SPEC]

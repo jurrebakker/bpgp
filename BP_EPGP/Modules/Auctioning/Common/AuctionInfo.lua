@@ -606,6 +606,15 @@ function AuctionInfo:GetFieldName(tier)
     return self.roster:GetFieldName(tier)
 end
 
+-- Custom name, or the tier name (Base/Small/...) when it's left empty
+---@param tier string
+---@return string
+function AuctionInfo:GetFieldDisplayName(tier)
+    local name = self:GetFieldName(tier)
+    if not name or name == "" then name = CONSTANTS.SLOT_VALUE_TIERS_GUI[tier] or "" end
+    return name
+end
+
 ---@return Roster
 function AuctionInfo:GetRoster()
     return self.roster
