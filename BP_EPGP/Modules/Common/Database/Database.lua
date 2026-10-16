@@ -11,6 +11,7 @@ local DeepCopy = UTILS.DeepCopy
 local assertType = UTILS.assertType
 
 ---@class DB
+---@field testMode boolean?
 local DB = {}
 
 -- You really do not want to modify this
@@ -20,6 +21,8 @@ local DB_NAME_GUI = 'gui'
 local DB_NAME_RAID = 'raid'
 local DB_NAME_GUILD = 'guild'
 local DB_NAME_LEDGER = 'ledger'
+local DB_NAME_LEDGER_TEST = 'ledger_test'
+local DB_TEST_MODE = 'testMode'
 local DB_NAME_LOGGER = 'logger'
 local DB_NAME_GLOBAL = 'global'
 -- ^^^^^
@@ -60,7 +63,13 @@ local function _initialize()
     if type(BPEPGP_DB[DB.database_name][DB_NAME_LEDGER]) ~= "table" then
         BPEPGP_DB[DB.database_name][DB_NAME_LEDGER] = {}
     end
-
+    if type(BPEPGP_DB[DB.database_name][DB_NAME_LEDGER_TEST]) ~= "table" then
+        BPEPGP_DB[DB.database_name][DB_NAME_LEDGER_TEST] = {}
+    end
+    -- Test mode is fixed for the session (also across ForceFallback); switching it reloads the UI (see TestMode)
+    if DB.testMode == nil then
+        DB.testMode = BPEPGP_DB[DB.database_name][DB_NAME_PERSONAL][DB_TEST_MODE] and true or false
+    end
 end
 
 -- Retail only: a fixed prefix, so data survives expansion changes
@@ -145,14 +154,32 @@ function DB:GUI(table, schema)
     return BPEPGP_DB[self.database_name][DB_NAME_PERSONAL][DB_NAME_GUI][table]
 end
 
+-- Test mode reads and writes only the test ledger; the live ledger is never touched.
 ---@return table
 function DB:Ledger()
-    return BPEPGP_DB[self.database_name][DB_NAME_LEDGER]
+    return BPEPGP_DB[self.database_name][self.testMode and DB_NAME_LEDGER_TEST or DB_NAME_LEDGER]
 end
 
 ---@param ledger table
 function DB:UpdateLedger(ledger)
-    BPEPGP_DB[self.database_name][DB_NAME_LEDGER] = ledger
+    BPEPGP_DB[self.database_name][self.testMode and DB_NAME_LEDGER_TEST or DB_NAME_LEDGER] = ledger
+end
+
+---@return boolean
+function DB:IsTestMode()
+    return self.testMode and true or false
+end
+
+-- Stored now, used after the next reload
+---@param enabled boolean
+function DB:SetTestModeOnReload(enabled)
+    BPEPGP_DB[self.database_name][DB_NAME_PERSONAL][DB_TEST_MODE] = enabled and true or false
+end
+
+-- Replaces the test ledger with an empty one or a copy of the live ledger
+---@param copyLive boolean
+function DB:ResetTestLedger(copyLive)
+    BPEPGP_DB[self.database_name][DB_NAME_LEDGER_TEST] = copyLive and DeepCopy(BPEPGP_DB[self.database_name][DB_NAME_LEDGER]) or {}
 end
 
 CLM.MODULES.Database = DB

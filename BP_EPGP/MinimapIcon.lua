@@ -15,6 +15,9 @@ local function CreateMinimapDBI()
         text = "0",
         icon = CLM.MEDIA_PATH .. "Icons\\bp-epgp-32.png"
     })
+    if CLM.MODULES.TestMode:IsOn() then
+        CLM.MinimapDBI.iconR, CLM.MinimapDBI.iconG, CLM.MinimapDBI.iconB = 1, 0.5, 0
+    end
 
     CLM.MinimapDBI.OnClick = function()
         CLM.GUI.Unified:Toggle()
@@ -23,6 +26,9 @@ local function CreateMinimapDBI()
     CLM.MinimapDBI.OnTooltipShow = function(tooltip)
         local info
         tooltip:AddLine(addonName .. " " .. CLM.MODULES.Version:GetString())
+        if CLM.MODULES.TestMode:IsOn() then
+            tooltip:AddLine(CLM.L["TEST MODE"], 1, 0.5, 0)
+        end
 
         if CLM.MODULES.LedgerManager:IsInitialized() then
             local lag = CLM.MODULES.LedgerManager:Lag()

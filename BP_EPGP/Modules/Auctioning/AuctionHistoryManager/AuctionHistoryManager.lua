@@ -44,7 +44,7 @@ end
 local AuctionHistoryManager = {}
 function AuctionHistoryManager:Initialize()
     LOG:Trace("AuctionHistoryManager:Initialize()")
-    self.db = CLM.MODULES.Database:Personal('auctionHistory2', {
+    self.db = CLM.MODULES.Database:Personal(CLM.MODULES.Database:IsTestMode() and 'auctionHistory2_test' or 'auctionHistory2', {
         stack = {},
         -- config
         enable = true,

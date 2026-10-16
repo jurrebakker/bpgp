@@ -16,6 +16,8 @@ local serdes = LibStub("LibSerialize")
 local codec = LibStub("LibDeflate")
 
 local CommsPrefix = "BPEP"
+-- Test mode: only clients in test mode see this traffic. Channel names must stay <= 11 chars.
+local CommsPrefixTest = "BPEPT"
 
 ---@class Comms : AceCommMixin
 ---@field allowSelfReceive table
@@ -46,6 +48,9 @@ function Comms:IsEnabled()
 end
 
 local function _prefix(prefix)
+    if CLM.MODULES.Database:IsTestMode() then
+        return CommsPrefixTest .. string.sub(prefix or "", 0, 11)
+    end
     return CommsPrefix .. string.sub(prefix or "", 0, 12)
 end
 

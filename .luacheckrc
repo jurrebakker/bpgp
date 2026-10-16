@@ -214,6 +214,8 @@ globals = {
 	"PlaySoundFile",
 	"IsInInstance",
 	"ReloadUI",
+	"YES",
+	"NO",
 	"GetBuildInfo",
 	"UnitFullName",
 	-- Retail only

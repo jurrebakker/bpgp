@@ -1195,6 +1195,11 @@ end
 
 local raidChannels = UTILS.Set({"RAID", "RAID_WARNING"})
 function UTILS.SendChatMessage(message, channel, _, target)
+    if CLM.MODULES.Database:IsTestMode() then
+        -- Test mode never sends chat; show what would have been sent
+        CLM.LOG:Message("|cffff8000[TEST]|r %s%s: %s", tostring(channel), target and (" " .. tostring(target)) or "", tostring(message))
+        return
+    end
     if raidChannels[channel] and not IsInRaid() then return end
     SendChatMessage("[BP EPGP] " .. tostring(message), channel, nil, target)
 end

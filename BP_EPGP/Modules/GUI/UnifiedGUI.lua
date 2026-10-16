@@ -278,7 +278,7 @@ function UnifiedGUI:CreateAceGUIStructure()
     LOG:Trace("UnifiedGUI:CreateAceGUIStructure()")
     -- Main Frame
     local f = AceGUI:Create("Window")
-    f:SetTitle(CLM.L["BP EPGP"])
+    f:SetTitle(CLM.MODULES.TestMode:IsOn() and (CLM.L["BP EPGP"] .. " - |cffff8000" .. CLM.L["TEST MODE"] .. "|r") or CLM.L["BP EPGP"])
     f:SetLayout("Fill")
     f:EnableResize(false)
     f:SetWidth(800)

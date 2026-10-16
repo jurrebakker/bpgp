@@ -275,7 +275,7 @@ Each phase ends with: luacheck clean, `/reload` without Lua errors, and the rele
 - [x] One officer level: collapse ASSISTANT/MANAGER checks into a single *officer* check ("Is Officer" rank, verified via rank flags 11/12 on 12.x). See [sync-and-security.md](sync-and-security.md) S1/S2.
 
 ### Phase 4 — Test mode ([features/test-mode.md](features/test-mode.md))
-- [ ] Test mode switch (Advanced tab + `/bpepgp test`): separate test ledger section, `BPEPT…` comm prefix, local `[TEST]` chat output, TEST MODE banner. No "apply" to live.
+- [x] Test mode switch (`/bpepgp test`, and a *Test mode* section in the settings until the Advanced tab exists in Phase 9): separate test ledger section, `BPEPT…` comm prefix, local `[TEST]` chat output, TEST MODE title and orange minimap icon. No "apply" to live. Switching reloads the UI.
 - [ ] Live ledger refuses anything flagged as test data (automated check in the test checklist).
 - [ ] Simulation tools: simulated raid, add item by ID/link, auction without raid lead, simulated bidders, bidding-window preview, reset test data.
 - **Done when:** a full raid evening (raid start → EP → auction → award → decay → undo) can be run solo in test mode, and the live ledger is byte-identical before and after.

@@ -3,6 +3,7 @@
 	<Include file="ACL\_filelist.xml"/>
 	<Include file="EventManager\_filelist.xml"/>
 	<Include file="Database\_filelist.xml"/>
+	<Include file="TestMode\_filelist.xml"/>
 	<Include file="Comms\_filelist.xml"/>
 	<Include file="ConfigManager\_filelist.xml"/>
 	<Include file="Logger\_filelist.xml"/>

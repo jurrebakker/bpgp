@@ -1,6 +1,6 @@
 # Test mode
 
-- **Status:** planned. Decisions made 2026-10-16 (T1-T5 at the bottom; ✅ = as recommended)
+- **Status:** in progress (Phase 4a: switch and isolation done). Decisions made 2026-10-16 (T1-T5 at the bottom; ✅ = as recommended)
 - **Target version:** v1.0
 
 ## Problem
@@ -52,9 +52,9 @@ Because test data lives on its own comm prefix, **several people can test togeth
 
 ## Design notes
 
-- **Isolation is enforced in three places:** a separate DB section, a separate comm prefix, and a `test` flag stored in the ledger header. The live ledger refuses to load or merge anything that carries that flag. This makes test data leaking into live a bug we can test for, not a matter of discipline.
+- **Isolation is enforced structurally:** the mode is fixed when the addon starts (switching reloads the UI), `Database:Ledger()` returns the `ledger_test` section in test mode, and every comm prefix is `BPEPT…` instead of `BPEP…`. A live client never registers a test prefix, so it can't receive test data, and a test client never holds a reference to the live ledger table. This replaces the planned `test` flag in the ledger header: it gives the same guarantee without changing the entry format.
 - **Comm prefix length:** WoW allows 16 characters. `BPEPT` + channel name must fit, so channel names stay ≤ 11 characters.
-- **Switching modes** restarts the ledger (like a `/reload` of the data) and closes open auction windows. Switching during a running auction is blocked.
+- **Switching modes** reloads the UI. Switching during a running auction is blocked.
 - The simulation tools are normal, shipped code, guarded by `TestMode:IsOn()`, so they behave the same in a git clone and in a packaged build. That's the opposite of the CLM dev fakes, which only existed in unpackaged builds.
 
 ## Effect on the feature list
