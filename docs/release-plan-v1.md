@@ -111,7 +111,7 @@ Because we start a fresh ledger, we are **free to delete ledger entry types and 
 | Dev fakes (FakeBids/FakeAuction/FakeTrack) + `--@do-not-package@` blocks | AuctionManager, BiddingManager, AutoAssign, ACL, Comms | ~200 |
 | Auto-roll on loot (GlobalUIHandlers) | `Modules/Global/GlobalUIHandlers.lua` | 150 |
 | Unused libs (LibExpiringTimer, AceHook) | `Libs/` | small |
-| Build/release scripts we don't need (l10n, changelog generators, itemlink decoder) | `scripts/` | ~4,000 |
+| ~~Build/release scripts we don't need (l10n, changelog generators, itemlink decoder, vendored packager, CLM Discord/GitHub bots)~~ **done**, only `genxmls.py` and `verify-dependencies.sh` remain | `scripts/` | ~4,000 |
 
 **Expected result:** from roughly 52k lines of addon Lua (excluding libraries) down to about **15–18k**.
 
@@ -254,7 +254,7 @@ Each phase ends with: luacheck clean, `/reload` without Lua errors, and the rele
 - **Done when:** addon loads on Midnight with zero errors, shows the UI, two officers see each other as synced.
 
 ### Phase 2 — Remove the big unused blocks
-- [ ] Delete non-English locales, Changelog module, `_annotations`, April Fools, unused scripts.
+- [ ] Delete non-English locales, Changelog module, `_annotations`, April Fools. (Unused scripts: already removed.)
 - [ ] Delete CrossGuildSyncManager, SandboxManager + time travel + ChatOps (move `stateManagers` init out of `SlashCommands.lua` first).
 - [ ] Delete all classic code: `IsClassicEra`/`IsSoD`/`IsHardcore`, expansion branches in `Utils.lua`, classic item ID lists, IndirectSlotMap data, master-loot paths, classic tooltip fallbacks.
 - [ ] Delete GlobalUIHandlers (auto-roll), Tooltips.lua.
@@ -291,8 +291,8 @@ Each phase ends with: luacheck clean, `/reload` without Lua errors, and the rele
 ### Phase 8 — Release 1.0
 - [ ] Licensing checklist (§8).
 - [ ] New README (what it is, install, officer setup, raider usage), CHANGELOG starting at 1.0.0.
-- [ ] Packaging: either keep BigWigs packager with a new `.pkgmeta` (no externals needed since libs are vendored) or a simple zip script.
-- [ ] Publish on CurseForge and/or Wago under the new name; tag `v1.0.0` on GitHub.
+- [ ] Packaging: BigWigs packager with a new `.pkgmeta` (no externals, libs are vendored), see §10.4.
+- [ ] Publish on CurseForge (and optionally Wago) under the new name; tag `v1.0.0`. Full checklist in §10.
 - [ ] Guild rollout: officers first, import standings, then raiders install.
 
 ---
@@ -356,3 +356,116 @@ There is no automated test harness for WoW UI code; luacheck catches syntax/glob
 | Import of standings is only as good as the list | Preview + officer double-check before applying; Audit tab can undo |
 | Decay settings (EP%, GP%, how often) | Keep all three decay types; configure in-game |
 | Internal namespace still called `CLM` | Intentional for v1 (smaller diff); optional rename in v1.1 |
+
+---
+
+## 10. Releasing to CurseForge
+
+Research done 2026-10-16. Items marked **(unverified)** could not be confirmed from an official source; check them when we get there.
+
+### 10.1 What matters for us
+
+| Fact | Impact on BP EPGP |
+|---|---|
+| **Projects can't be private.** There is no private or guild-only mode; once approved, a project is public. | Anyone can install BP EPGP. That's fine: all write actions are gated by guild-rank ACL (§4.1 #3), provided the dev blocks are removed (§5.2). |
+| **Experimental status** keeps a project out of website search and out of app sync; files can still be installed via the app's import. Leaving it requires the *legacy* site. Setting it from the new console is **(unverified)**. | Option for an officer-only beta before the guild rollout. |
+| **Every project and every file is moderated.** The first review happens after the first file is uploaded, and takes "a few minutes to three workdays". Each later file shows *Under Review* until approved. | Upload at least a week before the rollout date. Don't plan a same-day hotfix release. |
+| **Only Release/Beta files sync to the app** for a new project. Alpha-only projects are website-only, and beta/alpha files only reach app users who opt in. | Raiders get the Release channel. Officers can opt in to Beta to test. |
+| **Every file needs a changelog.** | `CHANGELOG.md` via `manual-changelog` in `.pkgmeta`. |
+| **Forks:** credit and link the original, explain what changed, and don't copy the original's description. Name, logo, summary and description must be our own. | Matches the §8 checklist. Write our own description ("Based on Core Loot Manager by Lantis and contributors…"). |
+| **No donation links** (Patreon, Ko-fi) and no external download links. Blizzard's add-on policy also forbids obfuscated code and in-game donation requests. | Remove CLM's Patreon/Discord links (§8). |
+| **Zip layout:** the top-level folder name must match the `.toc` name, or the validator can fail the upload. | Zip contains `BP_EPGP/BP_EPGP.toc`. |
+
+Sources: [Creating and Submitting a Project](https://support.curseforge.com/support/solutions/articles/9000197241), [File & Project Types](https://support.curseforge.com/support/solutions/articles/9000197242), [Moderation Policies](https://support.curseforge.com/support/solutions/articles/9000197279), [How to become a CurseForge author](https://blog.curseforge.com/how-to-become-a-curseforge-author/), [Multi-TOC for WoW](https://support.curseforge.com/support/solutions/articles/9000209856-multi-toc-for-world-of-warcraft-addons), [Blizzard UI Add-On Development Policy](https://us.forums.blizzard.com/en/wow/t/ui-add-on-development-policy/24534).
+
+### 10.2 One-time setup
+
+- [ ] **CurseForge author account.** Sign in at <https://authors.curseforge.com/> with Google, Discord, GitHub or Twitch; there is no password login. Accept the author terms and fill in the profile.
+- [ ] **Logo:** our own icon, 1:1, at least 400×400, PNG (not WebP), not a solid colour. The same artwork can replace the CLM icons in `Media/Icons` (§8).
+- [ ] **Create the project:** Author Portal → Create Project → World of Warcraft → Addons.
+  - **Name:** "BP EPGP". It must be unique on CurseForge; check that it's free.
+  - **Summary:** one line, e.g. "Lightweight EPGP loot system with officer sync and open tier bidding."
+  - **Description:** in English. Cover what it does, install, officer setup and raider usage, plus the CLM credit and link.
+  - **License:** "Apache License version 2.0".
+  - **Category:** main = *Guild*; extra = *Auction & Economy* (unrelated categories get the project sent back).
+  - **Links:** source repository and issue tracker (optional; needs the repo to be public).
+- [ ] Note the numeric **Project ID** (shown in the "About Project" box) and add it to the TOC: `## X-Curse-Project-ID: <id>`.
+- [ ] **Upload token:** create one at <https://authors.curseforge.com/#/settings/api-tokens>. This is *not* the CurseForge "Core API" key from console.curseforge.com, which is for third-party apps.
+- [ ] *(Optional)* **Wago Addons:** create a project at <https://addons.wago.io/developers>, add `## X-Wago-ID: <id>` to the TOC, and create a token at <https://addons.wago.io/account/apikeys>. Their onboarding and moderation process is **(unverified)**.
+
+### 10.3 Where the build runs
+
+The repo is currently only on this PC. The BigWigs packager (the standard WoW release tool) can run in two places:
+
+| Option | What's needed | Pros / cons |
+|---|---|---|
+| **A. GitHub + GitHub Action** (recommended) | Push the repo to GitHub (private is fine). Add repository secret `CF_API_TOKEN` (and `WAGO_API_TOKEN`). Add a workflow running `BigWigsMods/packager@v2` on tag push. | Pushing a tag publishes the release. No local tooling, and it also creates a GitHub Release with the zip. A private repo uses free Actions minutes **(verify current limits)**. |
+| **B. Locally in Git Bash** | Download `release.sh` into `.release/` (gitignored). Put tokens in `.release/.env`. Install `zip` and `jq`, which Git for Windows doesn't ship, or use WSL. Needs bash 4.3+. | No GitHub needed. Windows isn't officially supported by the packager, and the tokens live on this PC. |
+| C. Manual upload | Build the zip yourself, then upload on the website and pick the game version and release type. | Fine as a one-off for the first upload. Easy to get the zip layout or changelog wrong. |
+
+Sketch of the workflow for option A (`.github/workflows/release.yml`):
+
+```yaml
+name: Release
+on:
+  push:
+    tags: ['v*']
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write          # create the GitHub Release
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0       # packager needs history/tags
+      - uses: BigWigsMods/packager@v2
+        env:
+          CF_API_TOKEN: ${{ secrets.CF_API_TOKEN }}
+          WAGO_API_TOKEN: ${{ secrets.WAGO_API_TOKEN }}   # optional
+          GH_API_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+```
+
+The packager docs still use the old names `CF_API_KEY` / `GITHUB_OAUTH`; both are deprecated but still work.
+
+### 10.4 Packaging changes in this repo
+
+- [ ] Rewrite `.pkgmeta`:
+  - `package-as: BP_EPGP`
+  - Drop all `externals` (libs are vendored) and the CLM `move-folders`.
+  - `ignore:` `scripts`, `docs`, `assets`, `ARCHITECTURE.md`, `CLAUDE.md`, `_annotations`, library docs/examples. Dot-files are excluded automatically.
+  - `manual-changelog: { filename: CHANGELOG.md, markup-type: markdown }`
+  - Optional: `embedded-libraries` with the CurseForge slugs of the vendored libs (`ace3`, `libdbicon-1-0`, …). This only adds metadata on CurseForge.
+- [ ] TOC: `## Interface: 120105` (live 12.1.5 as of Oct 2026; 120107 is on the PTR). The packager reads this to set the CurseForge game version. Add `## X-Curse-Project-ID` and optionally `## X-Wago-ID`.
+- [ ] `CHANGELOG.md`: replace the CLM history with our own, starting at `1.0.0`. Each release section must describe its changes.
+- [ ] Do a dry run first (`release.sh -d`, or the Action on a test tag) and check the zip: a single top-level `BP_EPGP/` folder, no `scripts/`, no `docs/`, and all libs present.
+
+### 10.5 Release flow
+
+Tags map to CurseForge release types (packager rules):
+
+| Tag | Release type | Who gets it |
+|---|---|---|
+| `v1.0.0-alpha1` (contains "alpha") / untagged build | Alpha | Website only, or opted-in app users |
+| `v1.0.0-beta1` (contains "beta") | Beta | Users who opted in to beta, e.g. officers |
+| `v1.0.0` | Release | Everyone |
+
+1. Update `CHANGELOG.md` and the TOC `## Version` (or use `@project-version@`).
+2. Create an annotated tag: `git tag -a v1.0.0 -m "BP EPGP 1.0.0"`, then `git push --tags`.
+3. The Action uploads the build to CurseForge (plus Wago and GitHub Releases).
+4. Wait for moderation. The first upload also triggers the project review.
+5. Tell the guild to install "BP EPGP" from the CurseForge app (or WowUp/Wago).
+
+For the guild rollout (Phase 8): publish `v1.0.0-beta1` first and have officers opt in to Beta. Then publish `v1.0.0` before rollout day.
+
+### 10.6 Alternatives (if we don't want a public CurseForge page)
+
+- **GitHub Releases + WowUp "Install from URL":** works with a public repo once the packager attaches the zip to a GitHub Release. A private repo would need a GitHub token *per guild member*, which isn't practical. The CurseForge app cannot install from GitHub.
+- **Share the zip directly** (Discord): zero setup, but no auto-updates. That's a problem because the version check (§3.1) expects everyone to stay current.
+
+### 10.7 Open questions
+
+- Is "BP EPGP" free as a CurseForge project name, and do we want a longer, more descriptive name?
+- Public GitHub repo (source/issue links on CurseForge, WowUp install) or private?
+- Do we want Wago as well, or CurseForge only?
+- Do we use Experimental status for the officer beta? **(unverified)** whether the new console supports it.

@@ -1,10 +1,11 @@
-.release
-.aiscripts
-ExternalLibs
-locales_*
-TESTING
-merger.py
-report.log
-old_bidding_GUI.lua
-scripts/mdin*
-scripts/mdout*
+# Packager output (BigWigsMods/packager)
+.release/
+
+# Editors / OS
+.vscode/
+.idea/
+Thumbs.db
+.DS_Store
+
+# Python
+__pycache__/
