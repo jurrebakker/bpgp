@@ -238,25 +238,28 @@ We don't yet know the exact startup error. **First step in Phase 1 is to capture
 Each phase ends with: luacheck clean, `/reload` without Lua errors, and the relevant part of the in-game checklist (§7) passing. Commit per phase.
 
 ### Phase 0 — Project setup
-- [ ] Create `CLAUDE.md` (architecture summary, conventions, "never write state directly — submit ledger entries", how to test in-game).
-- [ ] Vendor all libraries from `.pkgmeta` into `Libs/` (latest Ace3 for Midnight, LibStub, CallbackHandler, lib-st, LibCandyBar, LibLogger, LibDBIcon, LibDeflate, LibSerialize, LibUIDropDownMenu, LibSharedMedia, AceGUI-SharedMediaWidgets) with their license files.
-- [ ] Dev setup: symlink/junction the addon folder into `World of Warcraft\_retail_\Interface\AddOns\`; install BugSack + !BugGrabber.
-- [ ] Keep `.luacheckrc` (update globals), add a GitHub Action for luacheck.
-- [ ] Decide branch strategy (`main` for releases, feature branches per phase).
+- [x] Create `CLAUDE.md` (architecture summary, conventions, "never write state directly — submit ledger entries", how to test in-game).
+- [x] Vendor all libraries from `.pkgmeta` *(copied from the packaged CLM v5.8.0; license files still incomplete, see `Libs/README.md`)* into `Libs/` (latest Ace3 for Midnight, LibStub, CallbackHandler, lib-st, LibCandyBar, LibLogger, LibDBIcon, LibDeflate, LibSerialize, LibUIDropDownMenu, LibSharedMedia, AceGUI-SharedMediaWidgets) with their license files.
+- [x] Dev setup: symlink/junction *(junction created 2026-10-16)* the addon folder into `World of Warcraft\_retail_\Interface\AddOns\`; install BugSack + !BugGrabber.
+- [x] Keep `.luacheckrc` (update globals), add a GitHub Action for luacheck.
+- [x] Decide branch strategy *(feature branch per phase or two, e.g. `feat/v1-phase-0-1`)* (`main` for releases, feature branches per phase).
 
 ### Phase 1 — Rebrand & boot on Midnight
-- [ ] Rename folder/TOC to `BP_EPGP`, Title "BP EPGP", Author, remove CLM Curse/Wago IDs and Patreon link.
-- [ ] Rename SavedVariables, slash command `/bpepgp`, comm prefix `BPEP`, global `_G.BPEPGP`, frame/binding names, `[CLM]` chat prefix, minimap LDB name.
-- [ ] Introduce `MEDIA_PATH` constant; replace all hard-coded `Interface\AddOns\ClassicLootManager\…` paths. Replace CLM logo with our own icon.
-- [ ] Fix DB key to `retail <faction> <realm> <guild>`; version to 1.0.0-dev.
-- [ ] Merge the Alerts addon into the main addon; delete Tracker and Integrations folders.
-- [ ] Remove `--@do-not-package@` / `--@debug@` / `@non-debug@` dev blocks and dev fakes. Without this a git clone has **no security** ([sync-and-security.md](sync-and-security.md) C1).
-- [ ] Add a CI/luacheck step that fails if any of those markers reappear.
-- [ ] Capture and fix the actual startup error(s) — §5.1 items 1-4.
+- [x] Rename folder/TOC to `BP_EPGP`, Title "BP EPGP", Author, remove CLM Curse/Wago IDs and Patreon link.
+- [x] Rename SavedVariables, slash command `/bpepgp`, comm prefix `BPEP`, global `_G.BPEPGP`, frame/binding names, `[CLM]` chat prefix, minimap LDB name.
+- [x] Introduce `MEDIA_PATH` constant; replace all hard-coded `Interface\AddOns\ClassicLootManager\…` paths.
+- [ ] Replace CLM logo with our own icon.
+- [x] Fix DB key to `retail <faction> <realm> <guild>`; version to 1.0.0-dev.
+- [x] Merge the Alerts addon into the main addon; delete Tracker and Integrations folders.
+- [x] Remove `--@do-not-package@` / `--@debug@` / `@non-debug@` dev blocks and dev fakes. Without this a git clone has **no security** ([sync-and-security.md](sync-and-security.md) C1).
+- [x] Add a CI/luacheck step *(`scripts/check_addon.py`)* that fails if any of those markers reappear.
+- [ ] Capture and fix the actual startup error(s) — §5.1 items 1-4. *(1: libs vendored; 2: MasterLooterFrame hook removed; 3: guarded; 4: chat filter no longer hides messages in lockdown; also ported 5.8.0's `C_Item.GetItemClassInfo` fix. Waiting for the first in-game run.)*
+- [x] Isolation from CLM: unique LibStub names for our forked libs (`BPEPGP-EventSourcing/*`, `BPEPGP-EventDispatcher`), AceGUI widget types, AceConfig app names, keybinding names, alert templates. *(found while renaming)*
 - **Done when:** addon loads on Midnight with zero errors, shows the UI, two officers see each other as synced.
 
 ### Phase 2 — Remove the big unused blocks
-- [ ] Delete non-English locales, Changelog module, `_annotations`, April Fools. (Unused scripts: already removed.)
+- [x] Delete non-English locales *(done in Phase 1)*.
+- [ ] Delete Changelog module, `_annotations`, April Fools. (Unused scripts: already removed.)
 - [ ] Delete CrossGuildSyncManager, SandboxManager + time travel + ChatOps (move `stateManagers` init out of `SlashCommands.lua` first).
 - [ ] Delete all classic code: `IsClassicEra`/`IsSoD`/`IsHardcore`, expansion branches in `Utils.lua`, classic item ID lists, IndirectSlotMap data, master-loot paths, classic tooltip fallbacks.
 - [ ] Delete GlobalUIHandlers (auto-roll), Tooltips.lua.

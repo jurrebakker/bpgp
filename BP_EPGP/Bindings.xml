@@ -1,0 +1,42 @@
+<Bindings>
+    <Binding name="BPEPGP_START_AUCTION" header="BPEPGP" category="ADDONS">
+        BPEPGP_Binding_StartAuction()
+    </Binding>
+    <Binding name="BPEPGP_QUICK_START_AUCTION" category="ADDONS">
+        BPEPGP_Binding_QuickStartAuction()
+    </Binding>
+    <Binding name="BPEPGP_AWARD_FOR_BASE" category="ADDONS">
+        BPEPGP_Binding_AwardForBase()
+    </Binding>
+    <Binding name="BPEPGP_AWARD_FOR_TIER_SMALL" category="ADDONS">
+        BPEPGP_Binding_AwardForSmall()
+    </Binding>
+    <Binding name="BPEPGP_AWARD_FOR_TIER_MEDIUM" category="ADDONS">
+        BPEPGP_Binding_AwardForMedium()
+    </Binding>
+    <Binding name="BPEPGP_AWARD_FOR_TIER_LARGE" category="ADDONS">
+        BPEPGP_Binding_AwardForLarge()
+    </Binding>
+    <Binding name="BPEPGP_AWARD_FOR_MAX" category="ADDONS">
+        BPEPGP_Binding_AwardForMax()
+    </Binding>
+    <Binding name="BPEPGP_AWARD_FOR_FREE" category="ADDONS">
+        BPEPGP_Binding_AwardForFree()
+    </Binding>
+    <!--  -->
+    <Binding name="BPEPGP_TOGGLE_AUCTIONING" category="ADDONS">
+        BPEPGP_Binding_ToggleGUI_Auctioning()
+    </Binding>
+    <Binding name="BPEPGP_TOGGLE_AUCTION_HISTORY" category="ADDONS">
+        BPEPGP_Binding_ToggleGUI_AuctionHistory()
+    </Binding>
+    <Binding name="BPEPGP_TOGGLE_BIDDING" category="ADDONS">
+        BPEPGP_Binding_ToggleGUI_Bidding()
+    </Binding>
+    <Binding name="BPEPGP_TOGGLE_LOOT_QUEUE" category="ADDONS">
+        BPEPGP_Binding_ToggleGUI_LootQueue()
+    </Binding>
+    <Binding name="BPEPGP_TOGGLE_MAIN_UI" category="ADDONS">
+        BPEPGP_Binding_ToggleGUI_UnifiedGUI()
+    </Binding>
+</Bindings>

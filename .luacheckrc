@@ -13,27 +13,20 @@ exclude_files = {
 ignore = {
 	"11./SLASH_.*", -- Setting an undefined (Slash handler) global variable
 	"11./BINDING_.*", -- Setting an undefined (Keybinding header) global variable
+	"11./BPEPGP_Binding_.*", -- Keybinding handlers (Bindings.xml)
 	"113/Enum*",
-	"211/CLM",
+	"211/CLM", -- internal namespace local
 	"212", -- Unused argument
 	"542", -- An empty if branch
 }
 globals = {
 	-- Design
-	"CLM",
+	"BPEPGP",
 	"LibStub",
-	-- Saved Variable
-	"CLM_DB",
-	"CLM_Logs",
-	"CLM_MinimapIcon",
-	--
-	"CLM2_DB",
-	"CLM2_Logs",
-	"CLM2_MinimapIcon",
-	"CLM_UnifiedGUI_Toggle",
-	-- Bindings
-	"CLM_Undo",
-	"CLM_Redo",
+	-- Saved Variables
+	"BPEPGP_DB",
+	"BPEPGP_Logs",
+	"BPEPGP_Minimap",
 	-- Monolith and Essential and Community
 	"MonDKP_DKPTable",
 	"MonDKP_Loot",
