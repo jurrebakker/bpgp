@@ -9,6 +9,7 @@
 	<Include file="Points\_filelist.xml"/>
 	<Include file="Loot\_filelist.xml"/>
 	<Include file="Auctioning\_filelist.xml"/>
+	<Include file="Import\_filelist.xml"/>
 
 	<Include file="Global\_filelist.xml"/>
 	<Include file="GUI\_filelist.xml"/>

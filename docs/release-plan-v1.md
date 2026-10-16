@@ -288,10 +288,10 @@ Each phase ends with: luacheck clean, `/reload` without Lua errors, and the rele
 - [x] Fix the auction bugs in §5.2: anti-snipe countdown, `GetUseOS`, nil handlers for non-officers, auction/award modifiers must differ, ranged weapons → main hand, `/bpepgp ignore`, stale `!bid/!dkp` hint, defaults. "Raiders accept START/STOP from anyone" is S9 in Phase 8.
 
 ### Phase 6 — New: standings import
-- [ ] Officer-only window: paste lines `Name,EP,GP` (also accept tab-separated from a spreadsheet).
-- [ ] Preview table (unknown names, duplicates, invalid numbers highlighted) before applying.
-- [ ] On confirm: create profiles for missing characters, add them to the roster, set EP and GP via ledger entries (verify `PointManager` can *set* GP; add a GP-set entry if it can only set EP).
-- [ ] Guard: import only allowed while the roster has no point history yet (or with an explicit "overwrite" confirmation).
+- [x] Officer-only window (`/bpepgp import`, or *Import standings* in the Standings sidebar): paste lines `Name,EP,GP`; comma, semicolon or tab separated (decimal comma allowed with tab/semicolon). A header line is skipped.
+- [x] Preview table (Update / Add to roster / Not in guild / Duplicate / Invalid) before applying. Only guild members can be imported.
+- [x] On confirm: create profiles for missing characters, add them to the roster, set EP and GP with the existing SET entry (`PointManager` SET supports GP), one entry per distinct value, reason *Import*.
+- [x] Guard: when the roster already has point or loot history, the *Overwrite existing standings* checkbox must be ticked.
 
 ### Phase 7 — Midnight hardening
 - [ ] Chat lockdown: route all chat sends through one helper that checks `C_ChatInfo.InChatMessagingLockdown()` and queues messages.

@@ -11,6 +11,8 @@ One roster with EPGP standings (PR = EP/GP), officers defined by the guild rank'
 The Profiles tab is now "Manage roster": it lists the guild's max level members, and officers add or remove them from the roster there. Only guild members can be added. Raids no longer add players to the roster by themselves.
 ### Auctions
 Auctions are always Open with named tier buttons (each tier its own GP). Raiders get one button per tier, plus OS, Pass and Cancel; cancelling and passing are always allowed. Tiers without a custom name show as Base/Small/Medium/Large/Max. Fixed: anti-snipe now restarts the countdown, and the auction and award click modifiers can't be set to the same keys.
+### Standings import
+Officers can paste a `Name, EP, GP` list (e.g. from a spreadsheet) in *Import standings*, check the preview and set everyone's standings in one go.
 ### Test mode
 `/bpepgp test` switches to a separate test ledger and sync channel; chat output stays local. Simulate a raid group (`/bpepgp testgroup N`) and bidders (*Simulate bids*) to run a whole raid evening alone.
 ### Removed

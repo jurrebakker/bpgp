@@ -354,6 +354,14 @@ local function GenerateManagerOptions(self)
                 end
             end),
             order = 22
+        },
+        standings_import = {
+            name = CLM.L["Import standings"],
+            desc = CLM.L["Paste a Name, EP, GP list to set standings in one go."],
+            type = "execute",
+            width = "full",
+            func = (function() CLM.GUI.StandingsImport:Show() end),
+            order = 30
         }
     }
 end
