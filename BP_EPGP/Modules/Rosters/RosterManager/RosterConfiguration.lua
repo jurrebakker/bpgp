@@ -21,10 +21,10 @@ function RosterConfiguration:New(i)
     if i then return o end
 
     o._ = {}
-    -- Auction type: Open / Sealed / Vickrey
-    o._.auctionType = CONSTANTS.AUCTION_TYPE.SEALED
-    -- Item Value mode: Single-Priced / Ascending
-    o._.itemValueMode = CONSTANTS.ITEM_VALUE_MODE.SINGLE_PRICED
+    -- Auction type: BP EPGP uses Open auctions
+    o._.auctionType = CONSTANTS.AUCTION_TYPE.OPEN
+    -- Item Value mode: BP EPGP uses Tiered (named tier buttons, each with its own GP)
+    o._.itemValueMode = CONSTANTS.ITEM_VALUE_MODE.TIERED
     -- Auction time seconds
     o._.auctionTime = 30
     -- Anti snipe time seconds (0 = disabled)
@@ -42,7 +42,7 @@ function RosterConfiguration:New(i)
     -- Minimum GP used in calculations when player has less
     o._.minGP = 1
     -- Named Buttons Mode
-    o._.namedButtons = false
+    o._.namedButtons = true
     -- OS
     o._.useOS = true
     -- Always allow bidding base
