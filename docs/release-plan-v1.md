@@ -307,6 +307,7 @@ Each phase ends with: luacheck clean, `/reload` without Lua errors, and the rele
 - [x] **S7:** live single-entry pushes require `creator == sender` (via the sender's guild GUID); week data only from officers.
 - [x] **S9:** raiders accept auction control only from an officer who is raid leader/assistant; relaxed mode removed.
 - [x] Sync sending is re-evaluated on `GUILD_ROSTER_UPDATE`, so promotions/demotions take effect without `/reload` (L2). Officer-only UI still needs a `/reload`.
+- ⏸ In-game test postponed to Phase 10 (2026-10-16): needs a second account for sync; run it together with the full checklist.
 
 ### Phase 9 — Main window & settings tabs ([features/ui-overhaul.md](features/ui-overhaul.md))
 - [ ] Remove all Options → AddOns pages (`AddToBlizOptions`) and the minimap "Configuration" menu item; add `/bpepgp config`.
@@ -316,6 +317,7 @@ Each phase ends with: luacheck clean, `/reload` without Lua errors, and the rele
 - [ ] Apply the K/F/D decisions per setting (fixed values hard-coded, dropped settings removed). Check whether LibSharedMedia and its AceGUI widgets can be dropped.
 
 ### Phase 10 — Testing (see §7)
+- [ ] Phase 8 sync hardening in-game test (postponed): two clients in test mode sync EP awards, undo and week catch-up; minimap shows In-Sync; a non-officer can't push entries; auctions only accepted from an officer raid lead.
 
 ### Phase 11 — Release 1.0
 - [ ] Licensing checklist (§8).
