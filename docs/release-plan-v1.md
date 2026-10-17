@@ -244,7 +244,7 @@ Each phase ends with: luacheck clean, `/reload` without Lua errors, and the rele
 |---|---|
 | 0-7 | ✅ Done and tested in-game |
 | 8 Sync hardening | ✅ Built; in-game test postponed to Phase 10 (needs a second account) |
-| 9 UI redesign | 9a ✅ shared UI pieces (verified with `/bpepgp uitest`). 9b ✅ main window (selection retested in-game). 9c ✅ Settings tab. 9d ✅ Auctioning and Bidding windows (tier buttons verified). 9e ✅ other windows (item drop/shift-click verified). 9f ✅ unused UI libraries removed (built; covered by the full test run). **Phase 9 is complete in code; next: Phase 10, the full test run** |
+| 9 UI redesign | 9a ✅ shared UI pieces (verified with `/bpepgp uitest`). 9b ✅ main window (selection retested in-game). 9c ✅ Settings tab. 9d ✅ Auctioning and Bidding windows (tier buttons verified). 9e ✅ other windows (item drop/shift-click verified). 9f ✅ unused UI libraries removed (built; covered by the full test run). **Phase 9 is complete in code; next: Phase 10, the full test run.** After 9: the auctioning UI moved into an Auction tab (R12, tested in-game); a Bid button in the main window reopens the Bidding window (R13, built; loads without errors, button test in Phase 10) |
 | 10 Testing, 11 Release | Not started |
 
 Everything is on `master` (protected: changes go in through pull requests). Start each piece of work on a branch, e.g. `feat/phase-9b-main-window`.

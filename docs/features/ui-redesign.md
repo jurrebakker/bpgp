@@ -21,6 +21,8 @@ The design proposes a few things that conflict with earlier choices. Your calls:
 | R9 | Bidding window in comfortable + compact layouts, countdown docked in the header | **Comfortable only + docked countdown.** The separate timer bar becomes optional (off by default). |
 | R10 | Winner preselected when the timer ends (highest tier → PR → roll), value filled, Enter awards; next queued item loads after Award | **Yes, both.** |
 | R11 | Raiders: officer tabs hidden, own row pinned, *Your PR* big in the header | **Yes.** |
+| R12 | (2026-10-17, after 9d) How do officers open auctioning from the GUI? | **An Auction tab in the main window with the full auctioning UI** (officers only, right after Standings). The separate Auctioning window is gone; alt-click and `/bpepgp auction` open the tab. |
+| R13 | (2026-10-17) How does a raider reopen the Bidding window after closing it? (only `/bpepgp bid` did) | **A Bid button in the main window header**, shown to everyone while an auction runs. |
 
 Things in the design that conflict with earlier decisions are left out without asking:
 - the "Set alt" right-click item (alt linking removed in Phase 3);
@@ -77,9 +79,10 @@ Things in the design that conflict with earlier decisions are left out without a
 | **Main: Raids** | | Same columns as today (Name · Status · Created), new chrome; officer panel to create raids with the on-time bonus. |
 | **Main: Roster** (officers) | | Today's *Manage roster* with new chrome. Filter checkboxes and search stay in the side panel (they're useful here). |
 | **Main: Audit** (officers) | | Separate tab (R4). Skipped ledger entries (Phase 8, S3) show in red, with a count in the footer. |
+| **Main: Bid button** | | Right of the page header, everyone, only while an auction runs (R13). Opens the Bidding window. |
 | **Main: Settings** | | One tab (R3), with section navigation on the left: **Personal** (everyone), **Guild** and **Gear values** (everyone sees them; only officers edit, D3), **Advanced**: test mode for everyone (T1); logging and remove roster for officers. |
 | **States** | | Empty ("No standings yet…"), syncing overlay (`LoadingSpinnerTemplate` + progress bar, replaces "BP EPGP is processing"), test mode, read-only settings. |
-| **Auctioning** | 540×470 | Item queue on the left (36 px item buttons, border colour shows state); item + note; five tier GP fields (named); length, anti-snipe, *Simulate bids* (test mode), roll, Clear list, **Start/Stop**; bid list (Name · Bid · PR · Roll · equipped items); Remove on award (default on) · Value · **Award**. States: idle / running (inputs locked, timer in header) / finished (winner preselected, Enter awards, R10). |
+| **Auctioning** | Auction tab (R12; was 540×470) | Item queue on the left (36 px item buttons, border colour shows state); item + note; five tier GP fields (named); length, anti-snipe, *Simulate bids* (test mode), roll, Clear list, **Start/Stop**; bid list (Name · Bid · PR · Roll · equipped items); Remove on award (default on) · Value · **Award**. States: idle / running (inputs locked, timer in header) / finished (winner preselected, Enter awards, R10). |
 | **Bidding** | 480×440 | Header: "Item 2 of 4 · 14s left", "YOUR PR 1.82". Item row with ilvl and slot, **Next ›**. One row of 5 tier buttons with GP on the button; OS · Pass · Cancel; status line (accepted/denied); open bid list. Clicking another tier replaces your bid. Only an unusable item asks for confirmation. Comfortable layout only (R9). |
 | **Timer bar** | 270×24 | Optional, off by default (R9). Turns red under 5 s, shows "+5s" on anti-snipe; clicking it opens Bidding. |
 | **Alert toasts** | 276×72 | Existing AlertFrame subsystems with `LootWonAlertFrameTemplate` art. |

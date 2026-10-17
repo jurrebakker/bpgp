@@ -24,7 +24,7 @@ BP EPGP can be installed next to Core Loot Manager; they don't share data or cha
 ## For raiders
 
 - **Standings** shows everyone's EP, GP and PR. Your own row is pinned on top, and your PR is shown in the header.
-- **When an auction starts**, the bidding window opens with the item, the time left and one button per tier (each with its GP). Click a tier to bid; clicking another tier replaces your bid. You can also bid **OS**, **Pass** or **Cancel**. The status line tells you whether your bid was accepted.
+- **When an auction starts**, the bidding window opens with the item, the time left and one button per tier (each with its GP). Click a tier to bid; clicking another tier replaces your bid. You can also bid **OS**, **Pass** or **Cancel**. The status line tells you whether your bid was accepted. Closed it? Open the main window (minimap icon) and click **Bid**, or type `/bpepgp bid`.
 - **Settings → Personal**: bidding window options (open automatically, close after bidding, skip unusable items, timer bar), sounds, minimap icon and **Pass on loot**.
 - **Pass on loot** (on by default): in *our own* raids you automatically pass on boss loot, so the officer running the auctions can loot everything. It never passes outside our raids (pugs, other guilds, dungeons).
 
@@ -35,7 +35,7 @@ BP EPGP can be installed next to Core Loot Manager; they don't share data or cha
 3. **Raid night:**
    - Raids tab: create a raid, then right-click it → **Start raid**. Raid members join it and get the on-time bonus.
    - Award EP from the Standings tab: pick *Act on* (Selected / Raid / Roster), enter EP, **Award EP**.
-   - Loot: alt-click an item (the *Auction click*) to add it to the auctioning window, then **Start**. When the timer ends the winner is selected for you (highest tier, then PR, then roll): press **Enter** to award. Right-click a player in Standings → **Award item** to award without an auction.
+   - Loot: open the **Auction** tab (or alt-click an item, the *Auction click*, which adds it and opens the tab), then **Start**. When the timer ends the winner is selected for you (highest tier, then PR, then roll): press **Enter** to award. Right-click a player in Standings → **Award item** to award without an auction.
    - End the raid in the Raids tab.
 4. **Weekly:** decay from the Standings tab (*Decay %*).
 5. **Mistakes:** remove the entry in History or Audit (right-click). This writes an undo entry that syncs to everyone.
@@ -49,7 +49,7 @@ Practise first in **test mode** (`/bpepgp test`): a separate ledger and sync cha
 | `/bpepgp gui` | Main window |
 | `/bpepgp config` | Settings tab |
 | `/bpepgp bid` | Bidding window |
-| `/bpepgp auction` | Auctioning window (officers) |
+| `/bpepgp auction` | Auction tab (officers) |
 | `/bpepgp award` | Award window (officers) |
 | `/bpepgp auction_history` / `trade` | Auction history / Trade list (officers) |
 | `/bpepgp import` | Import standings (officers) |

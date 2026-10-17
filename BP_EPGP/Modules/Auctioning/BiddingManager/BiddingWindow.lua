@@ -531,6 +531,7 @@ function BiddingWindow:StartAuction()
         end
     end
     self:Refresh()
+    CLM.GUI.MainWindow:UpdateBidButton()
 end
 
 function BiddingWindow:EndAuction()
@@ -540,6 +541,7 @@ function BiddingWindow:EndAuction()
         self.bar = nil
     end
     self:Refresh()
+    CLM.GUI.MainWindow:UpdateBidButton()
 end
 
 function BiddingWindow:AntiSnipe()

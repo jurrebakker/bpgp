@@ -11,16 +11,17 @@ local UI = CLM.UI
 local S = UI.SPACE
 
 --[[
-    Auctioning window (Phase 9d, ui-redesign.md "Auctioning", R10). Officers only.
+    Auction tab (officers): the auctioning UI lives in the main window (decision R12, 2026-10-17;
+    it was a separate window in 9d). Alt-clicking an item or /bpepgp auction opens this tab.
       left   item queue (36 px item buttons; the border shows the state)
       right  item + note, five tier GP fields, length / anti-snipe / roll / clear / Start-Stop,
              bid list (Name · Bid · PR · Roll · equipped items), Remove on award · Value · Award
+      header state and countdown
     States: idle (building the list), running (inputs locked, countdown in the header) and finished
     (the winner is preselected: highest tier, then PR, then roll; Enter in the Value field awards).
     After an award the next item with bids is loaded.
 ]]--
 
-local WIDTH, HEIGHT = 540, 470
 local QUEUE_WIDTH = 44
 local QUEUE_BUTTON = 36
 local TIER_INPUT_WIDTH = 56
@@ -40,16 +41,13 @@ local INVALID_TINT = CreateColor(1, 0.13, 0.13, 0.15)
 local HIDDEN_BID = UI.COLOR.GREY
 local OS_COLOR = CreateColor(1, 0.82, 0.5)
 
----@class AuctionManagerGUI
----@field window table?
----@field auctionItem AuctionItem?
----@field awardPlayer string?
----@field awardValue number?
----@field removeOnAward boolean
----@field awarded table
----@field focusedFor AuctionItem?
----@field _initialized boolean
-local AuctionWindow = { awarded = {} }
+local AuctionWindow = {
+    key = "auction",
+    order = 1.5, -- right after Standings
+    title = CLM.L["Auction"],
+    officerOnly = true,
+    awarded = {},
+}
 
 local function Manager()
     return CLM.MODULES.AuctionManager
@@ -155,7 +153,7 @@ local function PreselectWinner(self)
     local name, response = Manager():GetWinner(item, self.awarded[item])
     if not name then return end
     SetWinner(self, name, response)
-    if self.window:IsShown() and self.focusedFor ~= item then
+    if self.content and self.content:IsVisible() and self.focusedFor ~= item then
         self.focusedFor = item
         self.valueInput:SetFocus()
         self.valueInput:HighlightText()
@@ -461,40 +459,19 @@ local function BuildAwardRow(self, panel)
     self.removeCheck:SetPoint("BOTTOMLEFT", -4, -1)
 end
 
-local function BuildHeader(self, window)
-    self.stateLabel = UI.CreateLabel(window, "", "GameFontNormal")
-    self.stateLabel:SetPoint("TOPRIGHT", window, "TOPRIGHT", -S.M, -32)
+local function BuildHeader(self, header)
+    self.stateLabel = UI.CreateLabel(header, "", "GameFontNormal")
+    self.stateLabel:SetPoint("RIGHT", header, "RIGHT", 0, 0)
     self.stateLabel:SetJustifyH("RIGHT")
-    self.timerBar = UI.CreateProgressBar(window, 140, 14)
-    self.timerBar:SetPoint("TOPRIGHT", self.stateLabel, "BOTTOMRIGHT", 0, -S.XS)
+    self.timerBar = UI.CreateProgressBar(header, 140, 14)
+    self.timerBar:SetPoint("RIGHT", self.stateLabel, "LEFT", -S.M, 0)
 end
 
-local function Build(self)
-    local window = UI.CreateWindow({
-        name = "BPEPGP_AuctionWindow",
-        title = CLM.L["Auctioning"],
-        width = WIDTH, height = HEIGHT,
-        portrait = true,
-        dbKey = "auctionwindow",
-    })
-    self.window = window
-    local heading = UI.CreateLabel(window, CLM.L["Auctioning"], "GameFontNormalLarge")
-    heading:SetPoint("TOPLEFT", 60, -34)
-    BuildHeader(self, window)
-
-    local top = S.TOP_BAND
-    local banner = UI.CreateTestModeBanner(window)
-    if banner then
-        banner:SetPoint("TOPLEFT", S.S, -top)
-        banner:SetPoint("TOPRIGHT", -S.S, -top)
-        top = top + 24 + S.XS
-    end
-    local area = CreateFrame("Frame", nil, window)
-    area:SetPoint("TOPLEFT", S.S, -top)
-    area:SetPoint("BOTTOMRIGHT", -S.S, S.S)
-
-    BuildQueue(self, area)
-    local panel = CreateFrame("Frame", nil, area)
+function AuctionWindow:Build(content, header)
+    self.removeOnAward = Manager():GetDefaultRemoveOnAward()
+    BuildHeader(self, header)
+    BuildQueue(self, content)
+    local panel = CreateFrame("Frame", nil, content)
     panel:SetPoint("TOPLEFT", QUEUE_WIDTH + S.S + S.S, 0)
     panel:SetPoint("BOTTOMRIGHT")
     BuildItemRow(self, panel)
@@ -503,15 +480,14 @@ local function Build(self)
     BuildBidList(self, panel, listTop)
     BuildAwardRow(self, panel)
 
-    -- Docked countdown: update while the window is open and something runs
+    -- Docked countdown: OnUpdate only runs while the tab is visible
     local elapsed = 0
-    window:SetScript("OnUpdate", function(_, delta)
+    content:SetScript("OnUpdate", function(_, delta)
         elapsed = elapsed + delta
         if elapsed < 0.2 then return end
         elapsed = 0
         self:UpdateHeader()
     end)
-    window:HookScript("OnShow", function() self:Refresh() end)
 end
 
 --[[
@@ -519,7 +495,7 @@ end
 ]]--
 
 function AuctionWindow:UpdateHeader()
-    if not self.window then return end
+    if not self.stateLabel then return end
     local state = State()
     local auction = Auction()
     local text = ({
@@ -624,10 +600,10 @@ local function RefreshAward(self)
     end
 end
 
----@param visibleOnly boolean? only refresh when the window is shown
+---@param visibleOnly boolean? only refresh when the tab is visible
 function AuctionWindow:Refresh(visibleOnly)
-    if not self._initialized or not self.window then return end
-    if visibleOnly and not self.window:IsShown() then return end
+    if not self.content then return end
+    if visibleOnly and not self.content:IsVisible() then return end
     local auction = Auction()
     if self.auctionItem and not auction:IsItemInAuction(self.auctionItem) then
         self.auctionItem = nil
@@ -644,54 +620,48 @@ function AuctionWindow:Refresh(visibleOnly)
     self.bidList:SetData(self.auctionItem and BuildBidRows(self.auctionItem) or {})
     RefreshAward(self)
     self:UpdateHeader()
+    self.window:SetPageFooter(CLM.L["Right-click an item in the queue: move to pending or remove · Enter in Value awards"])
 end
 
+CLM.GUI.MainWindow:RegisterPage(AuctionWindow)
+
 --[[
- * Public *
+ * CLM.GUI.AuctionManager: what AuctionManager calls (alt-click, refreshes, clearing the list) *
 ]]--
 
-function AuctionWindow:Initialize()
-    LOG:Trace("AuctionWindow:Initialize()")
+local AuctionGUI = {}
+
+function AuctionGUI:Initialize()
+    LOG:Trace("AuctionGUI:Initialize()")
     if not CLM.MODULES.ACL:IsTrusted() then return end
-    self.removeOnAward = Manager():GetDefaultRemoveOnAward()
     CLM.MODULES.ConfigManager:RegisterSlash({
         auction = {
             type = "execute",
             name = "Auctioning",
-            desc = CLM.L["Toggle Auctioning window display"],
-            handler = self,
-            func = "Toggle",
+            desc = CLM.L["Open the Auction tab"],
+            func = function() self:Show() end,
         }
     })
     self._initialized = true
 end
 
+-- Open the main window on the Auction tab
+function AuctionGUI:Show()
+    if not self._initialized then return end
+    CLM.GUI.MainWindow:Open(AuctionWindow.key)
+end
+AuctionGUI.Toggle = AuctionGUI.Show
+
+---@param visibleOnly boolean?
+function AuctionGUI:Refresh(visibleOnly)
+    AuctionWindow:Refresh(visibleOnly)
+end
+
 ---@param auctionItem AuctionItem?
-function AuctionWindow:SetVisibleAuctionItem(auctionItem)
-    self.auctionItem = auctionItem
-    self.awardPlayer, self.awardValue = nil, nil
-    self:Refresh(true)
+function AuctionGUI:SetVisibleAuctionItem(auctionItem)
+    AuctionWindow.auctionItem = auctionItem
+    AuctionWindow.awardPlayer, AuctionWindow.awardValue = nil, nil
+    AuctionWindow:Refresh(true)
 end
 
-function AuctionWindow:Show()
-    if not self._initialized then return end
-    if not self.window then Build(self) end
-    self.window:Show()
-end
-
-function AuctionWindow:Toggle()
-    if not self._initialized then return end
-    if self.window and self.window:IsShown() then
-        self.window:Hide()
-    else
-        self:Show()
-    end
-end
-
-function AuctionWindow:Reset()
-    if not self.window then return end
-    self.window:ClearAllPoints()
-    self.window:SetPoint("CENTER", 0, 0)
-end
-
-CLM.GUI.AuctionManager = AuctionWindow
+CLM.GUI.AuctionManager = AuctionGUI

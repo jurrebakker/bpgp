@@ -245,11 +245,12 @@ Each works for selected players, the whole roster, or the current raid. PR is EP
 
 ## 12. GUI
 
-- `Modules/MainWindow/MainWindow.lua` hosts the main window (`CLM.GUI.MainWindow`): a portrait frame with bottom tabs, a page header, a footer with the sync state, and a syncing overlay. Pages register with `MainWindow:RegisterPage` and implement `Build`, `Refresh` and optionally `OnShow`. Officers get Standings, History, Raids, Roster and Audit; raiders get Standings, History and Raids.
+- `Modules/MainWindow/MainWindow.lua` hosts the main window (`CLM.GUI.MainWindow`): a portrait frame with bottom tabs, a page header, a footer with the sync state, and a syncing overlay. Pages register with `MainWindow:RegisterPage` and implement `Build`, `Refresh` and optionally `OnShow`. Officers get Standings, Auction, History, Raids, Roster, Audit and Settings; raiders get Standings, History, Raids and Settings. While an auction runs, a Bid button right of the page header reopens the Bidding window (`MainWindow:UpdateBidButton`, called by the Bidding window on auction start and end).
 - Refreshes are coalesced to one per frame and only run while the window is visible (ledger updates, group and guild roster changes).
 - Every write asks first through `UI.Confirm` (a shared `StaticPopup`).
 - The Settings tab (`Settings.lua`) is built with `UI.CreateForm` and calls the modules' own getters and setters. Guild settings and gear values are ledger entries (`RosterManager:SetRosterConfiguration`, `SetRosterDefaultSlotTierValue`, …). `ConfigManager` only registers `/bpepgp` slash commands.
-- Separate windows, all on `Modules/UI`: Auctioning (`AuctionWindow.lua`), Bidding (`BiddingWindow.lua`), Award (`AwardGUI.lua`), Auction history, Trade list and Import standings (each module's `GUI.lua`).
+- The auctioning UI is the Auction tab (`MainWindow/Auction.lua`, R12); `CLM.GUI.AuctionManager` is a small adapter that opens it.
+- Separate windows, all on `Modules/UI`: Bidding (`BiddingWindow.lua`), Award (`AwardGUI.lua`), Auction history, Trade list and Import standings (each module's `GUI.lua`).
 - The rule: GUI reads from managers and writes only through manager methods.
 
 Shared pieces for every window are in `Modules/UI/` ([docs/features/ui-redesign.md](docs/features/ui-redesign.md)).
