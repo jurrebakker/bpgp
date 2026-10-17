@@ -1,0 +1,16 @@
+## Interface: 120100, 120105
+## Title: BPGP
+## Notes: BPGP (Boomer Points / Gear Points) loot system for our guild, with officer sync. Based on Core Loot Manager.
+## Author: Jurre Bakker
+## Category-enUS: Loot
+## Group: BPGP
+## IconTexture: Interface/AddOns/BPGP/Media/Icons/bpgp-32.png
+## AddonCompartmentFunc: BPGP_ToggleMainWindow
+## Version: @project-version@
+## OptionalDeps: ElvUI
+## X-License: Apache-2.0
+## SavedVariables: BPGP_DB, BPGP_Logs, BPGP_Minimap
+## LoadOnDemand: 0
+
+
+_filelist.xml

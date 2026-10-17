@@ -19,13 +19,13 @@ ignore = {
 }
 globals = {
 	-- Design
-	"BPEPGP",
-	"BPEPGP_ToggleMainWindow", -- AddonCompartmentFunc
+	"BPGP",
+	"BPGP_ToggleMainWindow", -- AddonCompartmentFunc
 	"LibStub",
 	-- Saved Variables
-	"BPEPGP_DB",
-	"BPEPGP_Logs",
-	"BPEPGP_Minimap",
+	"BPGP_DB",
+	"BPGP_Logs",
+	"BPGP_Minimap",
 	-- Monolith and Essential and Community
 	"MonDKP_DKPTable",
 	"MonDKP_Loot",

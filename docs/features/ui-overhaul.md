@@ -5,7 +5,7 @@
 
 ## Problem
 
-BP EPGP has two places where you manage things:
+BPGP has two places where you manage things:
 
 1. **The main window.** Open it from the minimap button or `/clm`. It has the Standings, History, Raids, Profiles and Audit tabs, where you award EP, decay, create raids and so on.
 2. **Options → AddOns → Core Loot Manager.** This is the Blizzard settings panel, with a *Core Loot Manager* page (personal settings) and a *Rosters* sub-page (guild EPGP settings). The minimap right-click menu item "Configuration" opens this panel too.
@@ -61,8 +61,8 @@ Knowing this explains the decisions below:
 | D3 | Who sees the Guild settings / Gear values tabs? | a) everyone; read-only unless officer · b) officers only | a | **a: everyone, read-only** ✅ |
 | D4 | Where do settings go? | a) one Configuration tab with sub-tabs · b) separate top-level tabs in a wider window | a | ~~b: top-level tabs~~ → **one Settings tab with sections** (redesign R3, [ui-redesign.md](ui-redesign.md)) |
 | D5 | How to build the settings pages | a) render existing AceConfig tables · b) hand-build widgets | a | **b: hand-build** |
-| D6 | Minimap right-click "Configuration" | a) open the Settings tab · b) remove the menu item | a | **b: remove**. After the Phase 3 smoke test the whole right-click menu went: any click opens the main window. The other windows open with `/bpepgp` commands. |
-| D7 | Roster creation (single roster) | a) "Set up BP EPGP" button for officers when no roster exists · b) "Create roster" button in Guild settings | a | **a: setup button** ✅ |
+| D6 | Minimap right-click "Configuration" | a) open the Settings tab · b) remove the menu item | a | **b: remove**. After the Phase 3 smoke test the whole right-click menu went: any click opens the main window. The other windows open with `/bpgp` commands. |
+| D7 | Roster creation (single roster) | a) "Set up BPGP" button for officers when no roster exists · b) "Create roster" button in Guild settings | a | **a: setup button** ✅ |
 | D8 | "Advanced" items (logging, remove roster) | a) bottom of Settings tab · b) own *Advanced* tab | a | ~~b: own Advanced tab~~ → **Advanced section in the Settings tab** (redesign R3) |
 | D9 | Window size | a) fixed, wider · b) resizable with minimum size, remembered per character | b | **b: resizable** ✅ (minimum 720×480 per the redesign) |
 
@@ -138,7 +138,7 @@ Legend for **Your call**: **K** = keep (move to a settings tab) · **F** = fix: 
 | Setting | What it does | Recommendation | Your call |
 |---|---|---|---|
 | Create roster (name + point type) | Creates a roster | D. Replaced by the D7 setup button | ✅ |
-| Roster name | Renames the roster | F: "BP EPGP" (or K if you want a custom name) | ✅ |
+| Roster name | Renames the roster | F: "BPGP" (or K if you want a custom name) | ✅ |
 | Copy settings / Copy source | Copies settings from another roster | D (single roster) | ✅ |
 | Remove roster | Deletes the roster | D, or keep under *Advanced* as a "reset everything" option | **K**, in the Advanced tab, officers only |
 | Point type (read-only) | Shows DKP/EPGP | D (always EPGP) | ✅ |
@@ -203,7 +203,7 @@ These settings disappear with features the release plan already removes. **Confi
 
 - **Raids tab sidebar** (`UnifiedGUI_Raids.lua:80-137`) shows the bonus settings when creating a raid. After the change it only needs the on-time bonus, and it can link to the Guild settings tab instead of duplicating it.
 - **Profiles tab** is now **Manage roster** (Phase 3 smoke test): max level guild members with an "In roster" column; officers add/remove them. Guild members only; raids never add players themselves. Standings has no filters, search or award reason.
-- **Slash commands** registered via `ConfigManager:RegisterSlash` are commands, not settings, so they're unaffected. Only the `/bpepgp` root needs a `config` subcommand that opens the Settings tab.
+- **Slash commands** registered via `ConfigManager:RegisterSlash` are commands, not settings, so they're unaffected. Only the `/bpgp` root needs a `config` subcommand that opens the Settings tab.
 - **`ConfigManager`** shrinks: no `AddToBlizOptions` at all, and no `AddGroup` for the Integrations/Tracker/Cross-guild pages.
 - **Settings changes while an auction runs:** guild settings are ledger entries and apply after sync. That's the same as today.
 
