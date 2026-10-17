@@ -7,6 +7,7 @@ Planning documents for BPGP. Code-level documentation stays next to the code (`A
 | Folder / file | What goes there |
 |---|---|
 | [release-plan-v1.md](release-plan-v1.md) | The v1.0 plan: scope, architecture, phases, test checklist, releasing |
+| [phase-10-test-run.md](phase-10-test-run.md) | Step-by-step script for the full in-game test before 1.0 (solo, sync with a second account, raid evening, rollout check) |
 | [sync-and-security.md](sync-and-security.md) | How ledger sync works, security issues found, decisions S1-S9 |
 | [features/](features/) | Planned features: agreed on, scoped, ready to be built |
 | [design/](design/) | The Claude Design spec for the UI redesign (open the `.dc.html` in a browser) |

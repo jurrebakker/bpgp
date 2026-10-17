@@ -332,7 +332,8 @@ Built from the Claude Design spec (`docs/design/`). Decisions R1-R11 in ui-redes
 - [x] **9f** Remove AceGUI, AceConfigDialog, lib-st, LibUIDropDownMenu and unused LibSharedMedia widgets; update `Libs/README.md` and licences. *(Done 2026-10-17. LibSharedMedia itself went too (the timer bar uses its fixed texture and font directly), plus AceHook, LibExpiringTimer, the unused Ace3 parts and the lib-st / dropdown helpers in `Utils.lua`. LibCandyBar ("All Rights Reserved") was replaced by our own timer bar on `Modules/UI`; LibDBIcon (also "All Rights Reserved") is kept as the standard minimap library (user's call).)*
 
 ### Phase 10 — Testing (see §7)
-- [ ] Phase 8 sync hardening in-game test (postponed): two clients in test mode sync EP awards, undo and week catch-up; minimap shows In-Sync; a non-officer can't push entries; auctions only accepted from an officer raid lead.
+- [ ] Run [phase-10-test-run.md](phase-10-test-run.md) parts 1-3 (part 4 at the rollout).
+- [ ] Phase 8 sync hardening in-game test (postponed, part 2 of the script): two clients in test mode sync EP awards, undo and week catch-up; minimap shows In-Sync; a non-officer can't push entries; auctions only accepted from an officer raid lead.
 
 ### Phase 11 — Release 1.0
 - [ ] Licensing checklist (§8).
@@ -344,6 +345,8 @@ Built from the Claude Design spec (`docs/design/`). Decisions R1-R11 in ui-redes
 ---
 
 ## 7. Test checklist (in-game)
+
+**The step-by-step script for the Phase 10 run is [phase-10-test-run.md](phase-10-test-run.md)**; it covers everything below plus the Phase 8 sync test and the Phase 9 windows. The list below is the original summary.
 
 There is no automated test harness for WoW UI code; luacheck catches syntax/global mistakes. Everything is tested in-game **in test mode first** (Phase 4), then the sync and bidding parts once more on the test channel with a second account, and only then live. The multi-person parts need **at least two accounts/characters in the guild** (one officer, one raider), ideally two officers for sync.
 
