@@ -4,8 +4,6 @@
 	<Script file="LibStub\LibStub.lua"/>
 	<Include file="CallbackHandler-1.0\CallbackHandler-1.0.xml"/>
 	<!-- UI Libs -->
-	<Include file="LibCandyBar-3.0\lib.xml"/>
-	<Include file="LibCandyBar-3.0\embeds.xml"/>
 	<Script file="LibDataBroker-1.1\LibDataBroker-1.1.lua"/>
 	<Include file="LibDBIcon-1.0\LibDBIcon-1.0\lib.xml"/>
 	<Script file="LibDeformat-3.0\LibDeformat-3.0.lua"/>

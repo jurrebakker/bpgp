@@ -20,7 +20,6 @@ local S = UI.SPACE
 ]]--
 
 local WIDTH, HEIGHT = 480, 440
-local BAR_FONT_SIZE = 12 -- timer bar font and texture are fixed (ui-overhaul.md)
 local ITEM_SIZE = 36
 
 local HIDDEN_BID = UI.COLOR.GREY
@@ -106,7 +105,6 @@ local function BarOptions(self, callback)
         anchor = self.db.barLocation,
         width = self.db.barWidth,
         height = self.db.barHeight,
-        fontSize = BAR_FONT_SIZE,
         callback = callback,
     }
 end
