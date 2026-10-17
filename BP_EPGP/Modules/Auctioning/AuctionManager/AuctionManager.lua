@@ -901,7 +901,7 @@ function AuctionManager:GetBidTypeOrder(bidType)
 end
 
 --[[
-    The winner the auctioning window preselects when an auction ends (ui-redesign.md R10):
+    The winner the Auction tab preselects when an auction ends (ui-redesign.md R10):
     the highest tier, then the highest PR, then the highest roll. Passes, cancels and invalid
     bids never win. `exclude` holds names already awarded this item (items with a count > 1).
 ]]--

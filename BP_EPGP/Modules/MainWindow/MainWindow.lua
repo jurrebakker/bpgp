@@ -12,7 +12,8 @@ local S = UI.SPACE
 
 --[[
     The main window (Phase 9b, docs/features/ui-redesign.md): one portrait frame with bottom tabs.
-    Officers get Standings, History, Raids, Roster and Audit; raiders get Standings, History and Raids (R11).
+    Officers get Standings, Auction (R12), History, Raids, Roster, Audit and Settings; raiders get Standings,
+    History, Raids and Settings (R11).
 
     Pages register themselves with MainWindow:RegisterPage(page). A page is a table with:
       key, order, title, officerOnly
@@ -132,6 +133,27 @@ end
  * Pages *
 ]]--
 
+-- The page header ends left of the Bid button while that is shown
+local function AnchorHeader(self, page)
+    local window = self.window
+    if window.BidButton:IsShown() then
+        page.header:SetPoint("TOPRIGHT", window.BidButton, "TOPLEFT", -S.S, 2)
+    else
+        page.header:SetPoint("TOPRIGHT", window, "TOPRIGHT", -S.S, -26)
+    end
+end
+
+-- Show the Bid button while an auction runs, so a closed Bidding window can be reopened
+function MainWindow:UpdateBidButton()
+    if not self.window then return end
+    local running = CLM.MODULES.BiddingManager:IsAuctionInProgress() and true or false
+    if self.window.BidButton:IsShown() == running then return end
+    self.window.BidButton:SetShown(running)
+    for _, page in ipairs(self.shownPages) do
+        if page.header then AnchorHeader(self, page) end
+    end
+end
+
 local function ShowPage(self, page)
     for _, other in ipairs(self.shownPages) do
         local shown = other == page
@@ -146,8 +168,8 @@ local function ShowPage(self, page)
         page.content:SetAllPoints(self.window.PageArea)
         page.header = CreateFrame("Frame", nil, self.window)
         page.header:SetPoint("TOPLEFT", self.window.Subtitle, "TOPRIGHT", S.M, 6)
-        page.header:SetPoint("TOPRIGHT", self.window, "TOPRIGHT", -S.S, -26)
         page.header:SetHeight(S.BUTTON + 4)
+        AnchorHeader(self, page)
         page.window = self
         page.isOfficer = self.isOfficer
         page:Build(page.content, page.header)
@@ -210,6 +232,9 @@ local function Build(self)
     window.Heading:SetPoint("TOPLEFT", HEADING_LEFT, -34)
     window.Subtitle = UI.CreateLabel(window, "", "GameFontDisableSmall")
     window.Subtitle:SetPoint("BOTTOMLEFT", window.Heading, "BOTTOMRIGHT", S.S, 1)
+    window.BidButton = UI.CreateButton(window, CLM.L["Bid"], 72, function() CLM.GUI.BiddingManager:Show() end)
+    window.BidButton:SetPoint("TOPRIGHT", window, "TOPRIGHT", -S.S, -28)
+    window.BidButton:Hide()
 
     local top = S.TOP_BAND
     local banner = UI.CreateTestModeBanner(window)
@@ -242,8 +267,10 @@ local function Build(self)
         end
     end
     UI.CreateTabs(window, names, function(id) ShowPage(self, self.shownPages[id]) end)
+    self:UpdateBidButton()
 
     window:HookScript("OnShow", function()
+        self:UpdateBidButton()
         if self.currentPage and self.currentPage.OnShow then self.currentPage:OnShow() end
         self:RefreshNow()
     end)
