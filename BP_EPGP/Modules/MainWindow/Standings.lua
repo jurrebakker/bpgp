@@ -158,7 +158,8 @@ local function Award(self, awardType, input)
     if not awardValue then LOG:Message(CLM.L["Missing award value"]) return end
     if not GetRoster() then LOG:Message(CLM.L["Set up BP EPGP first (Standings tab)."]) return end
     local points = UTILS.DecodePointTypeChangeName(awardType)
-    local profiles, text = {}, nil
+    local profiles = {}
+    local text
     if self.context == CONSTANTS.ACTION_CONTEXT.RAID then
         if not CLM.MODULES.RaidManager:IsInRaid() then LOG:Message(CLM.L["You are not in a raid."]) return end
         text = string.format(CLM.L["Award %s %s to everyone in raid."], awardValue, points)

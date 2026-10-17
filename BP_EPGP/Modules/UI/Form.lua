@@ -203,7 +203,10 @@ function Form:Button(definition)
         button:GetFontString():SetTextColor(definition.color:GetRGB())
     end
     if definition.desc then
-        button:SetScript("OnEnter", function(self) ShowTooltip(self, definition.label or definition.text, definition.desc) end)
+        button:SetScript("OnEnter", function(owner)
+            local title = (definition.label and definition.label ~= "") and definition.label or owner:GetText()
+            ShowTooltip(owner, title, definition.desc, definition.warning)
+        end)
         button:SetScript("OnLeave", function() GameTooltip:Hide() end)
     end
     row.Control = button

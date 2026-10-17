@@ -193,8 +193,6 @@ function UTILS.RemoveColorCode(s)
     return string.sub(s or "", 11, -3)
 end
 
-local RemoveColorCode = UTILS.RemoveColorCode
-
 -- formats:
 -- s: string  "AARRGGBB"
 -- a: string array  = {a = "AA", r = "RR", g = "GG", b = "BB"}
