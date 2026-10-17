@@ -68,7 +68,7 @@ local function BuildListTab(self, content)
         sortKey = "pr",
         sortDesc = true,
         onSelectionChanged = function(selection)
-            footer:SetText(string.format("%d selected · shift-click selects a range · right-click for a menu", #selection))
+            footer:SetText(string.format("%d selected · ctrl-click adds · shift-click selects a range · right-click for a menu", #selection))
         end,
         onRightClick = function(row, rowFrame)
             UI.ShowContextMenu(rowFrame, row.values.name, {
@@ -87,7 +87,7 @@ local function BuildListTab(self, content)
     list:SetPoint("TOPLEFT", S.XS, -S.XS)
     list:SetPoint("BOTTOMRIGHT", -S.XS, S.XS)
     list:SetData(FakeRows())
-    footer:SetText("0 selected · click rows to select · click headers to sort")
+    footer:SetText("0 selected · click a row to select it · click headers to sort")
 end
 
 local function BuildControlsTab(self, content)

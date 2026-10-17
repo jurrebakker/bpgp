@@ -161,6 +161,7 @@ function CORE:_InitializeFeatures()
     CLM.GlobalSlashCommands:Initialize() -- Initialize global slash handlers
     CLM.GlobalChatMessageHandlers:Initialize() -- Initialize global chat message handlers
     CLM.GlobalGuildChangeHandler:Initialize() -- Initialize guild change handler
+    CLM.GlobalLootRollHandler:Initialize() -- Pass on loot rolls (setting)
 
     return true
 end

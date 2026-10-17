@@ -7,342 +7,209 @@ local CONSTANTS = CLM.CONSTANTS
 local UTILS     = CLM.UTILS
 -- ------------------------------- --
 
-local AceGUI = LibStub("AceGUI-3.0")
----@cast AceGUI AceGUI
-local AceConfigRegistry = LibStub("AceConfigRegistry-3.0")
-local AceConfigDialog = LibStub("AceConfigDialog-3.0")
+local UI = CLM.UI
+local S = UI.SPACE
 
-local REGISTRY = "bpepgp_reg_awardgui_opt"
+--[[
+    Award window (Phase 9e, ui-redesign.md "Award"): award an item outside an auction.
+    Item, player, GP with the item's tier values as a hint, Cancel · Award. Opened with the award
+    click on an item link, by right-click → Award item in Standings (player filled in, R7), or
+    /bpepgp award. Officers only.
+]]--
 
-local _, _, _, isElvUI = UTILS.GetAddOnInfo("ElvUI")
+local WIDTH, HEIGHT = 300, 205
 
-local BASE_WIDTH  = 375 + (isElvUI and 15 or 0)
+---@class AwardGUI
+---@field window table?
+---@field itemLink string?
+---@field awardPlayer string?
+---@field _initialized boolean
+local AwardGUI = {}
 
-local function InitializeDB(self)
-    self.db = CLM.MODULES.Database:GUI('award', {
-        location = {nil, nil, "CENTER", 0, 0 }
+---@return Roster?
+local function GetRoster()
+    return CLM.MODULES.RosterManager:GetRoster()
+end
+
+local function PlayerOptions()
+    local roster = GetRoster()
+    local options = {}
+    if not roster then return options end
+    for _, GUID in ipairs(roster:Profiles()) do
+        local profile = CLM.MODULES.ProfileManager:GetProfileByGUID(GUID)
+        if profile then
+            local color = UI.GetClassColor(UTILS.CanonicalClass(profile:ClassInternal()))
+            options[#options + 1] = { text = color:WrapTextInColorCode(profile:ShortName()), value = profile:Name(), sort = profile:Name() }
+        end
+    end
+    table.sort(options, function(a, b) return a.sort < b.sort end)
+    return options
+end
+
+-- "Base 20 · Small 60 · ... · Max 300" from the slot values or the item's override
+local function TierHint(itemLink)
+    local roster = GetRoster()
+    if not (roster and itemLink) then return "" end
+    local values = roster:GetItemValuesFromItemLink(itemLink) or {}
+    local parts = {}
+    for _, tier in ipairs(CONSTANTS.SLOT_VALUE_TIERS_ORDERED) do
+        if values[tier] then
+            local name = UTILS.GetRosterConditionalFieldName(tier, roster, "", "")
+            parts[#parts + 1] = UI.TIER_COLOR[tier]:WrapTextInColorCode(name .. " " .. tostring(values[tier]))
+        end
+    end
+    return table.concat(parts, " · ")
+end
+
+local function SetItem(self, itemLink)
+    self.itemLink = itemLink
+    self.itemButton:SetItem(itemLink)
+    self.itemInput:SetText(itemLink or "")
+    self.hint:SetText(TierHint(itemLink))
+    self:Refresh()
+end
+
+local function SetItemFromText(self, text)
+    text = (text or ""):match("^%s*(.-)%s*$")
+    if text == "" then SetItem(self, nil) return end
+    local itemId = UTILS.GetItemInfoInstant(text)
+    if not itemId then
+        LOG:Message(CLM.L["Not an item: %s"], text)
+        return
+    end
+    local item = tostring(itemId) == text and Item:CreateFromItemID(itemId) or Item:CreateFromItemLink(text)
+    if item:IsItemEmpty() then return end
+    item:ContinueOnItemLoad(function() SetItem(self, item:GetItemLink()) end)
+end
+
+local function Award(self)
+    local roster = GetRoster()
+    local value = tonumber(self.gpInput:GetText())
+    if not (roster and self.itemLink and self.awardPlayer and value) then return end
+    local itemId, extra = UTILS.GetItemIdFromLink(self.itemLink)
+    UI.Confirm(string.format(CLM.L["Award %s to %s for %s GP?"], self.itemLink,
+        UI.COLOR.GOLD:WrapTextInColorCode(Ambiguate(self.awardPlayer, "none")), tostring(value)), function()
+        -- During a raid on this roster the award belongs to the raid
+        local target = roster
+        local raid = CLM.MODULES.RaidManager:IsInRaid() and CLM.MODULES.RaidManager:GetRaid()
+        if raid and raid:Roster() == roster then target = raid end
+        local link, player = self.itemLink, self.awardPlayer
+        local success = CLM.MODULES.LootManager:AwardItem(target, player, link, itemId, extra, value)
+        if success then
+            CLM.MODULES.TradeHelper:Handle(link, player)
+            self.window:Hide()
+        end
+    end)
+end
+
+local function Build(self)
+    local window = UI.CreateWindow({
+        name = "BPEPGP_AwardWindow",
+        title = CLM.L["Award"],
+        width = WIDTH, height = HEIGHT,
+        dbKey = "awardwindow",
     })
-end
-
-local function StoreLocation(self)
-    self.db.location = { self.top:GetPoint() }
-    self.db.location[2] = nil
-end
-
-local function RestoreLocation(self)
-    if self.db.location then
-        self.top:ClearAllPoints()
-        self.top:SetPoint(self.db.location[3], self.db.location[4], self.db.location[5])
-    end
-end
-
-local options = {
-    type = 'group',
-    args = {}
-}
-
-local override = false
-local function UpdateOptions(self)
-    local icon = "Interface\\Icons\\INV_Misc_QuestionMark"
-    self.itemId = 0
-    self.extra = nil
-    if self.itemLink then
----@diagnostic disable-next-line: cast-local-type
-        _, _, _, _, icon = UTILS.GetItemInfoInstant(self.itemLink)
-        self.itemId, self.extra = UTILS.GetItemIdFromLink(self.itemLink)
+    self.window = window
+    local top = 32
+    local banner = UI.CreateTestModeBanner(window)
+    if banner then
+        banner:SetPoint("TOPLEFT", S.S, -26)
+        banner:SetPoint("TOPRIGHT", -S.S, -26)
+        top = top + 24
     end
 
-    if CLM.MODULES.RaidManager:IsInRaid() and not override then
-        local roster = CLM.MODULES.RaidManager:GetRaid():Roster()
-        if roster then
-            self.rosterId = roster:UID()
-        end
-    end
+    self.itemButton = UI.CreateItemButton(window, 36)
+    self.itemButton:SetPoint("TOPLEFT", S.M, -top)
+    self.itemInput = UI.CreateInput(window, WIDTH - S.M * 2 - 36 - S.S - 6, false)
+    self.itemInput:SetPoint("LEFT", self.itemButton, "RIGHT", S.S + 6, 0)
+    self.itemInput:SetScript("OnEnterPressed", function(box) box:ClearFocus() end)
+    self.itemInput:HookScript("OnEditFocusLost", function(box)
+        if box:GetText() ~= (self.itemLink or "") then SetItemFromText(self, box:GetText()) end
+    end)
+    -- Shift-click an item (bags, chat, loot) while the field has focus, or drag it onto the field or icon
+    UI.AcceptItems(self.itemInput, function(link) SetItemFromText(self, link) end)
+    UI.AcceptItems(self.itemButton, function(link) SetItemFromText(self, link) end)
 
-    local profileNameMap = {}
-    local profileList = {}
-    local rosterList = {}
-    for name, roster in pairs(CLM.MODULES.RosterManager:GetRosters()) do
-        rosterList[roster:UID()] = name
-        if roster:UID() == self.rosterId then
-            self.roster = roster
-            local profiles = roster:Profiles()
-            for _, GUID in ipairs(profiles) do
-                local profile = CLM.MODULES.ProfileManager:GetProfileByGUID(GUID)
-                if profile then
-                    profileNameMap[profile:Name()] = profile:ShortName()
-                    profileList[#profileList + 1] = profile:Name()
-                end
-            end
-            table.sort(profileList)
-        end
-    end
+    local playerLabel = UI.CreateLabel(window, CLM.L["Player"], "GameFontNormal")
+    playerLabel:SetPoint("TOPLEFT", self.itemButton, "BOTTOMLEFT", 0, -S.M - 4)
+    self.playerDropdown = UI.CreateDropdown(window, 180, PlayerOptions,
+        function() return self.awardPlayer end,
+        function(value) self.awardPlayer = value; self:Refresh() end)
+    self.playerDropdown:SetPoint("LEFT", playerLabel, "LEFT", 80, 0)
 
-    local itemLink = "item:" .. tostring(self.itemId) .. (self.extra or "")
-    options.args = {
-        icon = {
-            name = "",
-            type = "execute",
-            image = icon,
-            func = (function() end),
-            width = 0.50,
-            order = 1,
-            tooltipHyperlink = itemLink,
-        },
-        item = {
-            name = CLM.L["Item"],
-            type = "input",
-            get = (function(i)
-                return self.itemLink or ""
-            end),
-            set = (function(i,v)
-                if v and UTILS.GetItemInfoInstant(v) then -- validate if it is an itemLink or itemString or itemId
-                    local itemID = UTILS.GetItemInfoInstant(v)
-                    local item
-                    if tostring(itemID) == v then
-                        item = Item:CreateFromItemID(tonumber(v))
-                    else
-                        item = Item:CreateFromItemLink(v)
-                    end
-                    item:ContinueOnItemLoad(function()
-                        self.itemLink = item:GetItemLink()
-                        self:Refresh()
-                    end)
-                end
-            end),
-            width = 1.4,
-            order = 2,
-            tooltipHyperlink = itemLink,
-        },
-        roster = {
-            name = CLM.L["Roster"],
-            type = "select",
-            set = function(i, v)
-                self.rosterId = v
-                override = true
-                self:Refresh()
-            end,
-            get = function(i) return self.rosterId end,
-            -- style = "radio",
-            values = rosterList,
-            order = 3,
-        },
-        profile = {
-            name = CLM.L["Player"],
-            type = "select",
-            set = function(i, v) self.awardPlayer = v end,
-            get = function(i) return self.awardPlayer end,
-            values = profileNameMap,
-            sorting = profileList,
-            order = 4,
-        },
-        padding = {
-            name = "",
-            type = "description",
-            order = 5,
-            width = 0.9
-        },
-        award_value = {
-            name = CLM.L["Award value"],
-            type = "input",
-            set = (function(i,v) self.awardValue = tonumber(v) or 0 end),
-            get = (function(i) return tostring(self.awardValue) end),
-            width = 0.55,
-            pattern = CONSTANTS.REGEXP_FLOAT,
-            order = 17
-        },
-        award = {
-            name = CLM.L["Award"],
-            type = "execute",
-            func = (function()
-                local awardTarget = self.roster
-                if CLM.MODULES.RaidManager:IsInRaid() then
-                    local raid = CLM.MODULES.RaidManager:GetRaid()
-                    local roster = raid:Roster()
-                    if self.roster == roster then
-                        awardTarget = raid
-                    end
-                end
-                local success, _ = CLM.MODULES.LootManager:AwardItem(awardTarget, self.awardPlayer, self.itemLink, self.itemId, self.extra, self.awardValue)
-                if success then
-                    CLM.MODULES.TradeHelper:Handle(self.itemLink, self.awardPlayer)
-                else
-                    self:Refresh()
-                end
-                self.itemLink = nil
-                self.itemId = 0
-                self.awardValue = 0
-                self.awardPlayer = ""
-            end),
-            confirm = (function()
-                return string.format(
-                    CLM.L["Are you sure, you want to award %s to %s for %s %s?"],
-                    self.itemLink,
-                    UTILS.ColorCodeText(Ambiguate(self.awardPlayer, "none"), "FFD100"),
-                    tostring(self.awardValue),
-                    CLM.L["GP"]
-                )
-            end),
-            width = 0.55,
-            order = 18,
-            disabled = (function() return (not (self.itemLink or false)) end)
-        }
-    }
+    local gpLabel = UI.CreateLabel(window, CLM.L["GP"], "GameFontNormal")
+    gpLabel:SetPoint("TOPLEFT", playerLabel, "BOTTOMLEFT", 0, -S.M - 4)
+    self.gpInput = UI.CreateInput(window, 70, true, function() self:Refresh() end)
+    self.gpInput:SetPoint("LEFT", gpLabel, "LEFT", 86, 0)
+    self.gpInput:SetScript("OnEnterPressed", function(box) box:ClearFocus() Award(self) end)
+    self.hint = UI.CreateLabel(window, "", "GameFontHighlightSmall")
+    self.hint:SetPoint("TOPLEFT", gpLabel, "BOTTOMLEFT", 0, -S.S)
+    self.hint:SetPoint("RIGHT", window, "RIGHT", -S.M, 0)
+    self.hint:SetWordWrap(true)
+
+    self.awardButton = UI.CreateButton(window, CLM.L["Award"], 90, function() Award(self) end)
+    self.awardButton:SetPoint("BOTTOMRIGHT", -S.M, S.M)
+    local cancel = UI.CreateButton(window, CLM.L["Cancel"], 90, function() window:Hide() end)
+    cancel:SetPoint("RIGHT", self.awardButton, "LEFT", -S.S, 0)
 end
 
-local function CreateOptions(self)
-    local OptionsGroup = AceGUI:Create("SimpleGroup")
-    OptionsGroup:SetLayout("Flow")
-    OptionsGroup:SetWidth(BASE_WIDTH)
-    self.OptionsGroup = OptionsGroup
-    UpdateOptions(self)
-    AceConfigRegistry:RegisterOptionsTable(REGISTRY, options)
-    AceConfigDialog:Open(REGISTRY, OptionsGroup)
-
-    return OptionsGroup
+function AwardGUI:Refresh()
+    if not self.window then return end
+    self.playerDropdown:Refresh()
+    self.awardButton:SetEnabled(self.itemLink ~= nil and self.awardPlayer ~= nil and tonumber(self.gpInput:GetText()) ~= nil)
 end
 
-local function Create(self)
-    LOG:Trace("AwardGUI:Create()")
-    -- Main Frame
-    local f = AceGUI:Create("Window")
-    f:SetTitle(CLM.L["Award"])
-    f:SetStatusText("")
-    f:SetLayout("Flow")
-    f:EnableResize(false)
-    f:SetWidth(BASE_WIDTH)
-    f:SetHeight(205)
-    self.top = f
-
-    self.itemId = 0
-    self.itemLink = nil
-    self.awardValue = 0
-    self.awardName = ""
-
-    f:AddChild(CreateOptions(self))
-    RestoreLocation(self)
-    -- Hide by default
-    UTILS.MakeFrameCloseOnEsc(f.frame, "BPEPGP_Award_GUI")
-    f:Hide()
-end
-
-local function RegisterSlash(self)
-    local slash = {
+function AwardGUI:Initialize()
+    LOG:Trace("AwardGUI:Initialize()")
+    if not CLM.MODULES.ACL:IsTrusted() then return end
+    CLM.MODULES.ConfigManager:RegisterSlash({
         award = {
             type = "input",
             name = "Award",
             desc = CLM.L["Show Award window"],
-            handler = self,
-            set = "Show",
+            set = function(_, args) self:Show(nil, args) end,
         }
-    }
-    CLM.MODULES.ConfigManager:RegisterSlash(slash)
-end
-
-local function CreateConfig()
-    local config = {
-        awarding_header = {
-            type = "header",
-            name = CLM.L["Award"],
-            order = 60
-        },
-        awarding_config_modifier_header = {
-            name = CLM.L["Modifier combination"],
-            desc = CLM.L["Select modifier combination for awarding."],
-            type = "select",
-            values = CONSTANTS.MODIFIER_COMBINATIONS_GUI,
-            sorting = CONSTANTS.MODIFIER_COMBINATIONS_SORTED,
-            set = function(i, v) CLM.GlobalConfigs:SetAwardModifierCombination(v) end,
-            get = function(i) return CLM.GlobalConfigs:GetAwardModifierCombination() end,
-            order = 61
-        },
-    }
-    CLM.MODULES.ConfigManager:Register(CLM.CONSTANTS.CONFIGS.GROUP.GLOBAL, config)
-end
-
-local function SetItemLink(self, args)
-    local itemId = UTILS.GetItemIdFromLink(args)
-    if UTILS.GetItemInfoInstant(itemId) then
-        self.itemLink = args
-    end
-end
-
-local function HookAwardFilling(self)
+    })
+    -- Award click (Settings → Personal) on an item link opens the window with that item
     CLM.MODULES.Hooks:RegisterModifiedItemLinkClickHandler(function(modifiers, itemLink)
         if CLM.GlobalConfigs:GetAwardModifierCombination() ~= modifiers then return end
         if not itemLink then return end
-        self:Show(_, itemLink)
+        self:Show(nil, itemLink)
     end)
-end
-
----@class AwardGUI
----@field top AceGUIFrameWidget
----@field OptionsGroup AceGUISimpleGroupWidget
----@field db table
----@field _initialized boolean
----@field itemId number
----@field itemLink string
----@field roster Roster?
----@field rosterId string?
----@field awardPlayer string?
----@field awardName string?
----@field awardValue number?
----@field extra table?
-local AwardGUI = {}
-function AwardGUI:Initialize()
-    LOG:Trace("AwardGUI:Initialize()")
-    if not CLM.MODULES.ACL:IsTrusted() then return end
-    InitializeDB(self)
-    Create(self)
-    CreateConfig()
-    RegisterSlash(self)
-    HookAwardFilling(self)
-
-    CLM.MODULES.EventManager:RegisterWoWEvent({"PLAYER_LOGOUT"}, (function() StoreLocation(self) end))
-    CLM.MODULES.LedgerManager:RegisterOnUpdate(function(lag, uncommitted)
-        if lag ~= 0 or uncommitted ~= 0 then return end
-        self:Refresh(true)
-    end)
-
     self._initialized = true
 end
 
----@param visible boolean?
-function AwardGUI:Refresh(visible)
-    LOG:Trace("AwardGUI:Refresh()")
-    if visible and not self.top:IsVisible() then return end
+---@param _ any
+---@param itemLink string?
+function AwardGUI:Show(_, itemLink)
+    if not self._initialized then return end
+    if not self.window then Build(self) end
+    self.gpInput:SetText("")
+    if itemLink and itemLink ~= "" then
+        SetItemFromText(self, itemLink)
+    else
+        SetItem(self, nil)
+    end
+    self.window:Show()
+    self:Refresh()
+end
 
-    UpdateOptions(self)
-    AceConfigDialog:Open(REGISTRY, self.OptionsGroup) -- Refresh the config gui panel
+-- Standings right-click "Award item" (R7): open with the player filled in; the officer adds the item
+---@param name string profile name
+function AwardGUI:ShowForPlayer(name)
+    if not self._initialized then return end
+    self.awardPlayer = name
+    self:Show()
 end
 
 function AwardGUI:Toggle()
-    LOG:Trace("AwardGUI:Toggle()")
-    if not self._initialized then return end
-    if self.top:IsVisible() then
-        self.top:Hide()
-    else
-        self:Show()
-    end
-end
-
----@param args string?
-function AwardGUI:Show(_, args)
-    LOG:Trace("AwardGUI:Show()")
-    if not self._initialized then return end
-    SetItemLink(self, args)
-    override = false
-    self:Refresh()
-    if not self.top:IsVisible() then
-        self.top:Show()
-    end
+    if self.window and self.window:IsShown() then self.window:Hide() else self:Show() end
 end
 
 function AwardGUI:Reset()
-    LOG:Trace("AwardGUI:Reset()")
-    self.top:ClearAllPoints()
-    self.top:SetPoint("CENTER", 0, 0)
+    if not self.window then return end
+    self.window:ClearAllPoints()
+    self.window:SetPoint("CENTER", 0, 0)
 end
-
 
 CLM.GUI.Award = AwardGUI

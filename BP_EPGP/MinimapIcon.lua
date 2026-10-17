@@ -20,7 +20,7 @@ local function CreateMinimapDBI()
     end
 
     CLM.MinimapDBI.OnClick = function()
-        CLM.GUI.Unified:Toggle()
+        CLM.GUI.MainWindow:Toggle()
     end
 
     CLM.MinimapDBI.OnTooltipShow = function(tooltip)
@@ -43,18 +43,12 @@ local function CreateMinimapDBI()
             info = string.format(CLM.L["Loading..."])
         end
 
-        if CLM.MODULES.LedgerManager:IsInIncoherentState() then
-            tooltip:AddLine(CLM.L["Incoherent state"], 0.6, 0.0, 0.0) -- RED
-        elseif CLM.MODULES.LedgerManager:IsInSync() then
-            tooltip:AddLine(CLM.L["In-Sync"], 0.0, 0.8, 0.0) -- GREEN
-        elseif CLM.MODULES.LedgerManager:IsSyncOngoing() then
-            tooltip:AddLine(CLM.L["Sync ongoing"], 0.75, 0.75, 0.0) -- YELLOW
-        elseif CLM.MODULES.LedgerManager:IsDisabled() then
-            tooltip:AddLine(CLM.L["Disabled"], 0.6, 0.0, 0.0) -- RED
-        else -- Unknown state
-            tooltip:AddLine(CLM.L["Unknown sync state"], 0.4, 0.6, 1) -- BLUE
-        end
-        tooltip:AddLine(info)
+        -- Same wording and colours as the main window footer
+        local state, color = CLM.GUI.MainWindow:GetSyncState()
+        tooltip:AddLine(state, color:GetRGB())
+        tooltip:AddLine(info, 1, 1, 1)
+        tooltip:AddLine(" ")
+        tooltip:AddLine(CLM.L["Left-click: open BP EPGP"], 0.62, 0.62, 0.62)
     end
 
     icon:Register(addonName, CLM.MinimapDBI, BPEPGP_Minimap)
@@ -64,28 +58,21 @@ end
 ---@field _initialized boolean
 local Minimap = {}
 
-local function CreateConfig(self)
-    local options = {
-        minimap_toggle = {
-            name = CLM.L["Toggle Minimap Icon"],
-            desc = CLM.L["Enables / disables minimap Icon"],
-            type = "toggle",
-            set = function(i, v)
-                if v then
-                    self:Enable()
-                else
-                    self:Disable()
-                end
+local function RegisterSlash(self)
+    CLM.MODULES.ConfigManager:RegisterSlash({
+        minimap = {
+            type = "execute",
+            name = CLM.L["Minimap icon"],
+            desc = CLM.L["Show or hide the minimap icon"],
+            func = function()
+                if self:IsEnabled() then self:Disable() else self:Enable() end
             end,
-            get = function(i) return self:IsEnabled() end,
-            order = 2.5
-          },
-    }
-    CLM.MODULES.ConfigManager:Register(CLM.CONSTANTS.CONFIGS.GROUP.GLOBAL, options)
+        }
+    })
 end
 
 function Minimap:Initialize()
-    CreateConfig(self)
+    RegisterSlash(self)
     if not BPEPGP_Minimap then BPEPGP_Minimap = {} end
 
     -- Create Minimap Icon
@@ -103,7 +90,7 @@ end
 
 function Minimap:Enable()
     BPEPGP_Minimap.disable = false
-        icon:Show(addonName)
+    icon:Show(addonName)
 end
 
 function Minimap:Disable()

@@ -2,5 +2,5 @@
 	..\FrameXML\UI.xsd">
 	<Script file="BiddingManager.lua"/>
 	<Script file="BiddingTimerBar.lua"/>
-	<Script file="MultiGUI.lua"/>
+	<Script file="BiddingWindow.lua"/>
 </Ui>

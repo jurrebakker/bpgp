@@ -2,5 +2,6 @@
 	..\FrameXML\UI.xsd">
 	<Script file="UI.lua"/>
 	<Script file="List.lua"/>
+	<Script file="Form.lua"/>
 	<Script file="Demo.lua"/>
 </Ui>

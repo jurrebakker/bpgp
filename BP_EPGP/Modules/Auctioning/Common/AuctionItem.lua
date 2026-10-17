@@ -250,8 +250,16 @@ function AuctionItem:GetBid()
     return self.bid
 end
 
-function AuctionItem:SetBidStatus(status)
+---@param status boolean accepted
+---@param reason string? why it was denied
+function AuctionItem:SetBidStatus(status, reason)
     self.bidStatus = status
+    self.bidDenyReason = reason
+end
+
+---@return string?
+function AuctionItem:GetBidDenyReason()
+    return self.bidDenyReason
 end
 
 function AuctionItem:BidAccepted()

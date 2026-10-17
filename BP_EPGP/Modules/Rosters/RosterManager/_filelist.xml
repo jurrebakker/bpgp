@@ -5,6 +5,5 @@
 	<Script file="LedgerEntries.lua"/>
 	<Script file="IndirectSlotMap.lua"/>
 	<Script file="RosterManager.lua"/>
-	<Script file="Options.lua"/>
 	<Script file="PointInfo.lua"/>
 </Ui>

@@ -1,6 +1,6 @@
 # UI redesign: native Blizzard look
 
-- **Status:** planned for v1.0, Phase 9 (decisions R1-R11 made 2026-10-16).
+- **Status:** in progress, v1.0, Phase 9 (decisions R1-R11 made 2026-10-16). all steps (9a-9f) built; 9a-9e checked in-game, the rest is covered by the Phase 10 test run.
 - **Source:** Claude Design spec made from [ui-design-brief.md](ui-design-brief.md): [design/bp-epgp-redesign.dc.html](../design/bp-epgp-redesign.dc.html). Open it in a browser; it needs `support.js` next to it. It's reference material only, not shipped (`docs` is in the `.pkgmeta` ignore list).
 - **Replaces:** the AceGUI/lib-st windows. It also updates [ui-overhaul.md](ui-overhaul.md) decisions D4 and D8 (see R3).
 

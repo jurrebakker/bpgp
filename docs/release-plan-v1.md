@@ -48,6 +48,7 @@
 | Existing data | Start a **fresh ledger**; officer pastes current EP/GP list into a new **import window** |
 | Name | Title **BP EPGP**, folder `BP_EPGP`, slash `/bpepgp`, comm prefix `BPEP` |
 | Language | English only (other locales removed; `enUS` returns the key itself, so nothing breaks) |
+| Pass on loot | **Re-added 2026-10-17** as one checkbox (Settings → Personal → Loot, **on by default**): pass on loot rolls so one officer loots the items. **Only in our own raids:** a BP EPGP raid in progress, started less than 12 hours ago, in a raid group inside a raid instance, led by one of our guild's officers. If any of that can't be verified, nothing is passed, so pugging someone else's raid never passes automatically (user's call, 2026-10-17). The tooltip says so in red. CLM's exclusions stay (quest items, legendaries, stacks, recipes, mounts, toys, cosmetics). The full auto-roll (roll type, include toggles) stays removed |
 
 Because we start a fresh ledger, we are **free to delete ledger entry types and trim their fields**. (In CLM an unknown entry type crashes replay — `LibEventSourcing/source/StateManager.lua:187-245` — so this freedom only exists because we don't import the old CLM ledger.)
 
@@ -110,7 +111,7 @@ Because we start a fresh ledger, we are **free to delete ledger entry types and 
 | Classic shims, IndirectSlotMap (classic tier-token data), classic item ID lists, SSC/Wrath workarounds | `Utils.lua`, `ClassicLootManager.lua`, `IndirectSlotMap.lua`, etc. | ~700 |
 | April Fools (`CLM.AF`) + joke sounds | multiple, `Media/Audio` | ~80 |
 | `--@do-not-package@` blocks; dev fakes (FakeBids/FakeAuction) → rebuilt as test-mode tools | AuctionManager, BiddingManager, AutoAssign, ACL, Comms | ~200 |
-| Auto-roll on loot (GlobalUIHandlers) | `Modules/Global/GlobalUIHandlers.lua` | 150 |
+| Auto-roll on loot (GlobalUIHandlers). *A simple "Pass on loot" checkbox came back on 2026-10-17, see §2* | `Modules/Global/GlobalUIHandlers.lua` | 150 |
 | Unused libs (LibExpiringTimer, AceHook) | `Libs/` | small |
 | ~~Build/release scripts we don't need (l10n, changelog generators, itemlink decoder, vendored packager, CLM Discord/GitHub bots)~~ **done**, only `genxmls.py` and `verify-dependencies.sh` remain | `scripts/` | ~4,000 |
 
@@ -237,13 +238,13 @@ We don't yet know the exact startup error. **First step in Phase 1 is to capture
 
 Each phase ends with: luacheck clean, `/reload` without Lua errors, and the relevant part of the in-game checklist (§7) passing. Commit per phase.
 
-### Status (2026-10-16)
+### Status (2026-10-17)
 
 | Phase | State |
 |---|---|
 | 0-7 | ✅ Done and tested in-game |
 | 8 Sync hardening | ✅ Built; in-game test postponed to Phase 10 (needs a second account) |
-| 9 UI redesign | 9a ✅ shared UI pieces (verified with `/bpepgp uitest`). **Next: 9b**, main window rebuilt on `Modules/UI` |
+| 9 UI redesign | 9a ✅ shared UI pieces (verified with `/bpepgp uitest`). 9b ✅ main window (selection retested in-game). 9c ✅ Settings tab. 9d ✅ Auctioning and Bidding windows (tier buttons verified). 9e ✅ other windows (item drop/shift-click verified). 9f ✅ unused UI libraries removed (built; covered by the full test run). **Phase 9 is complete in code; next: Phase 10, the full test run** |
 | 10 Testing, 11 Release | Not started |
 
 Everything is on `master` (protected: changes go in through pull requests). Start each piece of work on a branch, e.g. `feat/phase-9b-main-window`.
@@ -323,18 +324,18 @@ Everything is on `master` (protected: changes go in through pull requests). Star
 ### Phase 9 — UI redesign: native Blizzard windows ([features/ui-redesign.md](features/ui-redesign.md), [features/ui-overhaul.md](features/ui-overhaul.md))
 Built from the Claude Design spec (`docs/design/`). Decisions R1-R11 in ui-redesign.md; all windows move from AceGUI/lib-st to Blizzard templates.
 - [x] **9a** (verified in-game 2026-10-16 with `/bpepgp uitest`) Shared UI pieces in `Modules/UI/`: window factory (portrait/flat, saved position, test-mode tint), bottom tabs, ScrollBox list with column headers and selection, buttons, inputs, dropdown, checkbox, MenuUtil context menus, item buttons.
-- [ ] **9b** Main window (min 720×480, resizable): Standings (officer + raider view), History, Raids, Roster, Audit, empty/syncing states, right-click *Award item*.
-- [ ] **9c** One Settings tab (Personal, Guild, Gear values, Advanced); remove all Options → AddOns pages; `/bpepgp config`. Guild/Gear values visible to all, editable by officers. Apply the K/F/D decisions per setting.
-- [ ] **9d** Auctioning and Bidding windows: docked countdown, optional timer bar, winner preselected + Enter awards, auto-advance to the next item.
-- [ ] **9e** Award, Auction history, Trade list, alert toasts, minimap tooltip, popups.
-- [ ] **9f** Remove AceGUI, AceConfigDialog, lib-st, LibUIDropDownMenu and unused LibSharedMedia widgets; update `Libs/README.md` and licences.
+- [x] **9b** Main window (min 720×480, resizable): Standings (officer + raider view), History, Raids, Roster, Audit, empty/syncing states, right-click *Award item*. *(Built 2026-10-17 in `Modules/MainWindow/`; the old UnifiedGUI tabs and the Filters model are removed. List selection works like a file list: click, ctrl-click, shift-click.)*
+- [x] **9c** One Settings tab (Personal, Guild, Gear values, Advanced); remove all Options → AddOns pages; `/bpepgp config`. Guild/Gear values visible to all, editable by officers. Apply the K/F/D decisions per setting. *(Built 2026-10-17: `Modules/MainWindow/Settings.lua` on a new `UI.CreateForm`; ConfigManager only handles slash commands; RosterManager `Options.lua` removed; `/bpepgp minimap` toggles the icon. The raider window is 560 wide instead of 520 so the settings rows fit. In-game test pending.)*
+- [x] **9d** Auctioning and Bidding windows: docked countdown, optional timer bar, winner preselected + Enter awards, auto-advance to the next item. *(Built 2026-10-17: `AuctionManager/AuctionWindow.lua`, `BiddingManager/BiddingWindow.lua`. Winner = highest tier, then PR, then roll (`AuctionManager:GetWinner`); after the auction the cursor sits in Value, Enter opens the award confirmation and Enter again accepts. The timer bar keeps its old LibCandyBar look and is off by default (*Show timer bar* in Settings). Removed UIFade and the unused AceGUI widgets. In-game test pending.)*
+- [x] **9e** Award, Auction history, Trade list, alert toasts, minimap tooltip, popups. *(Built 2026-10-17. The Import standings window is rebuilt too. Toasts keep Blizzard's loot-toast art with our logo and EP/GP colours. The trade list has no "time left" column: the tracker doesn't store the award time. `Modules/GUI` (AceGUI widgets) is gone; the libraries go in 9f. In-game test pending.)*
+- [x] **9f** Remove AceGUI, AceConfigDialog, lib-st, LibUIDropDownMenu and unused LibSharedMedia widgets; update `Libs/README.md` and licences. *(Done 2026-10-17. LibSharedMedia itself went too (the timer bar uses its fixed texture and font directly), plus AceHook, LibExpiringTimer, the unused Ace3 parts and the lib-st / dropdown helpers in `Utils.lua`. LibCandyBar ("All Rights Reserved") was replaced by our own timer bar on `Modules/UI`; LibDBIcon (also "All Rights Reserved") is kept as the standard minimap library (user's call).)*
 
 ### Phase 10 — Testing (see §7)
 - [ ] Phase 8 sync hardening in-game test (postponed): two clients in test mode sync EP awards, undo and week catch-up; minimap shows In-Sync; a non-officer can't push entries; auctions only accepted from an officer raid lead.
 
 ### Phase 11 — Release 1.0
 - [ ] Licensing checklist (§8).
-- [ ] New README (what it is, install, officer setup, raider usage), CHANGELOG starting at 1.0.0.
+- [x] New README (what it is, install, officer setup, raider usage), CHANGELOG starting at 1.0.0. *(README rewritten 2026-10-17; CHANGELOG is kept up to date per phase.)*
 - [ ] Packaging: BigWigs packager with a new `.pkgmeta` (no externals, libs are vendored), see §10.4.
 - [ ] Publish on CurseForge (and optionally Wago) under the new name; tag `v1.0.0`. Full checklist in §10.
 - [ ] Guild rollout: officers first, import standings, then raiders install.

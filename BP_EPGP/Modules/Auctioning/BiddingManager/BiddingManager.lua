@@ -290,6 +290,8 @@ function BiddingManager:HandleAntiSnipe(_, sender)
         LOG:Debug("Received antisnipe from %s while no auctions are in progress", sender)
         return
     end
+    -- Keep the local end time in step so the docked countdown shows the extension
+    if self.auction:IsAntiSnipeAvailable() then self.auction:AntiSnipe() end
     CLM.GUI.BiddingManager:AntiSnipe()
 end
 
@@ -341,10 +343,10 @@ function BiddingManager:HandleDenyBid(data, sender)
     if not item then return end
     local bid = item:GetBid()
     if not bid then return end
-    item:SetBidStatus(false)
+    local reason = CONSTANTS.AUCTION_COMM.DENY_BID_REASONS_STRING[data:Reason()] or CLM.L["Unknown"]
+    item:SetBidStatus(false, reason)
     CLM.GUI.BiddingManager:Refresh()
     local text, short = stringifyBidInfo(self.auction, item, bid)
-    local reason = CONSTANTS.AUCTION_COMM.DENY_BID_REASONS_STRING[data:Reason()] or CLM.L["Unknown"]
     LOG:Message(CLM.L["Your bid (%s) was denied: |cffcc0000%s|r"], text, reason)
     CLM.MODULES.EventManager:DispatchEvent(CONSTANTS.EVENTS.USER_BID_DENIED, { value = short, reason = reason })
 end

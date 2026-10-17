@@ -3,330 +3,153 @@ local  _, CLM = ...
 ---@cast CLM CLMNamespace
 -- ------ CLM common cache ------- --
 local LOG       = CLM.LOG
-local CONSTANTS = CLM.CONSTANTS
+-- local CONSTANTS = CLM.CONSTANTS
 local UTILS     = CLM.UTILS
 -- ------------------------------- --
 
--- Libs
-local ScrollingTable = LibStub("ScrollingTable")
-local AceGUI = LibStub("AceGUI-3.0")
----@cast AceGUI AceGUI
+local UI = CLM.UI
+local S = UI.SPACE
 
-local RightClickMenu
+--[[
+    Auction history window (Phase 9e, ui-redesign.md "Auction history"). Officers only.
+    Finished auctions, newest first. Click an entry to show its bids under it.
+    Right-click: Post bids · Remove auction · Remove older than 7 days · Remove all.
+]]--
 
-local function InitializeDB(self)
-    self.db = CLM.MODULES.Database:GUI('auctionHistory', {
-        location = {nil, nil, "CENTER", 0, 0 }
+local WIDTH, HEIGHT = 265, 400
+local SEVEN_DAYS = 7 * 24 * 3600
+
+---@class AuctionHistoryGUI
+---@field window table?
+---@field expanded table
+---@field _initialized boolean
+local AuctionHistoryGUI = { expanded = {} }
+
+local function Manager()
+    return CLM.MODULES.AuctionHistoryManager
+end
+
+local function BidderColor(name)
+    local profile = CLM.MODULES.ProfileManager:GetProfileByName(name)
+    return profile and UI.GetClassColor(UTILS.CanonicalClass(profile:ClassInternal())) or UI.COLOR.WHITE
+end
+
+local function BuildRows(self)
+    local rows = {}
+    for seq, auction in ipairs(Manager():GetHistory()) do
+        local key = tostring(auction.time) .. ":" .. tostring(auction.id)
+        rows[#rows + 1] = {
+            id = "a" .. key,
+            seq = seq,
+            key = key,
+            auction = auction,
+            values = { order = #rows, item = auction.link or ("item:" .. tostring(auction.id)), time = auction.time or 0 },
+        }
+        if self.expanded[key] then
+            local bids = {}
+            for bidder, bid in pairs(auction.bids or {}) do
+                bids[#bids + 1] = { name = bidder, bid = bid }
+            end
+            table.sort(bids, function(a, b)
+                if a.bid ~= b.bid then return (tonumber(a.bid) or 0) > (tonumber(b.bid) or 0) end
+                return a.name < b.name
+            end)
+            if #bids == 0 then
+                rows[#rows + 1] = { id = "b" .. key, isBid = true, values = { order = #rows, item = "    " .. CLM.L["No bids"], time = 0 } }
+            end
+            for _, entry in ipairs(bids) do
+                local text = BidderColor(entry.name):WrapTextInColorCode(Ambiguate(entry.name, "none"))
+                local bid = tostring(entry.bid)
+                local names, rolls = auction.names or {}, auction.rolls or {}
+                if names[entry.name] then bid = names[entry.name] .. " " .. bid end
+                if rolls[entry.name] then bid = bid .. " / " .. tostring(rolls[entry.name]) end
+                rows[#rows + 1] = {
+                    id = "b" .. key .. entry.name,
+                    isBid = true,
+                    values = { order = #rows, item = "    " .. text .. "  " .. bid, time = 0 },
+                }
+            end
+        end
+    end
+    return rows
+end
+
+local function ShowMenu(self, row, owner)
+    UI.ShowContextMenu(owner, row.auction.link, {
+        { text = CLM.L["Post bids"], func = function() Manager():PostById(row.seq) end },
+        { divider = true },
+        { text = CLM.L["Remove auction"], color = UI.COLOR.BAD, func = function()
+            UI.Confirm(string.format(CLM.L["Remove the auction of %s from the history?"], row.auction.link or ""), function()
+                Manager():Remove(row.seq)
+            end)
+        end },
+        { text = CLM.L["Remove older than 7 days"], color = UI.COLOR.BAD, func = function()
+            UI.Confirm(CLM.L["Remove every auction older than 7 days from the history?"], function()
+                Manager():RemoveOld(SEVEN_DAYS)
+            end)
+        end },
+        { text = CLM.L["Remove all..."], color = UI.COLOR.BAD, func = function()
+            UI.Confirm(CLM.L["Remove the whole auction history?"], function() Manager():Wipe() end)
+        end },
     })
 end
 
-local function StoreLocation(self)
-    self.db.location = { self.top:GetPoint() }
-    self.db.location[2] = nil
+local function Build(self)
+    local window = UI.CreateWindow({
+        name = "BPEPGP_AuctionHistoryWindow",
+        title = CLM.L["Auction History"],
+        width = WIDTH, height = HEIGHT,
+        dbKey = "auctionhistorywindow",
+    })
+    self.window = window
+    local inset = UI.CreateInset(window)
+    inset:SetPoint("TOPLEFT", S.S, -28)
+    inset:SetPoint("BOTTOMRIGHT", -S.S, S.S + 16)
+    self.footer = UI.CreateLabel(window, "", "GameFontDisableSmall")
+    self.footer:SetPoint("BOTTOMLEFT", S.M, S.S)
+    self.list = UI.CreateList(inset, {
+        columns = {
+            { key = "item", title = CLM.L["Item"], width = 0, sortable = false },
+            { key = "time", title = CLM.L["Time"], width = 70, sortable = false,
+              text = function(row) return row.isBid and "" or date(CLM.L["%m/%d %H:%M"], row.values.time) end,
+              color = function() return UI.COLOR.GREY end },
+        },
+        sortKey = "order",
+        onSelectionChanged = function(selection)
+            local row = selection[1]
+            if row and not row.isBid then
+                self.expanded[row.key] = not self.expanded[row.key] or nil
+                self.list:ClearSelection()
+                self:Refresh()
+            end
+        end,
+        onRightClick = function(row, rowFrame)
+            if not row.isBid then ShowMenu(self, row, rowFrame) end
+        end,
+        onEnter = function(row, rowFrame)
+            if row.isBid then return end
+            GameTooltip:SetOwner(rowFrame, "ANCHOR_RIGHT")
+            GameTooltip:SetHyperlink(row.auction.link or ("item:" .. tostring(row.auction.id)))
+            GameTooltip:Show()
+        end,
+    })
+    self.list:SetPoint("TOPLEFT", S.XS, -S.XS)
+    self.list:SetPoint("BOTTOMRIGHT", -S.XS, S.XS)
+    window:HookScript("OnShow", function() self:Refresh() end)
 end
 
-local function RestoreLocation(self)
-    if self.db.location then
-        self.top:ClearAllPoints()
-        self.top:SetPoint(self.db.location[3], self.db.location[4], self.db.location[5])
-    end
+---@param visible boolean? only refresh when the window is shown
+function AuctionHistoryGUI:Refresh(visible)
+    if not self._initialized or not self.window then return end
+    if visible and not self.window:IsShown() then return end
+    self.list:SetData(BuildRows(self))
+    self.footer:SetText(string.format(CLM.L["%s auctions · click to show bids"], #Manager():GetHistory()))
 end
 
-local function ST_GetItemId(row)
-    return row.cols[2].value
-end
-
-local function ST_GetAuctionBids(row)
-    return row.cols[3].value
-end
-
-local function ST_GetAuctionTime(row)
-    return row.cols[4].value
-end
-
-local function ST_GetItemSeq(row)
-    return row.cols[5].value
-end
-
-local function ST_GetBidNames(row)
-    return row.cols[6].value
-end
-
-local function ST_GetRolls(row)
-    return row.cols[7].value
-end
-
----@class AuctionHistoryGUI
----@field st LibSTTable
----@field top AceGUIFrameWidget
----@field AuctionHistoryGroup AceGUISimpleGroupWidget
----@field tooltip GameTooltip
----@field db table
----@field _initialized boolean
----@field previousRows number
-local AuctionHistoryGUI = {}
 function AuctionHistoryGUI:Initialize()
     LOG:Trace("AuctionHistoryGUI:Initialize()")
     if not CLM.MODULES.ACL:IsTrusted() then return end
-    InitializeDB(self)
-
-    self.tooltip = GameTooltip
-    RightClickMenu = CLM.UTILS.GenerateDropDownMenu(
-        {
-            {
-                title = CLM.L["Post bids"],
-                func = (function()
-                    local rowData = self.st:GetRow(self.st:GetSelection())
-                    if not rowData or not rowData.cols then return end
-                    CLM.MODULES.AuctionHistoryManager:PostById(ST_GetItemSeq(rowData))
-                end),
-                color = "0000cc"
-            },
-            {
-                separator = true,
-                trustedOnly = true,
-            },
-            {
-                title = CLM.L["Remove auction"],
-                func = (function()
-                    local rowData = self.st:GetRow(self.st:GetSelection())
-                    if not rowData or not rowData.cols then return end
-                    CLM.MODULES.AuctionHistoryManager:Remove(ST_GetItemSeq(rowData))
-                end),
-                color = "cc0000"
-            },
-            {
-                separator = true,
-                trustedOnly = true,
-            },
-            {
-                title = CLM.L["Remove old"],
-                func = (function()
-                    CLM.MODULES.AuctionHistoryManager:RemoveOld()
-                end),
-                color = "cc0000"
-            },
-            {
-                separator = true,
-                trustedOnly = true,
-            },
-            {
-                title = CLM.L["Remove all"],
-                func = (function()
-                    CLM.MODULES.AuctionHistoryManager:Wipe()
-                end),
-                color = "cc0000"
-            }
-        },
-        CLM.MODULES.ACL:CheckLevel(CONSTANTS.ACL.LEVEL.OFFICER),
-        CLM.MODULES.ACL:CheckLevel(CLM.CONSTANTS.ACL.LEVEL.OFFICER)
-    )
-
-    self:Create()
-    CLM.MODULES.EventManager:RegisterWoWEvent({"PLAYER_LOGOUT"}, (function(...) StoreLocation(self) end))
-    self:RegisterSlash()
-    self._initialized = true
-    self:Refresh()
-
-    CLM.MODULES.LedgerManager:RegisterOnUpdate(function(lag, uncommitted)
-        if lag ~= 0 or uncommitted ~= 0 then
-            self:Refresh(true)
-        end
-    end)
-end
-
-local ROW_HEIGHT = 18
-local MIN_HEIGHT = 105
-
-local function CreateAuctionDisplay(self)
-    local columns = {
-        {name = "",  width = 200},
-    }
-    local AuctionHistoryGroup = AceGUI:Create("SimpleGroup")
-    AuctionHistoryGroup:SetLayout("Flow")
-    AuctionHistoryGroup:SetWidth(265)
-    AuctionHistoryGroup:SetHeight(MIN_HEIGHT)
-    self.AuctionHistoryGroup = AuctionHistoryGroup
-    -- Standings
-    self.st = ScrollingTable:CreateST(columns, 1, ROW_HEIGHT, nil, AuctionHistoryGroup.frame)
-    self.st:EnableSelection(true)
-    self.st.frame:SetPoint("TOPLEFT", AuctionHistoryGroup.frame, "TOPLEFT", 0, 0)
-    self.st.frame:SetBackdropColor(0.1, 0.1, 0.1, 0.1)
-    self.st:SetData({})
-    -- fix weird behavior when scaling down list and scrollbar not hiding
-    self.st.scrollframe:SetScript("OnHide", function() end)
-    -- OnEnter handler -> on hover
-    local OnEnterHandler = (function (rowFrame, cellFrame, data, cols, row, realrow, column, table, ...)
-        local status = self.st.DefaultEvents["OnEnter"](rowFrame, cellFrame, data, cols, row, realrow, column, table, ...)
-        local rowData = self.st:GetRow(realrow)
-        if not rowData or not rowData.cols then return status end
-        local tooltip = self.tooltip
-        if not tooltip then return end
-        local itemId = ST_GetItemId(rowData)
-        local itemString = "item:" .. tostring(itemId)
-
-        local detailsMode = IsControlKeyDown()
-
-        tooltip:SetOwner(rowFrame, "ANCHOR_TOPRIGHT")
-        tooltip:SetHyperlink(itemString)
-        tooltip:AddLine(ST_GetAuctionTime(rowData))
-
-        if detailsMode then
-            local _, itemLink = tooltip:GetItem()
-            tooltip:SetOwner(UIParent, "ANCHOR_CURSOR")
-            tooltip:ClearLines()
-            tooltip:AddLine(itemLink)
-            tooltip:AddLine(ST_GetAuctionTime(rowData))
-            tooltip:AddLine("\n")
-
-            local bidNames = ST_GetBidNames(rowData) or {}
-            local rolls = ST_GetRolls(rowData) or {}
-            local noBids = true
-            for bidder, bid in pairs(ST_GetAuctionBids(rowData)) do
-                noBids = false
-                bid  = tostring(bid)
-                if rolls[bidder] then
-                    bid  = bid .. "/" .. tostring(rolls[bidder])
-                end
-                if bidNames[bidder] then
-                    bid = bid .. " (" .. bidNames[bidder] .. ")"
-                end
-                local bidderProfile = CLM.MODULES.ProfileManager:GetProfileByName(bidder)
-                if bidderProfile then
-                    bidder = UTILS.ColorCodeText(Ambiguate(bidder, "none"), UTILS.GetClassColor(bidderProfile:Class()).hex)
-                end
-                tooltip:AddDoubleLine(bidder, bid)
-            end
-            if noBids then
-                tooltip:AddLine(CLM.L["No bids"])
-            end
-        end
-        tooltip:Show()
-        return status
-    end)
-    -- OnLeave handler -> on hover out
-    local OnLeaveHandler = (function (rowFrame, cellFrame, data, cols, row, realrow, column, table, ...)
-        local status = self.st.DefaultEvents["OnLeave"](rowFrame, cellFrame, data, cols, row, realrow, column, table, ...)
-        self.tooltip:Hide()
-        return status
-    end)
-    -- end
-    -- OnClick handler
-    local OnClickHandler = function(rowFrame, cellFrame, data, cols, row, realrow, column, table, button, ...)
-        local rightButton = (button == "RightButton")
-        local status
-        local selected = self.st:GetSelection()
-        if selected ~= realrow then
-            if (row or realrow) then -- disables sorting click
-                status = self.st.DefaultEvents["OnClick"](rowFrame, cellFrame, data, cols, row, realrow, column, table, rightButton and "LeftButton" or button, ...)
-            end
-        end
-        if rightButton then
-            UTILS.LibDD:CloseDropDownMenus()
-            UTILS.LibDD:ToggleDropDownMenu(1, nil, RightClickMenu, cellFrame, -20, 0)
-        end
-        return status
-    end
-    -- end
-
-    self.st:RegisterEvents({
-        OnEnter = OnEnterHandler,
-        OnLeave = OnLeaveHandler,
-        OnClick = OnClickHandler
-    })
-
-    return AuctionHistoryGroup
-end
-
-function AuctionHistoryGUI:Create()
-    LOG:Trace("AuctionHistoryGUI:Create()")
-    -- Main Frame
-    local f = AceGUI:Create("Frame")
-    f:SetTitle(CLM.L["Auction History"])
-    f:SetStatusText("")
-    f:SetLayout("Table")
-    f:SetUserData("table", { columns = {0, 0}, alignV =  "top" })
-    f:EnableResize(false)
-    f:SetWidth(265)
-    f:SetHeight(MIN_HEIGHT)
-    self.top = f
-
-    f:AddChild(CreateAuctionDisplay(self))
-    RestoreLocation(self)
-    -- Hide by default
-    f:Hide()
-
-end
-
----@param visible boolean?
-function AuctionHistoryGUI:Refresh(visible)
-    LOG:Trace("AuctionHistoryGUI:Refresh()")
-    if not self._initialized then return end
-    if visible and not self.top:IsVisible() then return end
-
-    local data = {}
-    local stack = CLM.MODULES.AuctionHistoryManager:GetHistory()
-    -- Data
-    local rowId = 1
-    for seq, auction in ipairs(stack) do
-        local row = {
-            cols = {
-                { value = auction.link},
-                { value = auction.id },
-                { value = auction.bids },
-                { value = date(CLM.L["%Y/%m/%d %a %H:%M:%S"], auction.time) },
-                { value = seq },
-                { value = auction.names },
-                { value = auction.rolls }
-            }
-        }
-        data[rowId] = row
-        rowId = rowId + 1
-    end
-    -- View
-    local rows = (#stack < 20) and #stack or 20
-    local previousRows = self.previousRows or rows
-    local rowDiff = rows - previousRows
-    self.previousRows = rows
-
-    local height = MIN_HEIGHT + ROW_HEIGHT*(rows-1)
-    if height < MIN_HEIGHT then height = MIN_HEIGHT end
----@diagnostic disable-next-line: missing-parameter
-    local _, _, point, x, y = self.top:GetPoint()
-    self.top:SetHeight(height)
-    self.AuctionHistoryGroup:SetHeight(height)
-    self.st:SetDisplayRows((rows == 0) and 1 or rows, ROW_HEIGHT)
-
-    -- Makes it grow down / shorten up instead of omnidirectional
-    if (rows == 0 and previousRows == 1) then -- Removed last one
-        -- do nothing
-    elseif (rows == 0 and previousRows > 0) then -- Removed all
-        self.top:SetPoint(point, x, y + ((-rowDiff - 1)*ROW_HEIGHT/2))
-    elseif (rows == 1 and previousRows == 0) then -- Added first
-        -- do nothing
-    else
-        if (rowDiff > 0) then
-            self.top:SetPoint(point, x, y - (rowDiff*ROW_HEIGHT/2))
-        elseif (rowDiff < 0) then
-            self.top:SetPoint(point, x, y + (-rowDiff*ROW_HEIGHT/2))
-        end
-    end
-    self.st:SetData(data)
-end
-
-function AuctionHistoryGUI:Toggle()
-    LOG:Trace("AuctionHistoryGUI:Toggle()")
-    if not self._initialized then return end
-    if self.top:IsVisible() then
-        self.top:Hide()
-    else
-        self:Refresh()
-        self.top:Show()
-    end
-end
-
-function AuctionHistoryGUI:RegisterSlash()
-    local options = {
+    CLM.MODULES.ConfigManager:RegisterSlash({
         auction_history = {
             type = "execute",
             name = "Auction History",
@@ -334,14 +157,20 @@ function AuctionHistoryGUI:RegisterSlash()
             handler = self,
             func = "Toggle",
         }
-    }
-    CLM.MODULES.ConfigManager:RegisterSlash(options)
+    })
+    self._initialized = true
+end
+
+function AuctionHistoryGUI:Toggle()
+    if not self._initialized then return end
+    if not self.window then Build(self) end
+    self.window:SetShown(not self.window:IsShown())
 end
 
 function AuctionHistoryGUI:Reset()
-    LOG:Trace("AuctionHistoryGUI:Reset()")
-    self.top:ClearAllPoints()
-    self.top:SetPoint("CENTER", 0, 0)
+    if not self.window then return end
+    self.window:ClearAllPoints()
+    self.window:SetPoint("CENTER", 0, 0)
 end
 
 CLM.GUI.AuctionHistory = AuctionHistoryGUI

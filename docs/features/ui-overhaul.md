@@ -1,6 +1,6 @@
 # UI overhaul: one window, settings as tabs
 
-- **Status:** planned. All decisions made 2026-10-16 (column *Your call*; ✅ = as recommended)
+- **Status:** built in Phase 9c (2026-10-17), verified in-game. All decisions made 2026-10-16 (column *Your call*; ✅ = as recommended)
 - **Target version:** v1.0
 
 ## Problem

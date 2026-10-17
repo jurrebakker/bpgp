@@ -3,89 +3,30 @@ local  _, CLM = ...
 ---@cast CLM CLMNamespace
 -- ------ CLM common cache ------- --
 local LOG       = CLM.LOG
-local CONSTANTS = CLM.CONSTANTS
-local UTILS     = CLM.UTILS
+-- local CONSTANTS = CLM.CONSTANTS
+-- local UTILS     = CLM.UTILS
 -- ------------------------------- --
 
-local AceConfigRegistry = LibStub("AceConfigRegistry-3.0")
 local AceConfig = LibStub("AceConfig-3.0")
-local AceConfigDialog = LibStub("AceConfigDialog-3.0")
+
+--[[
+    Slash commands (/bpepgp ...). Settings live in the main window's Settings tab (Phase 9c);
+    there are no Options -> AddOns pages any more (docs/features/ui-overhaul.md D2).
+]]--
 
 ---@class ConfigManager
 ---@field enabled boolean
----@field generators table
----@field options table
 ---@field slash_options table
 local ConfigManager = { enabled = false }
 
-local function ConfigGenerator(config)
-    return ConfigManager.options[config]
-end
-
 function ConfigManager:Initialize()
     LOG:Trace("ConfigManager:Initialize()")
-
-    self.generators = {}
-    for _,groupName in pairs(CONSTANTS.CONFIGS.GROUP) do
-        self.generators[groupName] = (function() return ConfigGenerator(groupName) end)
-    end
-
-    -- self.generators = {
-    --     [CONSTANTS.CONFIGS.GROUP.GLOBAL] = (function() return ConfigGenerator(CONSTANTS.CONFIGS.GROUP.GLOBAL) end),
-    --     [CONSTANTS.CONFIGS.GROUP.ROSTER] = (function() return ConfigGenerator(CONSTANTS.CONFIGS.GROUP.ROSTER) end),
-    --     [CONSTANTS.CONFIGS.GROUP.INTEGRATIONS] = (function() return ConfigGenerator(CONSTANTS.CONFIGS.GROUP.INTEGRATIONS) end)
-    -- }
-
-    self.options = {}
-    for _, config in ipairs(CONSTANTS.CONFIGS.ORDERED_GROUPS) do
-        local parent = nil
-        if config ~= CONSTANTS.CONFIGS.GROUP.GLOBAL then
-            parent = CONSTANTS.CONFIGS.GROUP.GLOBAL
-        end
-        self.options[config] = { type = "group", childGroups = "tab", args = {}}
-        AceConfigRegistry:RegisterOptionsTable(config, self.generators[config])
-        _, CLM.GUI_ID = AceConfigDialog:AddToBlizOptions(config, config, parent)
-    end
     self.slash_options = { type = "group", args = {}}
 end
 
 function ConfigManager:Enable()
     LOG:Trace("ConfigManager:Enable()")
     self.enabled = true
-end
-
----@param group string
----@param options table
----@param clean boolean?
----@return boolean
-function ConfigManager:Register(group, options, clean)
-    LOG:Trace("ConfigManager:Register()")
-
-    if type(options) ~= "table" then
-        LOG:Error("ConfigManager:Register(): Object is not a table")
-        return false
-    end
-
-    if type(group) ~= "string" then
-        LOG:Error("ConfigManager:Register(): Group is not a string")
-        return false
-    end
-
-    if not CONSTANTS.CONFIGS.GROUPS[group] then
-        LOG:Error("ConfigManager:Register(): Group %s is not supported", group)
-        return false
-    end
-
-    if clean then
-        for option, _ in pairs(self.options[group].args) do
-            self.options[group].args[option] = nil
-        end
-    end
-
-    for option, definition in pairs(options) do
-        self.options[group].args[option] = definition
-    end
-    return true
 end
 
 ---@param options table
@@ -110,51 +51,5 @@ function ConfigManager:RegisterSlash(options)
     return true
 end
 
----@param group string
----@param register boolean?
-function ConfigManager:UpdateOptions(group, register)
-    if not CONSTANTS.CONFIGS.GROUPS[group] then
-        LOG:Warning("ConfigManager:Update(): Group %s is not supported", group)
-        return
-    end
-    if register then
-        AceConfig:RegisterOptionsTable(group, self.generators[group])
-    end
-    AceConfigRegistry:NotifyChange(group)
-end
-
----@param groupName string
----@param append boolean?
-function ConfigManager:AddGroup(groupName, append)
-    if CONSTANTS.CONFIGS.GROUPS[groupName] then
-        error(string.format("Config group %s already exists.", groupName))
-        return
-    end
-    -- Never allow changing first group
-    if append then
-        tinsert(CONSTANTS.CONFIGS.ORDERED_GROUPS, groupName)
-    else
-        tinsert(CONSTANTS.CONFIGS.ORDERED_GROUPS, 2, groupName)
-    end
-    CONSTANTS.CONFIGS.GROUPS[groupName] = true
-    CONSTANTS.CONFIGS.GROUP[groupName] = groupName
-
-end
-
 -- Publish API
 CLM.MODULES.ConfigManager = ConfigManager
-
-CONSTANTS.CONFIGS = {
-    GROUPS = UTILS.Set({
-        "BP EPGP",
-        "BP EPGP Rosters",
-    }),
-    ORDERED_GROUPS = {
-        "BP EPGP",
-        "BP EPGP Rosters",
-    },
-    GROUP = {
-        GLOBAL = "BP EPGP",
-        ROSTER = "BP EPGP Rosters",
-    },
-}

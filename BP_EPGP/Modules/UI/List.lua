@@ -21,8 +21,10 @@ local UI = CLM.UI
         ...
       }
       options.rowHeight      default 20
-      options.multiSelect    clicks toggle rows, shift-click selects a range
+      options.multiSelect    click selects one row, ctrl-click adds/removes, shift-click selects a range
       options.sortKey / options.sortDesc   initial sort
+      options.pinned(row) -> true keeps the row on top whatever the sort (e.g. your own row)
+      options.rowTint(row) -> ColorMixin? background tint instead of the alternating stripe
       options.onSelectionChanged(selectedRows)
       options.onRightClick(row, rowFrame)
       options.onEnter(row, rowFrame) / options.onLeave(row, rowFrame)
@@ -81,8 +83,13 @@ local List = {}
 function List:SortRows()
     local key, desc = self.sortKey, self.sortDesc
     local rows = self.rows
+    local pinned = self.options.pinned
     if key then
         table.sort(rows, function(a, b)
+            if pinned then
+                local pa, pb = pinned(a) and true or false, pinned(b) and true or false
+                if pa ~= pb then return pa end
+            end
             local va, vb = a.values[key], b.values[key]
             if va == vb then
                 return CompareValues(a.id, b.id)
@@ -175,12 +182,21 @@ function List:OnRowClick(rowFrame, button)
         return
     end
     if self.options.multiSelect then
+        -- Like a file list: click selects one row, ctrl-click toggles, shift-click selects a range
         if IsShiftKeyDown() and self.lastClicked and self.lastClicked._index then
             local from, to = self.lastClicked._index, row._index
             if from > to then from, to = to, from end
+            if not IsControlKeyDown() then wipe(self.selected) end
             for i = from, to do self.selected[self.rows[i].id] = true end
-        else
+            -- keep the anchor so the next shift-click extends from the same row
+            self:UpdateSelectionVisuals()
+            self:SelectionChanged()
+            return
+        elseif IsControlKeyDown() then
             self.selected[row.id] = not self.selected[row.id] or nil
+        else
+            wipe(self.selected)
+            self.selected[row.id] = true
         end
     else
         local wasSelected = self.selected[row.id]
@@ -236,7 +252,14 @@ function List:InitRow(rowFrame, row)
         end)
     end
     rowFrame.row = row
-    rowFrame.Stripe:SetShown((row._index or 0) % 2 == 0)
+    local tint = self.options.rowTint and self.options.rowTint(row)
+    if tint then
+        rowFrame.Stripe:SetColorTexture(tint:GetRGBA())
+        rowFrame.Stripe:Show()
+    else
+        rowFrame.Stripe:SetColorTexture(1, 1, 1, 0.035)
+        rowFrame.Stripe:SetShown((row._index or 0) % 2 == 0)
+    end
     rowFrame.Selected:SetShown(self.selected[row.id] and true or false)
     for i, column in ipairs(self.columns) do
         local cell = rowFrame.cells[i]
