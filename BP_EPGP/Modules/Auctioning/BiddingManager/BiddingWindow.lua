@@ -119,7 +119,7 @@ local function HideTestBar(self)
     self.testBar = nil
 end
 
--- /bpepgp bar: shows a test bar so it can be moved
+-- /bpepgp testbar: shows a test bar so it can be moved
 function BiddingWindow:ToggleTestBar()
     if CLM.MODULES.BiddingManager:IsAuctionInProgress() then return end
     if self.testBar then

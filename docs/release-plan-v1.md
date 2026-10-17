@@ -335,7 +335,7 @@ Built from the Claude Design spec (`docs/design/`). Decisions R1-R11 in ui-redes
 
 ### Phase 11 — Release 1.0
 - [ ] Licensing checklist (§8).
-- [ ] New README (what it is, install, officer setup, raider usage), CHANGELOG starting at 1.0.0.
+- [x] New README (what it is, install, officer setup, raider usage), CHANGELOG starting at 1.0.0. *(README rewritten 2026-10-17; CHANGELOG is kept up to date per phase.)*
 - [ ] Packaging: BigWigs packager with a new `.pkgmeta` (no externals, libs are vendored), see §10.4.
 - [ ] Publish on CurseForge (and optionally Wago) under the new name; tag `v1.0.0`. Full checklist in §10.
 - [ ] Guild rollout: officers first, import standings, then raiders install.

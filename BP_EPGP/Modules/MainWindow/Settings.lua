@@ -114,7 +114,7 @@ local function BuildPersonal(self, form)
         get = function() return bidding:GetHideInCombat() end, set = function(v) bidding:SetHideInCombat(v) end })
     form:Toggle({ label = CLM.L["Show timer bar"], desc = CLM.L["A separate countdown bar during auctions. The bidding window already shows the time left."],
         get = function() return bidding:GetShowTimerBar() end, set = function(v) bidding:SetShowTimerBar(v) end })
-    form:Number({ label = CLM.L["Timer bar width"], desc = CLM.L["Width of the auction timer bar. /bpepgp bar shows it so you can move it."],
+    form:Number({ label = CLM.L["Timer bar width"], desc = CLM.L["Width of the auction timer bar. /bpepgp testbar shows it so you can move it."],
         get = function() return bidding:GetBarWidth() end, set = function(v) bidding:SetBarWidth(v) end })
     form:Number({ label = CLM.L["Timer bar height"],
         get = function() return bidding:GetBarHeight() end, set = function(v) bidding:SetBarHeight(v) end })

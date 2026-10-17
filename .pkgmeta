@@ -8,6 +8,7 @@ ignore:
   - docs
   - assets
   - CLAUDE.md
+  - DEVELOPMENT-GUIDELINES.md
   - ARCHITECTURE.md
   - BP_EPGP/_annotations
 
