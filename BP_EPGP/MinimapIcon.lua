@@ -20,7 +20,7 @@ local function CreateMinimapDBI()
     end
 
     CLM.MinimapDBI.OnClick = function()
-        CLM.GUI.Unified:Toggle()
+        CLM.GUI.MainWindow:Toggle()
     end
 
     CLM.MinimapDBI.OnTooltipShow = function(tooltip)

@@ -5,11 +5,4 @@
 	<Script file="AceGUIWidget-IconNoLabel.lua"/>
 	<Script file="AceGUIWidget-EditBoxNoButton.lua"/>
 	<Script file="UIFade.lua"/>
-	<Script file="Filters.lua"/>
-	<Script file="UnifiedGUI.lua"/>
-	<Script file="UnifiedGUI_Standings.lua"/>
-	<Script file="UnifiedGUI_Raids.lua"/>
-	<Script file="UnifiedGUI_ManageRoster.lua"/>
-	<Script file="UnifiedGUI_History.lua"/>
-	<Script file="UnifiedGUI_Audit.lua"/>
 </Ui>

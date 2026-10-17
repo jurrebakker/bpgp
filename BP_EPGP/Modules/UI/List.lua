@@ -23,6 +23,8 @@ local UI = CLM.UI
       options.rowHeight      default 20
       options.multiSelect    clicks toggle rows, shift-click selects a range
       options.sortKey / options.sortDesc   initial sort
+      options.pinned(row) -> true keeps the row on top whatever the sort (e.g. your own row)
+      options.rowTint(row) -> ColorMixin? background tint instead of the alternating stripe
       options.onSelectionChanged(selectedRows)
       options.onRightClick(row, rowFrame)
       options.onEnter(row, rowFrame) / options.onLeave(row, rowFrame)
@@ -81,8 +83,13 @@ local List = {}
 function List:SortRows()
     local key, desc = self.sortKey, self.sortDesc
     local rows = self.rows
+    local pinned = self.options.pinned
     if key then
         table.sort(rows, function(a, b)
+            if pinned then
+                local pa, pb = pinned(a) and true or false, pinned(b) and true or false
+                if pa ~= pb then return pa end
+            end
             local va, vb = a.values[key], b.values[key]
             if va == vb then
                 return CompareValues(a.id, b.id)
@@ -236,7 +243,14 @@ function List:InitRow(rowFrame, row)
         end)
     end
     rowFrame.row = row
-    rowFrame.Stripe:SetShown((row._index or 0) % 2 == 0)
+    local tint = self.options.rowTint and self.options.rowTint(row)
+    if tint then
+        rowFrame.Stripe:SetColorTexture(tint:GetRGBA())
+        rowFrame.Stripe:Show()
+    else
+        rowFrame.Stripe:SetColorTexture(1, 1, 1, 0.035)
+        rowFrame.Stripe:SetShown((row._index or 0) % 2 == 0)
+    end
     rowFrame.Selected:SetShown(self.selected[row.id] and true or false)
     for i, column in ipairs(self.columns) do
         local cell = rowFrame.cells[i]

@@ -237,13 +237,13 @@ We don't yet know the exact startup error. **First step in Phase 1 is to capture
 
 Each phase ends with: luacheck clean, `/reload` without Lua errors, and the relevant part of the in-game checklist (§7) passing. Commit per phase.
 
-### Status (2026-10-16)
+### Status (2026-10-17)
 
 | Phase | State |
 |---|---|
 | 0-7 | ✅ Done and tested in-game |
 | 8 Sync hardening | ✅ Built; in-game test postponed to Phase 10 (needs a second account) |
-| 9 UI redesign | 9a ✅ shared UI pieces (verified with `/bpepgp uitest`). **Next: 9b**, main window rebuilt on `Modules/UI` |
+| 9 UI redesign | 9a ✅ shared UI pieces (verified with `/bpepgp uitest`). 9b built (main window on `Modules/UI`), **in-game test pending**. Then 9c Settings tab |
 | 10 Testing, 11 Release | Not started |
 
 Everything is on `master` (protected: changes go in through pull requests). Start each piece of work on a branch, e.g. `feat/phase-9b-main-window`.
@@ -323,7 +323,7 @@ Everything is on `master` (protected: changes go in through pull requests). Star
 ### Phase 9 — UI redesign: native Blizzard windows ([features/ui-redesign.md](features/ui-redesign.md), [features/ui-overhaul.md](features/ui-overhaul.md))
 Built from the Claude Design spec (`docs/design/`). Decisions R1-R11 in ui-redesign.md; all windows move from AceGUI/lib-st to Blizzard templates.
 - [x] **9a** (verified in-game 2026-10-16 with `/bpepgp uitest`) Shared UI pieces in `Modules/UI/`: window factory (portrait/flat, saved position, test-mode tint), bottom tabs, ScrollBox list with column headers and selection, buttons, inputs, dropdown, checkbox, MenuUtil context menus, item buttons.
-- [ ] **9b** Main window (min 720×480, resizable): Standings (officer + raider view), History, Raids, Roster, Audit, empty/syncing states, right-click *Award item*.
+- [x] **9b** Main window (min 720×480, resizable): Standings (officer + raider view), History, Raids, Roster, Audit, empty/syncing states, right-click *Award item*. *(Built 2026-10-17 in `Modules/MainWindow/`; the old UnifiedGUI tabs and the Filters model are removed. In-game test pending.)*
 - [ ] **9c** One Settings tab (Personal, Guild, Gear values, Advanced); remove all Options → AddOns pages; `/bpepgp config`. Guild/Gear values visible to all, editable by officers. Apply the K/F/D decisions per setting.
 - [ ] **9d** Auctioning and Bidding windows: docked countdown, optional timer bar, winner preselected + Enter awards, auto-advance to the next item.
 - [ ] **9e** Award, Auction history, Trade list, alert toasts, minimap tooltip, popups.

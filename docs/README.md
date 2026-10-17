@@ -50,7 +50,7 @@ How we'll verify it in-game.
 - [UI overhaul: settings in the main window](features/ui-overhaul.md) (planned, v1.0; per-setting keep/drop list. Layout decisions D4/D8 are replaced by the redesign)
 - [Test mode: isolated test ledger and simulation tools](features/test-mode.md) (done, v1.0)
 - [Claude Design brief: native Blizzard look for every window](features/ui-design-brief.md) (prompt for the UI redesign)
-- [UI redesign: native Blizzard windows](features/ui-redesign.md) (in progress, v1.0, Phase 9: 9a done, 9b next; spec in [design/](design/))
+- [UI redesign: native Blizzard windows](features/ui-redesign.md) (in progress, v1.0, Phase 9: 9a done, 9b built and waiting for its in-game test; spec in [design/](design/))
 
 ### Ideas
 _None yet._

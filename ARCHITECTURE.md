@@ -39,7 +39,9 @@ bp-epgp/
 │       ├── Auctioning/              # AuctionManager (officer), BiddingManager (raider), AuctionHistory, TradeHelper, Common
 │       ├── Import/                  # Standings import (Name, EP, GP)
 │       ├── Global/                  # Slash commands, chat handlers, global configs, guild change handler
-│       ├── GUI/                     # Main window (UnifiedGUI) and its tabs, AceGUI widgets, filters
+│       ├── UI/                      # Shared Blizzard-template UI pieces (windows, tabs, lists, inputs, menus)
+│       ├── MainWindow/              # Main window and its pages (Standings, History, Raids, Roster, Audit)
+│       ├── GUI/                     # AceGUI widgets still used by the windows not yet rebuilt
 │       └── Alerts/                  # Alert toasts (points received, bid accepted/denied)
 ├── docs/                            # Release plan, decisions, feature docs, design spec (not packaged)
 └── scripts/                         # check_addon.py (TOC/XML references, packager markers, Lua balance)
@@ -244,11 +246,13 @@ Each works for selected players, the whole roster, or the current raid. PR is EP
 
 ## 12. GUI
 
-- `UnifiedGUI.lua` hosts the main window. Its tabs are Standings, History, Raids, Manage roster and Audit.
-- Separate windows: Auctioning, Bidding, Award, Auction history, Trade list, Import standings.
+- `Modules/MainWindow/MainWindow.lua` hosts the main window (`CLM.GUI.MainWindow`): a portrait frame with bottom tabs, a page header, a footer with the sync state, and a syncing overlay. Pages register with `MainWindow:RegisterPage` and implement `Build`, `Refresh` and optionally `OnShow`. Officers get Standings, History, Raids, Roster and Audit; raiders get Standings, History and Raids.
+- Refreshes are coalesced to one per frame and only run while the window is visible (ledger updates, group and guild roster changes).
+- Every write asks first through `UI.Confirm` (a shared `StaticPopup`).
+- Separate windows: Auctioning, Bidding, Award, Auction history, Trade list, Import standings. These are still AceGUI + lib-st until Phase 9d/9e.
 - The rule: GUI reads from managers and writes only through manager methods.
 
-The current GUI is AceGUI + lib-st. The Phase 9 redesign moves every window to Blizzard templates ([docs/features/ui-redesign.md](docs/features/ui-redesign.md)).
+Shared pieces for every window are in `Modules/UI/` ([docs/features/ui-redesign.md](docs/features/ui-redesign.md)).
 
 ---
 

@@ -651,6 +651,50 @@ function UI.CreateItemButton(parent, size, onClick)
 end
 
 --[[
+ * Confirmations *
+    Every write asks first (ui-redesign.md R6). One shared StaticPopup; the text says exactly
+    what will happen, onAccept runs on Accept.
+]]--
+
+local CONFIRM_POPUP = "BPEPGP_CONFIRM"
+
+---@param text string
+---@param onAccept function
+function UI.Confirm(text, onAccept)
+    if not StaticPopupDialogs[CONFIRM_POPUP] then
+        StaticPopupDialogs[CONFIRM_POPUP] = {
+            text = "%s",
+            button1 = YES,
+            button2 = NO,
+            OnAccept = function(_, data)
+                if type(data) == "function" then data() end
+            end,
+            timeout = 0,
+            whileDead = true,
+            hideOnEscape = true,
+            preferredIndex = 3,
+        }
+    end
+    StaticPopup_Hide(CONFIRM_POPUP)
+    StaticPopup_Show(CONFIRM_POPUP, text, nil, onAccept)
+end
+
+-- Spinning loading indicator (LoadingSpinnerTemplate); plays while shown
+---@param parent table
+---@return table
+function UI.CreateSpinner(parent)
+    local spinner = CreateWithTemplates("Frame", nil, parent, { "LoadingSpinnerTemplate" })
+    spinner:SetSize(48, 48)
+    spinner:HookScript("OnShow", function(self)
+        if self.Anim then self.Anim:Play() end
+    end)
+    spinner:HookScript("OnHide", function(self)
+        if self.Anim then self.Anim:Stop() end
+    end)
+    return spinner
+end
+
+--[[
     Progress / timer bar: StatusBar with the standard bar texture. :SetProgress(fraction, text)
 ]]--
 ---@param parent table

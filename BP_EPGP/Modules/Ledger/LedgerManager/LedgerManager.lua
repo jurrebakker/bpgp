@@ -245,6 +245,12 @@ function LedgerManager:GetData()
     return self.activeLedger.getSortedList():entries()
 end
 
+-- Entries skipped on replay (S3), as { [uuid] = reason }
+---@return table
+function LedgerManager:GetFailedEntries()
+    return self.activeLedger.getFailedEntries()
+end
+
 ---@param seconds number? timeframe in seconds (default & max: 2 months)
 ---@return table
 function LedgerManager:GetRecentData(seconds)

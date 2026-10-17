@@ -58,6 +58,11 @@ local function UpdateOptions(self)
             self.rosterId = roster:UID()
         end
     end
+    -- One roster: outside a raid, default to it so the player list isn't empty
+    if not self.rosterId then
+        local roster = CLM.MODULES.RosterManager:GetRoster()
+        self.rosterId = roster and roster:UID()
+    end
 
     local profileNameMap = {}
     local profileList = {}
@@ -332,6 +337,19 @@ function AwardGUI:Show(_, args)
     if not self._initialized then return end
     SetItemLink(self, args)
     override = false
+    self:Refresh()
+    if not self.top:IsVisible() then
+        self.top:Show()
+    end
+end
+
+-- Standings right-click "Award item" (R7): open with the player filled in; the officer adds the item
+---@param name string profile name
+function AwardGUI:ShowForPlayer(name)
+    LOG:Trace("AwardGUI:ShowForPlayer()")
+    if not self._initialized then return end
+    override = false
+    self.awardPlayer = name
     self:Refresh()
     if not self.top:IsVisible() then
         self.top:Show()
