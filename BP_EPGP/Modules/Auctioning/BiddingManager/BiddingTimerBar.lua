@@ -8,17 +8,13 @@ local UTILS     = CLM.UTILS
 -- ------------------------------- --
 
 local LibCandyBar = LibStub("LibCandyBar-3.0")
-local SharedMedia = LibStub("LibSharedMedia-3.0")
 
 local _, _, _, isElvUI = UTILS.GetAddOnInfo("ElvUI")
 
 local DEFAULT_WIDTH = 345
 local DEFAULT_HEIGHT = 30
 local DEFAULT_TEXTURE = CLM.MEDIA_PATH .. "Bars\\Ruben.tga"
-local DEFAULT_TEXTURE_NAME = "BP EPGP Default"
 local DEFAULT_FONT_NAME, DEFAULT_FONT_SIZE = GameFontHighlightSmallOutline:GetFont()
-
-SharedMedia:Register("statusbar", DEFAULT_TEXTURE_NAME, DEFAULT_TEXTURE)
 
 ---@class BiddingTimerBar
 ---@field bar table
@@ -42,7 +38,8 @@ end
 
 local function Create(self, item, auction, options)
     self.options = {
-        texture = SharedMedia:Fetch("statusbar", options.texture) or DEFAULT_TEXTURE,
+        -- Font and texture are fixed (ui-overhaul.md), so no LibSharedMedia lookup
+        texture = DEFAULT_TEXTURE,
         width = tonumber(options.width) or DEFAULT_WIDTH,
         height = tonumber(options.height) or DEFAULT_HEIGHT,
         fontName = options.fontName or DEFAULT_FONT_NAME,
@@ -65,7 +62,7 @@ local function Create(self, item, auction, options)
     LibCandyBar.UnregisterCallback(self, "LibCandyBar_Stop")
 end)
 
-    self.bar:SetFont(SharedMedia:Fetch("font", self.options.fontName), self.options.fontSize)
+    self.bar:SetFont(self.options.fontName, self.options.fontSize)
 
     local duration = auction:GetEndTime() - GetServerTime()
     self.bar:SetDuration(duration)

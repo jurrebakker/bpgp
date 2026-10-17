@@ -6,8 +6,8 @@ EPGP loot addon for our guild, **WoW retail (Midnight, 12.x) only**. It's a fork
 
 ## Where we are
 
-- **Status:** see the table at the top of `docs/release-plan-v1.md` §6. Phases 0-8 are done (Phase 8's in-game test is postponed to Phase 10). Phase 9 is the UI redesign: 9a (shared UI pieces) is done; 9b (main window in `Modules/MainWindow/`) is built and waiting for its in-game test.
-- **Next:** the 9b in-game test, then **Phase 9c**: one Settings tab (Personal, Guild, Gear values, Advanced) in the main window, removing the Options → AddOns pages. The spec is in `docs/features/ui-redesign.md`, including decisions R1-R11 (they override the design where they differ). The visual reference is `docs/design/bp-epgp-redesign.dc.html`.
+- **Status:** see the table at the top of `docs/release-plan-v1.md` §6. Phases 0-8 are done (Phase 8's in-game test is postponed to Phase 10). Phase 9 is the UI redesign: 9a (shared UI pieces), 9b (main window in `Modules/MainWindow/`) and 9c (Settings tab), 9d (Auctioning and Bidding windows), 9e (Award, Auction history, Trade list, Import, toasts, minimap) and 9f (unused UI libraries removed) are done.
+- **Next:** **Phase 10**, the full test run (release plan §7): the user runs a real raid evening (bosses, auctions, awards, pass on loot) plus the postponed Phase 8 sync test with a second account. Then Phase 11, the release. The spec is in `docs/features/ui-redesign.md`, including decisions R1-R11 (they override the design where they differ). The visual reference is `docs/design/bp-epgp-redesign.dc.html`.
 - Decisions are recorded in the docs with the user's call. Don't reopen them without asking. When something needs a decision, ask with concrete options and a recommendation.
 
 ## Git workflow
@@ -37,7 +37,7 @@ EPGP loot addon for our guild, **WoW retail (Midnight, 12.x) only**. It's a fork
   - chat is printed locally;
   - a simulated raid group and bidders are available.
 - **Startup** is staged (`Core.lua`, `CORE:_Initialize`, stages 0.1 s apart).
-- **GUI:** the main window is `Modules/MainWindow/` (built on `Modules/UI`; pages register with `MainWindow:RegisterPage`). The other windows are still AceGUI + lib-st until Phase 9d/9e replaces them.
+- **GUI:** every window is built on `Modules/UI` (Blizzard templates). The main window is `Modules/MainWindow/` (pages register with `MainWindow:RegisterPage`). AceGUI, lib-st and LibUIDropDownMenu are gone (9f); only AceConfigCmd remains, for the `/bpepgp` slash commands.
 
 ## Rules
 

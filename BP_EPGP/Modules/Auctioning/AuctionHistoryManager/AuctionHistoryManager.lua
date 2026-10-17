@@ -19,24 +19,6 @@ local CHANNELS = {
 }
 
 
-local function SetEnabled(self, value)
-    self.db.enable = value and true or false
-end
-
-local function GetEnabled(self)
-    return self.db.enable
-end
-
-local function SetPostBidsChannel(self, value)
-    local channel = CHANNELS[value]
-    if channel then
-        self.db.post_bids_channel = value
-    end
-end
-
-local function GetPostBidsChannel(self)
-    return self.db.post_bids_channel
-end
 
 ---@class AuctionHistoryManager
 ---@field db table
@@ -47,43 +29,34 @@ function AuctionHistoryManager:Initialize()
     self.db = CLM.MODULES.Database:Personal(CLM.MODULES.Database:IsTestMode() and 'auctionHistory2_test' or 'auctionHistory2', {
         stack = {},
         -- config
-        enable = true,
         post_bids_channel = 5
     })
 
     self.uuidCache = {}
 
-    local options = {
-        auction_history_header = {
-            type = "header",
-            name = CLM.L["Auctioning - History"],
-            order = 50
-        },
-        auction_history_store_bids = {
-            name = CLM.L["Store bids"],
-            desc = CLM.L["Store finished auction bids information."],
-            type = "toggle",
-            set = function(i, v) SetEnabled(self, v) end,
-            get = function(i) return GetEnabled(self) end,
-            order = 51
-        },
-        auction_history_post_bids_channel = {
-            name = CLM.L["Post channel"],
-            desc = CLM.L["Channel for posting bids."],
-            type = "select",
-            values = CHANNELS,
-            set = function(i, v) SetPostBidsChannel(self, v) end,
-            get = function(i) return GetPostBidsChannel(self) end,
-            order = 52
-        },
-    }
-    CLM.MODULES.ConfigManager:Register(CONSTANTS.CONFIGS.GROUP.GLOBAL, options)
+end
+
+-- Settings tab: where "Post bids" sends to. Storing bids is always on (fixed setting).
+---@return table channels { [id] = chat type }
+function AuctionHistoryManager:GetPostBidsChannels()
+    return CHANNELS
+end
+
+---@param value number
+function AuctionHistoryManager:SetPostBidsChannel(value)
+    if CHANNELS[value] then
+        self.db.post_bids_channel = value
+    end
+end
+
+---@return number
+function AuctionHistoryManager:GetPostBidsChannel()
+    return self.db.post_bids_channel
 end
 
 ---@param auctionItem AuctionItem
 ---@param uuid string?
 function AuctionHistoryManager:AddAuctionItem(auctionItem, uuid)
-        if not GetEnabled(self) then return end
         -- Translate new data format to old history format
         -- TODO new format in history! -> Requires  DB and dependant UIs changes
         -- uuid also in weird state as there can be multiple awards towards 1 auction
@@ -159,7 +132,7 @@ end
 ---@param data table?
 function AuctionHistoryManager:PostData(data)
     if data then
-        local channel = CHANNELS[GetPostBidsChannel(self)] or "OFFICER"
+        local channel = CHANNELS[self:GetPostBidsChannel()] or "OFFICER"
         UTILS.SendChatMessage(data.link, channel)
         local noBids = true
         for bidder,bid in pairs(data.bids) do

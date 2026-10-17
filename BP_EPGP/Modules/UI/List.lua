@@ -21,7 +21,7 @@ local UI = CLM.UI
         ...
       }
       options.rowHeight      default 20
-      options.multiSelect    clicks toggle rows, shift-click selects a range
+      options.multiSelect    click selects one row, ctrl-click adds/removes, shift-click selects a range
       options.sortKey / options.sortDesc   initial sort
       options.pinned(row) -> true keeps the row on top whatever the sort (e.g. your own row)
       options.rowTint(row) -> ColorMixin? background tint instead of the alternating stripe
@@ -182,12 +182,21 @@ function List:OnRowClick(rowFrame, button)
         return
     end
     if self.options.multiSelect then
+        -- Like a file list: click selects one row, ctrl-click toggles, shift-click selects a range
         if IsShiftKeyDown() and self.lastClicked and self.lastClicked._index then
             local from, to = self.lastClicked._index, row._index
             if from > to then from, to = to, from end
+            if not IsControlKeyDown() then wipe(self.selected) end
             for i = from, to do self.selected[self.rows[i].id] = true end
-        else
+            -- keep the anchor so the next shift-click extends from the same row
+            self:UpdateSelectionVisuals()
+            self:SelectionChanged()
+            return
+        elseif IsControlKeyDown() then
             self.selected[row.id] = not self.selected[row.id] or nil
+        else
+            wipe(self.selected)
+            self.selected[row.id] = true
         end
     else
         local wasSelected = self.selected[row.id]

@@ -41,7 +41,6 @@ bp-epgp/
 │       ├── Global/                  # Slash commands, chat handlers, global configs, guild change handler
 │       ├── UI/                      # Shared Blizzard-template UI pieces (windows, tabs, lists, inputs, menus)
 │       ├── MainWindow/              # Main window and its pages (Standings, History, Raids, Roster, Audit)
-│       ├── GUI/                     # AceGUI widgets still used by the windows not yet rebuilt
 │       └── Alerts/                  # Alert toasts (points received, bid accepted/denied)
 ├── docs/                            # Release plan, decisions, feature docs, design spec (not packaged)
 └── scripts/                         # check_addon.py (TOC/XML references, packager markers, Lua balance)
@@ -60,7 +59,7 @@ All files share one addon table via `local name, CLM = ...`. It's also exposed a
 | `CLM.MODULES` | Runtime modules (managers), keyed by name |
 | `CLM.MODELS` | Data models (Roster, Profile, Loot, Raid, …) and `CLM.MODELS.LEDGER` entry types |
 | `CLM.GUI` | GUI modules, initialized after all managers |
-| `CLM.OPTIONS` | AceConfig option modules |
+| `CLM.OPTIONS` | Option modules (empty since Phase 9c; settings are in the Settings tab) |
 | `CLM.EXTERNAL` | Externally registered modules (unused for now) |
 | `CLM.UTILS` | Utility functions |
 | `CLM.CONSTANTS` | Shared constants |
@@ -249,7 +248,8 @@ Each works for selected players, the whole roster, or the current raid. PR is EP
 - `Modules/MainWindow/MainWindow.lua` hosts the main window (`CLM.GUI.MainWindow`): a portrait frame with bottom tabs, a page header, a footer with the sync state, and a syncing overlay. Pages register with `MainWindow:RegisterPage` and implement `Build`, `Refresh` and optionally `OnShow`. Officers get Standings, History, Raids, Roster and Audit; raiders get Standings, History and Raids.
 - Refreshes are coalesced to one per frame and only run while the window is visible (ledger updates, group and guild roster changes).
 - Every write asks first through `UI.Confirm` (a shared `StaticPopup`).
-- Separate windows: Auctioning, Bidding, Award, Auction history, Trade list, Import standings. These are still AceGUI + lib-st until Phase 9d/9e.
+- The Settings tab (`Settings.lua`) is built with `UI.CreateForm` and calls the modules' own getters and setters. Guild settings and gear values are ledger entries (`RosterManager:SetRosterConfiguration`, `SetRosterDefaultSlotTierValue`, …). `ConfigManager` only registers `/bpepgp` slash commands.
+- Separate windows, all on `Modules/UI`: Auctioning (`AuctionWindow.lua`), Bidding (`BiddingWindow.lua`), Award (`AwardGUI.lua`), Auction history, Trade list and Import standings (each module's `GUI.lua`).
 - The rule: GUI reads from managers and writes only through manager methods.
 
 Shared pieces for every window are in `Modules/UI/` ([docs/features/ui-redesign.md](docs/features/ui-redesign.md)).

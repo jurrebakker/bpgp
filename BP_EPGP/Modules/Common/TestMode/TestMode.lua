@@ -176,7 +176,8 @@ function TestMode:SimulateBids()
                     local tier = tiers[math.random(#tiers)]
                     value, bidType = tonumber(values[tier]) or 0, tier
                 else
-                    value, bidType = 0, CLM.CONSTANTS.BID_TYPE.MAIN_SPEC
+                    -- No tier has a value: bid the Base tier, like the bidding window's fallback button
+                    value, bidType = tonumber(values[CLM.CONSTANTS.SLOT_VALUE_TIER.BASE]) or 0, CLM.CONSTANTS.SLOT_VALUE_TIER.BASE
                 end
                 if bidType then
                     auctionManager:HandleSubmitBid(CLM.MODELS.BiddingCommSubmitBid:New(value, bidType, uid, {}), name)
@@ -217,75 +218,6 @@ local function RegisterPopups(self)
 end
 
 local function RegisterOptions(self)
-    local options = {
-        test_mode_header = {
-            type = "header",
-            name = CLM.L["Test mode"],
-            order = 9000
-        },
-        test_mode_info = {
-            type = "description",
-            name = CLM.L["Test mode uses a separate ledger and its own sync channel. Only other players in test mode see your test changes, and chat messages are only shown to you. Live data is never changed."],
-            width = "full",
-            order = 9001
-        },
-        test_mode_switch = {
-            name = function() return self:IsOn() and CLM.L["Leave test mode"] or CLM.L["Enter test mode"] end,
-            type = "execute",
-            func = function() self:RequestSwitch() end,
-            width = 1,
-            order = 9002
-        },
-        test_mode_reset_empty = {
-            name = CLM.L["Reset: empty"],
-            desc = CLM.L["Wipes all test data."],
-            type = "execute",
-            func = function() self:RequestReset(false) end,
-            hidden = function() return not self:IsOn() end,
-            width = 1,
-            order = 9003
-        },
-        test_mode_reset_copy = {
-            name = CLM.L["Reset: copy of live"],
-            desc = CLM.L["Replaces all test data with a copy of today's live data."],
-            type = "execute",
-            func = function() self:RequestReset(true) end,
-            hidden = function() return not self:IsOn() end,
-            width = 1,
-            order = 9004
-        },
-        test_mode_group_size = {
-            name = CLM.L["Simulated raid group size"],
-            desc = CLM.L["You plus guild members (roster members first). Used while you're not in a real group."],
-            type = "range",
-            min = 2,
-            max = 40,
-            step = 1,
-            set = function(i, v) self.groupSize = v end,
-            get = function(i) return self.groupSize or DEFAULT_GROUP_SIZE end,
-            hidden = function() return not self:IsOn() end,
-            width = 1,
-            order = 9005
-        },
-        test_mode_group = {
-            name = CLM.L["Simulate raid group"],
-            type = "execute",
-            func = function() self:SimulateGroup(self.groupSize) end,
-            hidden = function() return not self:IsOn() end,
-            width = 1,
-            order = 9006
-        },
-        test_mode_group_clear = {
-            name = CLM.L["Remove simulated group"],
-            type = "execute",
-            func = function() self:ClearSimulatedGroup() end,
-            hidden = function() return not self:IsOn() end,
-            width = 1,
-            order = 9007
-        },
-    }
-    CLM.MODULES.ConfigManager:Register(CLM.CONSTANTS.CONFIGS.GROUP.GLOBAL, options)
-
     CLM.MODULES.ConfigManager:RegisterSlash({
         test = {
             type = "execute",

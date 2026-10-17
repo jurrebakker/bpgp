@@ -21,7 +21,8 @@ CONSTANTS.ACTION_CONTEXT = {
     RAID = 3
 }
 
-local SIDE_WIDTH = 200
+local SIDE_WIDTH = 260
+local DECAY_TYPE_WIDTH = 100 -- fits "EP/GP"
 local MAX_REMOVE = 10
 local MAX_NOTE = 25
 local MAX_LISTED_NAMES = 6
@@ -75,7 +76,11 @@ local function BuildRows(roster)
         if a.values.pr ~= b.values.pr then return a.values.pr > b.values.pr end
         return a.values.name < b.values.name
     end)
-    for rank, row in ipairs(byPR) do row.values.rank = rank end
+    -- Equal PR shares a rank (1, 1, 3, ...)
+    for index, row in ipairs(byPR) do
+        local previous = byPR[index - 1]
+        row.values.rank = (previous and previous.values.pr == row.values.pr) and previous.values.rank or index
+    end
     return rows
 end
 
@@ -126,12 +131,6 @@ end
  * Officer actions *
 ]]--
 
-local function AnnounceToGuild(message, note)
-    if CLM.GlobalConfigs:GetAnnounceAwardToGuild() then
-        UTILS.SendChatMessage(message .. note, "GUILD")
-    end
-end
-
 ---@param awardType number CONSTANTS.POINT_CHANGE_TYPE.POINTS (EP) or SPENT (GP)
 ---@param awardValue number
 ---@param profiles Profile[]
@@ -139,25 +138,16 @@ local function DoAward(self, awardType, awardValue, profiles)
     local roster = GetRoster()
     if not roster then return end
     local reason = CONSTANTS.POINT_CHANGE_REASON.MANUAL_ADJUSTMENT
-    local reasonText = CONSTANTS.POINT_CHANGE_REASONS.ALL[reason] or ""
-    local points = UTILS.DecodePointTypeChangeName(awardType)
-    local noteText = self.note ~= "" and (": " .. self.note) or ""
     local note = self.note ~= "" and self.note or nil
 
     if self.context == CONSTANTS.ACTION_CONTEXT.RAID then
         local raid = CLM.MODULES.RaidManager:GetRaid()
         if not raid then LOG:Message(CLM.L["You are not in a raid."]) return end
         CLM.MODULES.PointManager:UpdateRaidPoints(raid, awardValue, reason, CONSTANTS.POINT_MANAGER_ACTION.MODIFY, note, awardType)
-        AnnounceToGuild(string.format(CLM.L["Awarded %s %s for %s to all players in raid %s"],
-            awardValue, points, reasonText, raid:Name()), noteText)
     elseif self.context == CONSTANTS.ACTION_CONTEXT.ROSTER then
         CLM.MODULES.PointManager:UpdateRosterPoints(roster, awardValue, reason, CONSTANTS.POINT_MANAGER_ACTION.MODIFY, false, note, awardType)
-        AnnounceToGuild(string.format(CLM.L["Awarded %s %s to %s player(s) for %s in <%s>"],
-            awardValue, points, string.lower(CLM.L["All"]), reasonText, CLM.MODULES.RosterManager:GetRosterNameByUid(roster:UID())), noteText)
     else
         CLM.MODULES.PointManager:UpdatePoints(roster, profiles, awardValue, reason, CONSTANTS.POINT_MANAGER_ACTION.MODIFY, note, awardType)
-        AnnounceToGuild(string.format(CLM.L["Awarded %s %s to %s player(s) for %s in <%s>"],
-            awardValue, points, #profiles, reasonText, CLM.MODULES.RosterManager:GetRosterNameByUid(roster:UID())), noteText)
     end
 end
 
@@ -250,7 +240,7 @@ local function UpdateActOn(self)
             end
             names[#names + 1] = UI.GetClassColor(row.classFile):WrapTextInColorCode(row.profile:ShortName())
         end
-        text = #names > 0 and table.concat(names, ", ") or CLM.L["Click names in the list to select them."]
+        text = #names > 0 and table.concat(names, ", ") or CLM.L["Click a name to select it. Ctrl-click adds more, shift-click selects a range."]
     elseif self.context == CONSTANTS.ACTION_CONTEXT.RAID then
         local raid = CLM.MODULES.RaidManager:GetRaid()
         text = raid and string.format(CLM.L["%s players in %s"], #raid:Players(), raid:Name()) or CLM.L["You are not in a raid."]
@@ -327,7 +317,7 @@ local function BuildSidePanel(self, content)
     Place(label, 14 + S.XS)
     self.decayInput = UI.CreateInput(panel, 40, true)
     Place(self.decayInput, 0, 6)
-    local decayType = UI.CreateDropdown(panel, 70,
+    local decayType = UI.CreateDropdown(panel, DECAY_TYPE_WIDTH,
         function()
             local options = {}
             for _, value in ipairs({ CONSTANTS.POINT_CHANGE_TYPE.TOTAL, CONSTANTS.POINT_CHANGE_TYPE.POINTS, CONSTANTS.POINT_CHANGE_TYPE.SPENT }) do
@@ -338,7 +328,7 @@ local function BuildSidePanel(self, content)
         function() return self.decayType end,
         function(value) self.decayType = value end)
     decayType:SetPoint("LEFT", self.decayInput, "RIGHT", S.S, 0)
-    self.decayButton = UI.CreateButton(panel, CLM.L["Decay"], SIDE_WIDTH - 6 - 40 - 70 - 2 * S.S, function() Decay(self) end)
+    self.decayButton = UI.CreateButton(panel, CLM.L["Decay"], SIDE_WIDTH - 6 - 40 - DECAY_TYPE_WIDTH - 2 * S.S, function() Decay(self) end)
     self.decayButton:SetPoint("LEFT", decayType, "RIGHT", S.S, 0)
     y = y - S.BUTTON - S.M
 

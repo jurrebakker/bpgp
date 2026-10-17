@@ -6,4 +6,5 @@
 	<Script file="Raids.lua"/>
 	<Script file="Roster.lua"/>
 	<Script file="Audit.lua"/>
+	<Script file="Settings.lua"/>
 </Ui>

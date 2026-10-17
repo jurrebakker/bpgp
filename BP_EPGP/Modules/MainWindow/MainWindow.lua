@@ -24,7 +24,7 @@ local S = UI.SPACE
 ]]--
 
 local OFFICER_SIZE = { width = 720, height = 480 }
-local RAIDER_SIZE  = { width = 520, height = 440 }
+local RAIDER_SIZE  = { width = 560, height = 440 } -- 520 in the spec; the Settings rows need 560
 local FOOTER_HEIGHT = 18
 local HEADING_LEFT = 60 -- clears the portrait
 
@@ -282,7 +282,13 @@ local function RegisterSlash(self)
             desc = CLM.L["Toggle standings window display"],
             handler = self,
             func = "Toggle",
-        }
+        },
+        config = {
+            type = "execute",
+            name = CLM.L["Settings"],
+            desc = CLM.L["Open the Settings tab"],
+            func = function() self:Open("settings") end,
+        },
     })
 end
 
@@ -332,6 +338,14 @@ function MainWindow:Toggle()
         return
     end
     self.window:SetShown(not self.window:IsShown())
+end
+
+-- Show the window on a page (e.g. /bpepgp config opens "settings")
+---@param key string
+function MainWindow:Open(key)
+    if not self._initialized then return end
+    if not (self.window and self.window:IsShown()) then self:Toggle() end
+    self:SelectPage(key)
 end
 
 function MainWindow:Reset()

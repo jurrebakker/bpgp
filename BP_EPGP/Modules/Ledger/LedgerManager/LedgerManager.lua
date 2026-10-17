@@ -120,16 +120,11 @@ end
 
 function LedgerManager:Enable()
     self.activeLedger.getStateManager():setUpdateInterval(50)
-    if CLM.GlobalConfigs:GetDisableSync() then
-        LedgerManager:Cutoff()
-        LOG:Message("Ledger synchronisation was disabled. Use this at your own risk.")
-    else
+    self:UpdateSending()
+    -- Promotions and demotions take effect without /reload (L2)
+    CLM.MODULES.EventManager:RegisterWoWBucketEvent({"GUILD_ROSTER_UPDATE"}, 5, function()
         self:UpdateSending()
-        -- Promotions and demotions take effect without /reload (L2)
-        CLM.MODULES.EventManager:RegisterWoWBucketEvent({"GUILD_ROSTER_UPDATE"}, 5, function()
-            self:UpdateSending()
-        end)
-    end
+    end)
 end
 
 -- Officers serve sync data; everyone else only listens

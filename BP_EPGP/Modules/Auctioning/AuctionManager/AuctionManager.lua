@@ -34,16 +34,11 @@ local function InitializeDB(self)
     self.db = CLM.MODULES.Database:Personal('auction', {
         autoTrade = true,
         fillFromCorpse = true,
-        fillFromCorpseMLOnly = true,
         fillFromLoot = true,
-        fillFromLootGLOnly = true,
         lootThreshold = 4,
         removeOnNoBids = false,
-        defaultRemoveOnAward = true,
         postAllBidsOnAward = false,
         notes = {},
-        includePasses = true,
-        includeCancels = false,
         ignoredClasses = {
             false, false, false, false,
             false, false, false, true,
@@ -63,92 +58,95 @@ local function InitializeDB(self)
     })
 end
 
--- helpers
+-- Settings (shown in the Settings tab, docs/features/ui-overhaul.md Part 2)
 
-local function SetFillAuctionListFromCorpse(self, value)
+---@param value boolean
+function AuctionManager:SetFillFromCorpse(value)
     self.db.fillFromCorpse = value and true or false
 end
 
-local function GetFillAuctionListFromCorpse(self)
+---@return boolean
+function AuctionManager:GetFillFromCorpse()
     return self.db.fillFromCorpse
 end
 
-local function SetFillAuctionListFromCorpseMLOnly(self, value)
-    self.db.fillFromCorpseMLOnly = value and true or false
-end
-
-local function GetFillAuctionListFromCorpseMLOnly(self)
-    return self.db.fillFromCorpseMLOnly
-end
-
-local function SetFillAuctionListFromLoot(self, value)
+---@param value boolean
+function AuctionManager:SetFillFromLoot(value)
     self.db.fillFromLoot = value and true or false
 end
 
-local function GetFillAuctionListFromLoot(self)
+---@return boolean
+function AuctionManager:GetFillFromLoot()
     return self.db.fillFromLoot
 end
 
-local function SetFillAuctionListFromLootGLOnly(self, value)
-    self.db.fillFromLootGLOnly = value and true or false
-end
-
-local function GetFillAuctionListFromLootGLOnly(self)
-    return self.db.fillFromLootGLOnly
-end
-
-local function SetFilledLootRarity(self, value)
+---@param value number item quality
+function AuctionManager:SetFillRarity(value)
     self.db.lootThreshold = tonumber(value)
 end
 
-local function GetFilledLootRarity(self)
+---@return number
+function AuctionManager:GetFillRarity()
     return self.db.lootThreshold or 4
 end
 
-local function SetRemoveOnNoBids(self, value)
+---@param value boolean
+function AuctionManager:SetRemoveOnNoBids(value)
     self.db.removeOnNoBids = value and true or false
 end
 
-local function GetRemoveOnNoBids(self)
+---@return boolean
+function AuctionManager:GetRemoveOnNoBids()
     return self.db.removeOnNoBids
 end
 
-local function SetPostAllBidsOnAward(self, value)
+---@param value boolean
+function AuctionManager:SetPostAllBidsOnAward(value)
     self.db.postAllBidsOnAward = value and true or false
 end
 
-local function GetPostAllBidsOnAward(self)
+---@return boolean
+function AuctionManager:GetPostAllBidsOnAward()
     return self.db.postAllBidsOnAward
 end
 
 ---@param value boolean
-function AuctionManager:SetDefaultRemoveOnAward(value)
-    self.db.defaultRemoveOnAward = value and true or false
+function AuctionManager:SetAutoTrade(value)
+    self.db.autoTrade = value and true or false
 end
 
 ---@return boolean
-function AuctionManager:GetDefaultRemoveOnAward()
-    return self.db.defaultRemoveOnAward
+function AuctionManager:GetAutoTrade()
+    return self.db.autoTrade
 end
 
+---@param classId number
 ---@param value boolean
-function AuctionManager:SetIncludePasses(value)
-    self.db.includePasses = value and true or false
+function AuctionManager:SetIgnoredClass(classId, value)
+    self.db.ignoredClasses[classId] = value and true or false
+end
+
+---@param classId number
+---@return boolean
+function AuctionManager:GetIgnoredClass(classId)
+    return self.db.ignoredClasses[classId] and true or false
+end
+
+-- Fixed settings (F): remove on award, and passes/cancels in the bid list, are always on
+
+---@return boolean
+function AuctionManager:GetDefaultRemoveOnAward()
+    return true
 end
 
 ---@return boolean
 function AuctionManager:GetIncludePasses()
-    return self.db.includePasses
-end
-
----@param value boolean
-function AuctionManager:SetIncludeCancels(value)
-    self.db.includeCancels = value and true or false
+    return true
 end
 
 ---@return boolean
 function AuctionManager:GetIncludeCancels()
-    return self.db.includeCancels
+    return true
 end
 
 -- Filling
@@ -164,6 +162,12 @@ do
             ItemClasses[id] = C_Item.GetItemClassInfo(id)
         end
     end
+end
+
+-- Item classes that can be ignored when filling the auction list: { [classId] = name }
+---@return table
+function AuctionManager:GetItemClasses()
+    return ItemClasses
 end
 
 local function DefaultCallback(_)
@@ -195,7 +199,7 @@ end
 
 local function AutoAddItemInternal(self, item)
     local _, _, _, _, _, _, _, _, _, _, _, classId = UTILS.GetItemInfo(item:GetItemID())
-    if (item:GetItemQuality() >= GetFilledLootRarity(self))
+    if (item:GetItemQuality() >= self:GetFillRarity())
     and not (self.db.ignoredClasses[classId])
     and not (self.db.ignoredItems[item:GetItemID()]) then
         AddItemToAuctionList(self, item)
@@ -221,10 +225,7 @@ local function HandleLootMessage(addon, event, message, _, _, _, playerName, ...
     if not message then return end
     if not CLM.MODULES.RaidManager:IsInActiveRaid() then return end
     if not self:IsAuctioneer() then return end
-    if GetFillAuctionListFromLootGLOnly(self) then
-        if not CLM.MODULES.RaidManager:IsGroupLoot() then return end
-    end
-    if not GetFillAuctionListFromLoot(self) then return end
+    if not self:GetFillFromLoot() then return end
     local itemLink = deformat(message, LOOT_ITEM_SELF_MULTIPLE)
     if not itemLink then
         itemLink = deformat(message, LOOT_ITEM_SELF)
@@ -244,42 +245,11 @@ local function HookAuctionFilling(self)
     end)
 end
 
-local alreadyPostedLoot = {}
-local function PostLootToRaidChat()
-    if not IsInRaid() then return end
-    if not CLM.GlobalConfigs:GetAnnounceLootToRaid() then return end
-    if CLM.GlobalConfigs:GetAnnounceLootToRaidOwnerOnly() then
-        if not CLM.MODULES.RaidManager:IsRaidOwner(UTILS.whoami()) then return end
-    end
-    local targetGuid = UnitGUID("target")
-    if UTILS.IsSecret(targetGuid) then targetGuid = nil end
-    if targetGuid then
-        if alreadyPostedLoot[targetGuid] then return end
-        alreadyPostedLoot[targetGuid] = true
-    end
-
-    local numLootItems = GetNumLootItems()
-    local num = 1
-    for lootIndex = 1, numLootItems do
-        local _, _, _, _, rarity = GetLootSlotInfo(lootIndex)
-        local itemLink = GetLootSlotLink(lootIndex)
-        if itemLink then
-            if (tonumber(rarity) or 0) >= CLM.GlobalConfigs:GetAnnounceLootToRaidLevel() then
-                UTILS.SendChatMessage(num .. ") " .. itemLink, "RAID")
-                num = num + 1
-            end
-        end
-    end
-end
-
 local alreadyAddedLoot = {}
 local function FillLootFromCorpse()
     if not CLM.MODULES.RaidManager:IsInActiveRaid() then return end
     if not AuctionManager:IsAuctioneer() then return end
-    if GetFillAuctionListFromCorpseMLOnly(AuctionManager) then
-        if not CLM.MODULES.RaidManager:IsMasterLooter() then return end
-    end
-    if not GetFillAuctionListFromCorpse(AuctionManager) then return end
+    if not AuctionManager:GetFillFromCorpse() then return end
 
     local targetGuid = UnitGUID("target")
     if UTILS.IsSecret(targetGuid) then targetGuid = nil end
@@ -298,165 +268,7 @@ local function FillLootFromCorpse()
 end
 
 local function HandleLootOpenedEvent()
-    -- Post loot to raid chat
-    PostLootToRaidChat()
-    -- Fill auction
     FillLootFromCorpse()
-end
-
--- CONFIGURATION
-
-local function SetAutoTrade(self, value)
-    self.db.autoTrade = value and true or false
-end
-
----@return boolean
-function AuctionManager:GetAutoTrade()
-    return self.db.autoTrade
-end
-
-local function CreateConfigurationOptions(self)
-    local options = {
-        auctioning_header = {
-            type = "header",
-            name = CLM.L["Auctioning"],
-            order = 30
-        },
-        auctioning_guild_award_announcement = {
-            name = CLM.L["Announce award to Guild"],
-            desc = CLM.L["Toggles loot and point award announcement to guild"],
-            type = "toggle",
-            set = function(i, v) CLM.GlobalConfigs:SetAnnounceAwardToGuild(v) end,
-            get = function(i) return CLM.GlobalConfigs:GetAnnounceAwardToGuild() end,
-            width = "double",
-            order = 31
-        },
-        auction_default_remove_on_award = {
-            name = CLM.L["Remove on award"],
-            desc = CLM.L["Toggle default behavior of remove on award field in auctioning ui"],
-            type = "toggle",
-            set = function(i, v) self:SetDefaultRemoveOnAward(v) end,
-            get = function(i) return self:GetDefaultRemoveOnAward() end,
-            width = 1,
-            order = 31.5,
-        },
-        auctioning_enable_auto_trade = {
-            name = CLM.L["Auto-trade after award"],
-            desc = CLM.L["Enables auto-trade awarded loot after auctioning from bag"],
-            type = "toggle",
-            set = function(i, v) SetAutoTrade(self, v) end,
-            get = function(i) return self:GetAutoTrade() end,
-            -- width = "double",
-            order = 33
-        },
-        auctioning_include_passes = {
-            name = CLM.L["Include passes"],
-            desc = CLM.L["Include passes in bid list in open auction mode."],
-            type = "toggle",
-            set = function(i, v) self:SetIncludePasses(v) end,
-            get = function(i) return self:GetIncludePasses() end,
-            width = "double",
-            order = 33.1
-        },
-        auctioning_include_cancels = {
-            name = CLM.L["Include cancels"],
-            desc = CLM.L["Include cancels in bid list in open auction mode."],
-            type = "toggle",
-            set = function(i, v) self:SetIncludeCancels(v) end,
-            get = function(i) return self:GetIncludeCancels() end,
-            width = 1,
-            order = 33.2
-        },
-        auctioning_list_header = {
-            type = "header",
-            name = CLM.L["Auctioning - List Filling"],
-            order = 33.5
-        },
-        auction_fill_from_corpse = {
-            name = CLM.L["Fill auction list from corpse"],
-            desc = CLM.L["Fill auction list with items from corpse. Will happen only if you open the corpse loot window."],
-            type = "toggle",
-            set = function(i, v) SetFillAuctionListFromCorpse(self, v) end,
-            get = function(i) return GetFillAuctionListFromCorpse(self) end,
-            width = "double",
-            order = 34,
-        },
-        auction_fill_from_corpse_ml_only = {
-            name = CLM.L["Master Loot Only"],
-            desc = CLM.L["Fill from corpse only if you are the Loot Master."],
-            type = "toggle",
-            set = function(i, v) SetFillAuctionListFromCorpseMLOnly(self, v) end,
-            get = function(i) return GetFillAuctionListFromCorpseMLOnly(self) end,
-            -- width = "double",
-            order = 35,
-        },
-        auction_fill_from_loot = {
-            name = CLM.L["Fill auction list with looted items"],
-            desc = CLM.L["Fill auction list with looted items. This will automatically add all items you have received."],
-            type = "toggle",
-            set = function(i, v) SetFillAuctionListFromLoot(self, v) end,
-            get = function(i) return GetFillAuctionListFromLoot(self) end,
-            width = "double",
-            order = 36,
-        },
-        auction_fill_from_loot_gl_only = {
-            name = CLM.L["Group Loot Only"],
-            desc = CLM.L["Fill from loot only if you are using Group Loot."],
-            type = "toggle",
-            set = function(i, v) SetFillAuctionListFromLootGLOnly(self, v) end,
-            get = function(i) return GetFillAuctionListFromLootGLOnly(self) end,
-            -- width = "double",
-            order = 37,
-        },
-        auction_fill_threshold = {
-            name = CLM.L["Loot rarity"],
-            desc = CLM.L["Select loot rarity threshold to used to fill the auction list."],
-            type = "select",
-            values = CONSTANTS.ITEM_QUALITY,
-            set = function(i, v) SetFilledLootRarity(self, v) end,
-            get = function(i) return GetFilledLootRarity(self) end,
-            order = 38
-        },
-        global_auction_combination = {
-            name = CLM.L["Modifier combination"],
-            desc = CLM.L["Select modifier combination for filling auction from bags and corpse."],
-            type = "select",
-            values = CONSTANTS.MODIFIER_COMBINATIONS_GUI,
-            sorting = CONSTANTS.MODIFIER_COMBINATIONS_SORTED,
-            set = function(i, v) CLM.GlobalConfigs:SetModifierCombination(v) end,
-            get = function(i) return CLM.GlobalConfigs:GetModifierCombination() end,
-            order = 39
-        },
-        auction_remove_on_no_bids = {
-            name = CLM.L["Remove items without bids"],
-            desc = CLM.L["Remove items without bids from the auction list when the auction ends."],
-            type = "toggle",
-            set = function(i, v) SetRemoveOnNoBids(self, v) end,
-            get = function(i) return GetRemoveOnNoBids(self) end,
-            width = "double",
-            order = 40,
-        },
-        loot_queue_ignore_classes = {
-            name = CLM.L["Ignore"],
-            type = "multiselect",
-            set = function(i, k, v)
-                local n = tonumber(k) or 0
-                self.db.ignoredClasses[n] = v
-            end,
-            get = function(i, v) return self.db.ignoredClasses[tonumber(v)] end,
-            values = ItemClasses,
-            order = 50
-        },
-        award_post_bids = {
-            name = CLM.L["Post all bids on award"],
-            desc = CLM.L["Post all bids after awarding item"],
-            type = "toggle",
-            set = function(i, v) SetPostAllBidsOnAward(self, v) end,
-            get = function(i) return GetPostAllBidsOnAward(self) end,
-            order = 53
-        }
-    }
-    return options
 end
 
 -- Comms
@@ -546,8 +358,6 @@ function AuctionManager:Initialize()
         [CONSTANTS.BIDDING_COMM.TYPE.NOTIFY_CANTUSE]    = "HandleNotifyCantUse",
     }
 
-    CLM.MODULES.ConfigManager:Register(CLM.CONSTANTS.CONFIGS.GROUP.GLOBAL, CreateConfigurationOptions(self))
-
     self.currentAuction = AuctionInfo:New()
     self.pendingAuction = AuctionInfo:New()
 
@@ -610,7 +420,7 @@ local function EndAuction(self)
     SendAuctionEnd()
     for _, item in pairs(auction:GetItems()) do
         CLM.MODULES.AuctionHistoryManager:AddAuctionItem(item)
-        if GetRemoveOnNoBids(self) then
+        if self:GetRemoveOnNoBids() then
             if not item:HasValidBids() then
                 self:RemoveItemFromCurrentAuction(item)
             end
@@ -1039,7 +849,7 @@ function AuctionManager:Award(item, name, price)
     local success, uuid = CLM.MODULES.LootManager:AwardItem(self.currentAuction:GetRaid(), name, item:GetItemLink(), item:GetItemID(), item:GetExtraPayload(), price, true)
     if success then
         CLM.MODULES.AuctionHistoryManager:CorrelateWithLoot(item:GetItemLink(), self.currentAuction:GetEndTime(), uuid)
-        if GetPostAllBidsOnAward(self) then
+        if self:GetPostAllBidsOnAward() then
             CLM.MODULES.AuctionHistoryManager:PostByUUID(uuid)
         end
         CLM.MODULES.TradeHelper:Handle(item:GetItemLink(), name)
@@ -1070,6 +880,52 @@ end
 ---@return AuctionInfo
 function AuctionManager:GetCurrentAuctionInfo()
     return self.currentAuction
+end
+
+-- Seconds left in the running auction or /roll phase (0 when nothing runs)
+---@return number
+function AuctionManager:GetTimeLeft()
+    if not (self:IsAuctionInProgress() or self:IsAcceptingRolls()) or not self.auctionTickerEndTime then return 0 end
+    return math.max(0, self.auctionTickerEndTime - GetServerTime())
+end
+
+-- Sort weight of a bid type: tiers (Max first) above MS, OS, Pass, Cancel
+---@param bidType any
+---@return number
+function AuctionManager:GetBidTypeOrder(bidType)
+    if CONSTANTS.SLOT_VALUE_TIERS[bidType] then return CONSTANTS.BID_TYPE_ORDER_DSC[bidType] end
+    for name, value in pairs(CONSTANTS.BID_TYPE) do
+        if value == bidType and CONSTANTS.BID_TYPE_ORDER_DSC[name] then return CONSTANTS.BID_TYPE_ORDER_DSC[name] end
+    end
+    return 0
+end
+
+--[[
+    The winner the auctioning window preselects when an auction ends (ui-redesign.md R10):
+    the highest tier, then the highest PR, then the highest roll. Passes, cancels and invalid
+    bids never win. `exclude` holds names already awarded this item (items with a count > 1).
+]]--
+---@param item AuctionItem
+---@param exclude table? { [name] = true }
+---@return string? name, UserResponse? response
+function AuctionManager:GetWinner(item, exclude)
+    local roster = self.currentAuction:GetRoster()
+    local best, bestName, bestKey
+    for name, response in pairs(item:GetAllResponses()) do
+        if not CONSTANTS.BID_TYPE_HIDDEN[response:Type()] and not response:IsInvalid() and not (exclude and exclude[name]) then
+            local profile = CLM.MODULES.ProfileManager:GetProfileByName(name)
+            local pr = (profile and roster) and roster:Priority(profile:GUID()) or 0
+            local key = { self:GetBidTypeOrder(response:Type()), pr, response:Roll() or 0 }
+            local better = not bestKey
+            if bestKey then
+                for i = 1, 3 do
+                    if key[i] ~= bestKey[i] then better = key[i] > bestKey[i] break end
+                end
+            end
+            if better then best, bestName, bestKey = response, name, key end
+        end
+    end
+    return bestName, best
 end
 
 ---@param time number

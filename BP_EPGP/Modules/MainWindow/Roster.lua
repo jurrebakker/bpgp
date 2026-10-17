@@ -31,12 +31,6 @@ local Roster = {
     hideNotOnRoster = false,
 }
 
----@param classFile string? e.g. "WARRIOR"
----@return string e.g. "Warrior"
-local function ClassFromClassFile(classFile)
-    return UTILS.NumberToClass(UTILS.CanonicalClassToNumber(classFile) or 0)
-end
-
 local function BuildRows(self)
     local rows = {}
     local listed = {}
@@ -241,7 +235,7 @@ function Roster:Refresh()
     UpdateButtons(self)
     local roster = CLM.MODULES.RosterManager:GetRoster()
     self.window:SetSubtitle(string.format(CLM.L["%s on the roster"], roster and #roster:Profiles() or 0))
-    self.window:SetPageFooter(CLM.L["Green rows are officers. Shift-click selects a range."])
+    self.window:SetPageFooter(CLM.L["Green rows are officers. Ctrl-click adds a player, shift-click selects a range."])
 end
 
 CLM.GUI.MainWindow:RegisterPage(Roster)

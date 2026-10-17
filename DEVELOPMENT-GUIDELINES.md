@@ -189,7 +189,7 @@ LibStub shares libraries between addons, so a forked lib under CLM's name would 
 
 The full design language is in `docs/features/ui-redesign.md`. The short version:
 
-- **Build windows from `CLM.UI`:** `UI.CreateWindow`, `UI.CreateTabs`, `UI.CreateList`, `UI.CreateButton`, `UI.CreateInput`, `UI.CreateDropdown`, `UI.CreateCheckbox`, `UI.ShowContextMenu`, `UI.CreateItemButton`, `UI.CreateProgressBar`. No new AceGUI, AceConfigDialog, lib-st or LibUIDropDownMenu code.
+- **Build windows from `CLM.UI`:** `UI.CreateWindow`, `UI.CreateTabs`, `UI.CreateList`, `UI.CreateButton`, `UI.CreateInput`, `UI.CreateDropdown`, `UI.CreateCheckbox`, `UI.ShowContextMenu`, `UI.CreateItemButton`, `UI.CreateProgressBar`, `UI.CreateForm` (settings rows), `UI.Confirm` (confirmation popup), `UI.AcceptItems` (shift-click / drag an item into a field). No new AceGUI, AceConfigDialog, lib-st or LibUIDropDownMenu code.
 - If a piece is missing, add it to `Modules/UI/` (and to `Demo.lua`, so `/bpepgp uitest` shows it) instead of building a one-off in a window.
 - **Spacing:** the 4 px grid in `UI.SPACE`. 8 between controls and from frame edge to inset, 12 between groups, rows 20, buttons 22, inputs 20, a 60 px top band on portrait frames.
 - **Fonts:** GameFont objects only (`GameFontNormal` labels, `GameFontHighlight` values, `GameFontDisableSmall` meta, `NumberFontNormal` numbers, `GameFontNormalHuge` your PR).
@@ -197,6 +197,7 @@ The full design language is in `docs/features/ui-redesign.md`. The short version
 - **Buttons:** one primary button per area, bottom-right; secondary buttons to its left.
 - **Confirm every write** with a `StaticPopup` (R6). Popup names are `BPEPGP_*`; the text says exactly what will happen ("Award 100 EP to 18 players in the raid?").
 - **Windows** are movable, clamped, close on Escape, remember their position (`dbKey`), get the test-mode tint, and respect the UI scale setting.
+- **New settings** go in the Settings tab (`Modules/MainWindow/Settings.lua`) as a form row that calls the module's getter and setter. Never add an Options → AddOns page.
 - **Views stay thin:** a window turns manager data into rows and calls manager methods on clicks. Business rules (who can be awarded, what a decay does) stay in managers.
 
 ---
@@ -207,7 +208,7 @@ The full design language is in `docs/features/ui-redesign.md`. The short version
 - **Don't edit third-party libraries.** Work around them in our code. If a library must change, update it to a newer upstream version and note it in `Libs/README.md`.
 - `LibEventSourcing` is the exception: it's CLM source and ours to change. Keep its LibStub names as `BPEPGP-*`.
 - Adding a library needs a reason (what we can't do with Blizzard APIs), its licence file, and an entry in `Libs/README.md` and `Libs/_filelist.xml`.
-- Phase 9f removes AceGUI, AceConfigDialog, lib-st and LibUIDropDownMenu once nothing uses them.
+- AceGUI, AceConfigDialog, lib-st, LibUIDropDownMenu and LibSharedMedia were removed in Phase 9f. Don't bring them back: build UI from `Modules/UI`.
 
 ---
 

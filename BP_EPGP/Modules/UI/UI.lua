@@ -422,7 +422,8 @@ function UI.CreateInput(parent, width, numeric, onChanged)
     local input = CreateWithTemplates("EditBox", nil, parent, { "InputBoxTemplate" })
     input:SetSize(width, UI.SPACE.INPUT)
     input:SetAutoFocus(false)
-    input:SetFontObject(numeric and "NumberFontNormal" or "ChatFontNormal")
+    -- ChatFontNormal for numbers too: NumberFontNormal is outlined and puts a gap before the cursor
+    input:SetFontObject("ChatFontNormal")
     if numeric then
         -- SetNumeric allows only digits; EP/GP/decay values may have decimals, so filter instead
         input:SetScript("OnChar", function(self)
@@ -433,12 +434,62 @@ function UI.CreateInput(parent, width, numeric, onChanged)
     end
     input:SetScript("OnEnterPressed", function(self) self:ClearFocus() end)
     input:SetScript("OnEscapePressed", function(self) self:ClearFocus() end)
+    -- Clear the selection when focus moves on (the template only selects all on focus)
+    input:HookScript("OnEditFocusLost", function(self) self:HighlightText(0, 0) end)
     if onChanged then
         input:SetScript("OnTextChanged", function(self, userInput)
             if userInput then onChanged(self:GetText()) end
         end)
     end
     return input
+end
+
+--[[
+    Item fields: accept an item by shift-clicking its link (bags, chat, loot) while the field has
+    focus, or by dragging the item onto the field or onto an item button.
+    WoW only inserts shift-clicked links into the chat box, so we hook the insert and pass the link
+    to whichever registered field has focus.
+]]--
+local itemInputs = {}
+local insertHooked = false
+
+local function OnInsertLink(link)
+    if type(link) ~= "string" then return end
+    for input, onItem in pairs(itemInputs) do
+        if input:HasFocus() then
+            onItem(link)
+            input:ClearFocus()
+            return
+        end
+    end
+end
+
+local function HookInsertLink()
+    if insertHooked then return end
+    insertHooked = true
+    if ChatEdit_InsertLink then hooksecurefunc("ChatEdit_InsertLink", OnInsertLink) end
+    if ChatFrameUtil and ChatFrameUtil.InsertLink then hooksecurefunc(ChatFrameUtil, "InsertLink", OnInsertLink) end
+end
+
+local function TakeCursorItem(onItem)
+    local cursorType, _, itemLink = GetCursorInfo()
+    if cursorType == "item" and itemLink then
+        ClearCursor()
+        onItem(itemLink)
+    end
+end
+
+-- frame: an EditBox (shift-click while focused, and drop) or any mouse-enabled frame (drop only)
+---@param frame table
+---@param onItem function called with the item link
+function UI.AcceptItems(frame, onItem)
+    if frame.HasFocus then
+        HookInsertLink()
+        itemInputs[frame] = onItem
+    end
+    frame:EnableMouse(true)
+    frame:HookScript("OnReceiveDrag", function() TakeCursorItem(onItem) end)
+    frame:HookScript("OnMouseUp", function() TakeCursorItem(onItem) end)
 end
 
 ---@param parent table
@@ -495,7 +546,12 @@ function UI.CreateDropdown(parent, width, getOptions, getSelected, onSelect)
     dropdown:SetSize(width, UI.SPACE.BUTTON)
     if dropdown.SetupMenu then
         dropdown:SetupMenu(function(_, rootDescription)
-            for _, option in ipairs(getOptions()) do
+            local options = getOptions()
+            -- Long lists (e.g. every player on the roster) scroll instead of running off screen
+            if #options > 20 and rootDescription.SetScrollMode then
+                rootDescription:SetScrollMode(20 * 20)
+            end
+            for _, option in ipairs(options) do
                 rootDescription:CreateRadio(option.text,
                     function() return getSelected() == option.value end,
                     function() onSelect(option.value) end)
@@ -672,6 +728,7 @@ function UI.Confirm(text, onAccept)
             timeout = 0,
             whileDead = true,
             hideOnEscape = true,
+            enterClicksFirstButton = true,
             preferredIndex = 3,
         }
     end

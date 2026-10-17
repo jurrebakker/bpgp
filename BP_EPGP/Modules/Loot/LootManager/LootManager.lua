@@ -117,9 +117,6 @@ function LootManager:AwardItem(raidOrRoster, name, itemLink, itemId, extra, valu
         if CLM.GlobalConfigs:GetLootWarning() then
             local message = string.format(CLM.L["%s awarded to %s for %s %s"], itemLink, name, value, CLM.L["GP"])
             UTILS.SendChatMessage(message, CHAT_MESSAGE_CHANNEL)
-            if CLM.GlobalConfigs:GetAnnounceAwardToGuild() then
-                UTILS.SendChatMessage(message, "GUILD")
-            end
         end
         return true, entry:uuid()
     else
