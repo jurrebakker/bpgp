@@ -1,4 +1,4 @@
-# BP EPGP — v1.0 Release Plan
+# BPGP — v1.0 Release Plan
 
 > Fork of [Core Loot Manager](https://github.com/CoreLootManager/CoreLootManager) v5.7.8 (Apache 2.0), stripped down to the
 > EPGP features our guild actually uses, for **retail (Midnight, 12.x) only**.
@@ -46,9 +46,10 @@
 | Admin | Keep **Audit tab** (view + undo entries). Remove time travel / sandbox, export, disenchant |
 | UI extras | Keep **minimap icon, alert popups, raid warnings**. Remove item-tooltip GP prices |
 | Existing data | Start a **fresh ledger**; officer pastes current EP/GP list into a new **import window** |
-| Name | Title **BP EPGP**, folder `BP_EPGP`, slash `/bpepgp`, comm prefix `BPEP` |
+| Name | Title **BPGP**, folder `BPGP`, slash `/bpgp`, comm prefix `BPGP` |
 | Language | English only (other locales removed; `enUS` returns the key itself, so nothing breaks) |
-| Pass on loot | **Re-added 2026-10-17** as one checkbox (Settings → Personal → Loot, **on by default**): pass on loot rolls so one officer loots the items. **Only in our own raids:** a BP EPGP raid in progress, started less than 12 hours ago, in a raid group inside a raid instance, led by one of our guild's officers. If any of that can't be verified, nothing is passed, so pugging someone else's raid never passes automatically (user's call, 2026-10-17). The tooltip says so in red. CLM's exclusions stay (quest items, legendaries, stacks, recipes, mounts, toys, cosmetics). The full auto-roll (roll type, include toggles) stays removed |
+| Pass on loot | **Re-added 2026-10-17** as one checkbox (Settings → Personal → Loot, **on by default**): pass on loot rolls so one officer loots the items. **Only in our own raids:** a BPGP raid in progress, started less than 12 hours ago, in a raid group inside a raid instance, led by one of our guild's officers. If any of that can't be verified, nothing is passed, so pugging someone else's raid never passes automatically (user's call, 2026-10-17). The tooltip says so in red. CLM's exclusions stay (quest items, legendaries, stacks, recipes, mounts, toys, cosmetics). The full auto-roll (roll type, include toggles) stays removed |
+| Name and points (2026-10-17) | The addon is **BPGP** (was BP EPGP), and effort points are **Boomer Points (BP)** (user's call). PR = BP/GP. Renamed: folder and TOC `BPGP`, SavedVariables `BPGP_*` (fresh start, no migration), comm prefix `BPGP` / `BPGPT`, frame and LibStub names `BPGP*`, slash command `/bpgp` only (no `/bpepgp` alias). Only player-visible text says BP; code, ledger fields and internal docs keep the name EP (`ep`, `UI.COLOR.EP`, `POINT_CHANGE_TYPE.POINTS`) |
 
 Because we start a fresh ledger, we are **free to delete ledger entry types and trim their fields**. (In CLM an unknown entry type crashes replay — `LibEventSourcing/source/StateManager.lua:187-245` — so this freedom only exists because we don't import the old CLM ledger.)
 
@@ -80,7 +81,7 @@ Because we start a fresh ledger, we are **free to delete ledger entry types and 
 | Raid warnings (auction start/countdown/winner, raid start/end) | `Utils.lua:1220` `SendChatMessage` callers |
 | Version check between guild members | `Modules/Common/Version` |
 | **Test mode** (new): isolated test ledger + comm prefix, simulated raid/bidders, add items by ID ([features/test-mode.md](features/test-mode.md)) | replaces `SandboxManager` and the dev fakes |
-| `/bpepgp` slash commands, settings (as tabs in the main window, Phase 9). Keybindings were removed after the Phase 3 smoke test | `Modules/Global/*`, `ConfigManager` |
+| `/bpgp` slash commands, settings (as tabs in the main window, Phase 9). Keybindings were removed after the Phase 3 smoke test | `Modules/Global/*`, `ConfigManager` |
 
 ### 3.2 Remove
 
@@ -152,13 +153,13 @@ Because we start a fresh ledger, we are **free to delete ledger entry types and 
 6. **Database.** SavedVariables `CLM2_DB` keyed by `"<expansion> <faction> <realm> <guild>"` — on retail 12.x that is `exp11 …`, which **changes every expansion** (data would look empty after 13.0).
 7. **Packager-dependent code.** `--@do-not-package@` / `--@debug@` blocks are only stripped by the BigWigs packager. In a raw clone `ACL:CheckLevel` returns `true` for everyone, GUILD sync is remapped to RAID, and anyone can run auctions (`ACL.lua:75-78`, `Comms.lua:302-304`, `RaidManager.lua:807`).
 
-### 4.2 Target architecture for BP EPGP
+### 4.2 Target architecture for BPGP
 
 Same layered design, much less in each layer:
 
 ```
-BP_EPGP/
-├── BP_EPGP.toc                 # Interface 120100,120105 · SavedVariables BPEPGP_DB, BPEPGP_Logs, BPEPGP_Minimap
+BPGP/
+├── BPGP.toc                 # Interface 120100,120105 · SavedVariables BPGP_DB, BPGP_Logs, BPGP_Minimap
 ├── Core.lua                    # (was ClassicLootManager.lua) namespace, staged init — no AF, no ML hook
 ├── Utils.lua                   # retail-only shims, chat send with lockdown guard, MEDIA_PATH constant
 ├── Libs/                       # ALL libraries vendored (no .pkgmeta externals needed to run)
@@ -181,16 +182,16 @@ BP_EPGP/
 
 **Naming / isolation**
 
-| Item | CLM | BP EPGP |
+| Item | CLM | BPGP |
 |---|---|---|
-| Folder / TOC | `ClassicLootManager` | `BP_EPGP` |
-| Title | Core Loot Manager | BP EPGP |
-| Slash | `/clm`, `/classiclootmanager` | `/bpepgp` |
-| SavedVariables | `CLM2_DB`, `CLM2_Logs`, `CLM2_MinimapIcon` | `BPEPGP_DB`, `BPEPGP_Logs`, `BPEPGP_Minimap` |
-| Comm prefix | `CLM` + channel | `BPEP` + channel (prefix+channel ≤ 16 chars) |
-| Global | `_G.CLM` | `_G.BPEPGP` (internal local stays `CLM` in v1 to keep the diff reviewable) |
+| Folder / TOC | `ClassicLootManager` | `BPGP` |
+| Title | Core Loot Manager | BPGP |
+| Slash | `/clm`, `/classiclootmanager` | `/bpgp` |
+| SavedVariables | `CLM2_DB`, `CLM2_Logs`, `CLM2_MinimapIcon` | `BPGP_DB`, `BPGP_Logs`, `BPGP_Minimap` |
+| Comm prefix | `CLM` + channel | `BPGP` + channel (prefix+channel ≤ 16 chars) |
+| Global | `_G.CLM` | `_G.BPGP` (internal local stays `CLM` in v1 to keep the diff reviewable) |
 | DB key | `exp11 <faction> <realm> <guild>` | `retail <faction> <realm> <guild>` (fixed — survives expansions) |
-| Frame / binding names | `CLM_*` | `BPEPGP_*` |
+| Frame / binding names | `CLM_*` | `BPGP_*` |
 | Version | v5.7.8 | v1.0.0 (own version channel, so CLM's v5 broadcasts can't switch us off) |
 
 ---
@@ -244,7 +245,7 @@ Each phase ends with: luacheck clean, `/reload` without Lua errors, and the rele
 |---|---|
 | 0-7 | ✅ Done and tested in-game |
 | 8 Sync hardening | ✅ Built; in-game test postponed to Phase 10 (needs a second account) |
-| 9 UI redesign | 9a ✅ shared UI pieces (verified with `/bpepgp uitest`). 9b ✅ main window (selection retested in-game). 9c ✅ Settings tab. 9d ✅ Auctioning and Bidding windows (tier buttons verified). 9e ✅ other windows (item drop/shift-click verified). 9f ✅ unused UI libraries removed (built; covered by the full test run). **Phase 9 is complete in code; next: Phase 10, the full test run.** After 9: the auctioning UI moved into an Auction tab (R12, tested in-game); a Bid button in the main window reopens the Bidding window (R13, built; loads without errors, button test in Phase 10) |
+| 9 UI redesign | 9a ✅ shared UI pieces (verified with `/bpgp uitest`). 9b ✅ main window (selection retested in-game). 9c ✅ Settings tab. 9d ✅ Auctioning and Bidding windows (tier buttons verified). 9e ✅ other windows (item drop/shift-click verified). 9f ✅ unused UI libraries removed (built; covered by the full test run). **Phase 9 is complete in code; next: Phase 10, the full test run.** After 9: the auctioning UI moved into an Auction tab (R12, tested in-game); a Bid button in the main window reopens the Bidding window (R13, built; loads without errors, button test in Phase 10) |
 | 10 Testing, 11 Release | Not started |
 
 Everything is on `master` (protected: changes go in through pull requests). Start each piece of work on a branch, e.g. `feat/phase-9b-main-window`.
@@ -257,16 +258,16 @@ Everything is on `master` (protected: changes go in through pull requests). Star
 - [x] Branch strategy: `master` is the main branch on GitHub (github.com/jurrebakker/bpgp), protected: no force pushes, changes through pull requests. One branch per phase or step.
 
 ### Phase 1 — Rebrand & boot on Midnight ✅
-- [x] Rename folder/TOC to `BP_EPGP`, Title "BP EPGP", Author, remove CLM Curse/Wago IDs and Patreon link.
-- [x] Rename SavedVariables, slash command `/bpepgp`, comm prefix `BPEP`, global `_G.BPEPGP`, frame/binding names, `[CLM]` chat prefix, minimap LDB name.
+- [x] Rename folder/TOC to `BPGP`, Title "BPGP", Author, remove CLM Curse/Wago IDs and Patreon link.
+- [x] Rename SavedVariables, slash command `/bpgp`, comm prefix `BPGP`, global `_G.BPGP`, frame/binding names, `[CLM]` chat prefix, minimap LDB name.
 - [x] Introduce `MEDIA_PATH` constant; replace all hard-coded `Interface\AddOns\ClassicLootManager\…` paths.
-- [x] Replace CLM logo with our own icon (`Media/Icons/bp-epgp-32.png`). A 400×400 version is still needed for CurseForge (§10).
+- [x] Replace CLM logo with our own icon (`Media/Icons/bpgp-32.png`). A 400×400 version is still needed for CurseForge (§10).
 - [x] Fix DB key to `retail <faction> <realm> <guild>`; version to 1.0.0-dev.
 - [x] Merge the Alerts addon into the main addon; delete Tracker and Integrations folders.
 - [x] Remove `--@do-not-package@` / `--@debug@` / `@non-debug@` dev blocks and dev fakes. Without this a git clone has **no security** ([sync-and-security.md](sync-and-security.md) C1).
 - [x] Add a CI/luacheck step *(`scripts/check_addon.py`)* that fails if any of those markers reappear.
 - [x] Capture and fix the actual startup error(s) — §5.1 items 1-4. *(1: libs vendored; 2: MasterLooterFrame hook removed; 3: guarded; 4: chat filter no longer hides messages in lockdown; also ported 5.8.0's `C_Item.GetItemClassInfo` fix. Loads without errors.)*
-- [x] Isolation from CLM: unique LibStub names for our forked libs (`BPEPGP-EventSourcing/*`, `BPEPGP-EventDispatcher`), AceGUI widget types, AceConfig app names, keybinding names, alert templates. *(found while renaming)*
+- [x] Isolation from CLM: unique LibStub names for our forked libs (`BPGP-EventSourcing/*`, `BPGP-EventDispatcher`), AceGUI widget types, AceConfig app names, keybinding names, alert templates. *(found while renaming)*
 - **Done when:** addon loads on Midnight with zero errors, shows the UI, two officers see each other as synced.
 
 ### Phase 2 — Remove the big unused blocks ✅
@@ -283,13 +284,13 @@ Everything is on `master` (protected: changes go in through pull requests). Star
 - [x] Remove bench/standby (StandbyStagingManager, standby lists in raids, bench multiplier, auto-bench leavers, STANDBY comm channel).
 - [x] Remove alt-main linking (P2), profile locking (P3), spec/role tracking, pruning, attendance tracker, disenchant (ID/IE).
 - [x] Trim `RosterConfiguration` fields and Options to what's left; set defaults: EPGP, Open, Tiered, named buttons on.
-- [x] Single roster: auto-select the only roster everywhere; hide roster dropdowns; block creating a second roster. First-time creation via a "Set up BP EPGP" button ([ui-overhaul](features/ui-overhaul.md) D7).
+- [x] Single roster: auto-select the only roster everywhere; hide roster dropdowns; block creating a second roster. First-time creation via a "Set up BPGP" button ([ui-overhaul](features/ui-overhaul.md) D7).
 - [x] One officer level: collapse ASSISTANT/MANAGER checks into a single *officer* check ("Is Officer" rank, verified via rank flags 11/12 on 12.x). See [sync-and-security.md](sync-and-security.md) S1/S2.
 
 ### Phase 4 — Test mode ✅ ([features/test-mode.md](features/test-mode.md))
-- [x] Test mode switch (`/bpepgp test`, and a *Test mode* section in the settings until the Advanced tab exists in Phase 9): separate test ledger section, `BPEPT…` comm prefix, local `[TEST]` chat output, TEST MODE title and orange minimap icon. No "apply" to live. Switching reloads the UI.
-- [x] Live ledger can't receive test data: separate ledger section and `BPEPT` comm prefix (see test-mode.md design notes). Checked in-game: live event count and hash unchanged after a test session.
-- [x] Simulation tools: simulated raid group (`/bpepgp testgroup N`), add item by ID/link (auction window input), solo auctions (group traffic is whispered to yourself), simulated bidders (*Simulate bids* in the auction window, `/bpepgp testbids`), reset test data. The bidding-window preview is the real bidding window of a solo auction.
+- [x] Test mode switch (`/bpgp test`, and a *Test mode* section in the settings until the Advanced tab exists in Phase 9): separate test ledger section, `BPGPT…` comm prefix, local `[TEST]` chat output, TEST MODE title and orange minimap icon. No "apply" to live. Switching reloads the UI.
+- [x] Live ledger can't receive test data: separate ledger section and `BPGPT` comm prefix (see test-mode.md design notes). Checked in-game: live event count and hash unchanged after a test session.
+- [x] Simulation tools: simulated raid group (`/bpgp testgroup N`), add item by ID/link (auction window input), solo auctions (group traffic is whispered to yourself), simulated bidders (*Simulate bids* in the auction window, `/bpgp testbids`), reset test data. The bidding-window preview is the real bidding window of a solo auction.
 - **Done when:** a full raid evening (raid start → EP → auction → award → decay → undo) can be run solo in test mode, and the live ledger is byte-identical before and after.
 - ✅ Verified in-game 2026-10-16: solo raid evening with simulated group and bidders; live event count and hash unchanged.
 
@@ -297,10 +298,10 @@ Everything is on `master` (protected: changes go in through pull requests). Star
 - [x] Remove Sealed / Vickrey / Anonymous Open, Ascending mode, All-In, auto-update bid, Joke/AF. Auctions are always Open + Tiered + named buttons; cancel/pass always allowed. The bidding window has only the named-button layout (tier buttons, OS, Pass, Cancel). Unnamed tiers show as Base/Small/Medium/Large/Max.
 - [x] Keep Tiered + named buttons, OS/Pass/Cancel, min EP, anti-snipe, `/roll`, upgrade info, history, item notes.
 - [x] AutoAssign → **TradeHelper**: keep trade tracking + TradeList GUI, drop `GiveMasterLoot` and the auto-assign setting.
-- [x] Fix the auction bugs in §5.2: anti-snipe countdown, `GetUseOS`, nil handlers for non-officers, auction/award modifiers must differ, ranged weapons → main hand, `/bpepgp ignore`, stale `!bid/!dkp` hint, defaults. "Raiders accept START/STOP from anyone" is S9 in Phase 8.
+- [x] Fix the auction bugs in §5.2: anti-snipe countdown, `GetUseOS`, nil handlers for non-officers, auction/award modifiers must differ, ranged weapons → main hand, `/bpgp ignore`, stale `!bid/!dkp` hint, defaults. "Raiders accept START/STOP from anyone" is S9 in Phase 8.
 
 ### Phase 6 — New: standings import ✅
-- [x] Officer-only window (`/bpepgp import`, or *Import standings* in the Standings sidebar): paste lines `Name,EP,GP`; comma, semicolon or tab separated (decimal comma allowed with tab/semicolon). A header line is skipped.
+- [x] Officer-only window (`/bpgp import`, or *Import standings* in the Standings sidebar): paste lines `Name,EP,GP`; comma, semicolon or tab separated (decimal comma allowed with tab/semicolon). A header line is skipped.
 - [x] Preview table (Update / Add to roster / Not in guild / Duplicate / Invalid) before applying. Only guild members can be imported.
 - [x] On confirm: create profiles for missing characters, add them to the roster, set EP and GP with the existing SET entry (`PointManager` SET supports GP), one entry per distinct value, reason *Import*.
 - [x] Guard: when the roster already has point or loot history, the *Overwrite existing standings* checkbox must be ticked.
@@ -323,9 +324,9 @@ Everything is on `master` (protected: changes go in through pull requests). Star
 
 ### Phase 9 — UI redesign: native Blizzard windows ([features/ui-redesign.md](features/ui-redesign.md), [features/ui-overhaul.md](features/ui-overhaul.md))
 Built from the Claude Design spec (`docs/design/`). Decisions R1-R11 in ui-redesign.md; all windows move from AceGUI/lib-st to Blizzard templates.
-- [x] **9a** (verified in-game 2026-10-16 with `/bpepgp uitest`) Shared UI pieces in `Modules/UI/`: window factory (portrait/flat, saved position, test-mode tint), bottom tabs, ScrollBox list with column headers and selection, buttons, inputs, dropdown, checkbox, MenuUtil context menus, item buttons.
+- [x] **9a** (verified in-game 2026-10-16 with `/bpgp uitest`) Shared UI pieces in `Modules/UI/`: window factory (portrait/flat, saved position, test-mode tint), bottom tabs, ScrollBox list with column headers and selection, buttons, inputs, dropdown, checkbox, MenuUtil context menus, item buttons.
 - [x] **9b** Main window (min 720×480, resizable): Standings (officer + raider view), History, Raids, Roster, Audit, empty/syncing states, right-click *Award item*. *(Built 2026-10-17 in `Modules/MainWindow/`; the old UnifiedGUI tabs and the Filters model are removed. List selection works like a file list: click, ctrl-click, shift-click.)*
-- [x] **9c** One Settings tab (Personal, Guild, Gear values, Advanced); remove all Options → AddOns pages; `/bpepgp config`. Guild/Gear values visible to all, editable by officers. Apply the K/F/D decisions per setting. *(Built 2026-10-17: `Modules/MainWindow/Settings.lua` on a new `UI.CreateForm`; ConfigManager only handles slash commands; RosterManager `Options.lua` removed; `/bpepgp minimap` toggles the icon. The raider window is 560 wide instead of 520 so the settings rows fit. In-game test pending.)*
+- [x] **9c** One Settings tab (Personal, Guild, Gear values, Advanced); remove all Options → AddOns pages; `/bpgp config`. Guild/Gear values visible to all, editable by officers. Apply the K/F/D decisions per setting. *(Built 2026-10-17: `Modules/MainWindow/Settings.lua` on a new `UI.CreateForm`; ConfigManager only handles slash commands; RosterManager `Options.lua` removed; `/bpgp minimap` toggles the icon. The raider window is 560 wide instead of 520 so the settings rows fit. In-game test pending.)*
 - [x] **9d** Auctioning and Bidding windows: docked countdown, optional timer bar, winner preselected + Enter awards, auto-advance to the next item. *(Built 2026-10-17: `AuctionManager/AuctionWindow.lua`, `BiddingManager/BiddingWindow.lua`. Winner = highest tier, then PR, then roll (`AuctionManager:GetWinner`); after the auction the cursor sits in Value, Enter opens the award confirmation and Enter again accepts. The timer bar keeps its old LibCandyBar look and is off by default (*Show timer bar* in Settings). Removed UIFade and the unused AceGUI widgets. In-game test pending.)*
 - [x] **9e** Award, Auction history, Trade list, alert toasts, minimap tooltip, popups. *(Built 2026-10-17. The Import standings window is rebuilt too. Toasts keep Blizzard's loot-toast art with our logo and EP/GP colours. The trade list has no "time left" column: the tracker doesn't store the award time. `Modules/GUI` (AceGUI widgets) is gone; the libraries go in 9f. In-game test pending.)*
 - [x] **9f** Remove AceGUI, AceConfigDialog, lib-st, LibUIDropDownMenu and unused LibSharedMedia widgets; update `Libs/README.md` and licences. *(Done 2026-10-17. LibSharedMedia itself went too (the timer bar uses its fixed texture and font directly), plus AceHook, LibExpiringTimer, the unused Ace3 parts and the lib-st / dropdown helpers in `Utils.lua`. LibCandyBar ("All Rights Reserved") was replaced by our own timer bar on `Modules/UI`; LibDBIcon (also "All Rights Reserved") is kept as the standard minimap library (user's call).)*
@@ -348,7 +349,7 @@ There is no automated test harness for WoW UI code; luacheck catches syntax/glob
 
 **Startup & sync**
 - [ ] `/reload` with zero Lua errors (BugSack empty), with and without CLM installed alongside.
-- [ ] Minimap icon shows; `/bpepgp` opens the main window; Settings, Guild settings, Gear values and Advanced tabs open; nothing appears under Options → AddOns.
+- [ ] Minimap icon shows; `/bpgp` opens the main window; Settings, Guild settings, Gear values and Advanced tabs open; nothing appears under Options → AddOns.
 - [ ] Officer A awards EP → officer B sees it within ~30 s; raider sees standings.
 - [ ] Non-officer cannot award, start auctions, or push ledger data.
 
@@ -381,12 +382,12 @@ There is no automated test harness for WoW UI code; luacheck catches syntax/glob
 - [ ] Keep `LICENSE` unchanged.
 - [x] No `NOTICE` file (removed 2026-10-16). The original copyright line and ours are in the README's License section, which satisfies Apache §4(d) (attribution "within the Source form or documentation").
 - [x] README: "Based on Core Loot Manager, heavily modified" plus the copyright lines.
-- [x] Mark modified files: the README says all files were changed for BP EPGP.
-- [ ] Don't use the names "Core Loot Manager" / "CLM" or the CLM logo as our branding (Apache §6 trademarks). Icons in `Media/Icons` are replaced by `bp-epgp-32.png` (done); in-game "CLM" strings remain.
-- [ ] Remove CLM's Patreon, Discord, Curse/Wago IDs, "Created by Lantis" in-game strings → move credit to an About/credits line instead. (In-game settings header done: logo + "BP EPGP <version>".)
+- [x] Mark modified files: the README says all files were changed for BPGP.
+- [x] Don't use the names "Core Loot Manager" / "CLM" or the CLM logo as our branding (Apache §6 trademarks). Icons in `Media/Icons` are replaced by `bpgp-32.png`. The last in-game "CLM" strings (startup error, version warnings) were renamed on 2026-10-17. "Core Loot Manager" only appears in the credit lines (Settings footer, TOC Notes). The internal Lua namespace stays `CLM` (not visible to players).
+- [x] Remove CLM's Patreon, Discord, Curse/Wago IDs, "Created by Lantis" in-game strings → move credit to an About/credits line instead. (Checked 2026-10-17: none left. The credit is the Settings line "Based on Core Loot Manager by Lantis and contributors (Apache License 2.0)".)
 - [ ] Keep each vendored library's own license file.
 - [x] No `CREDITS.md` (removed 2026-10-16); attribution is in the README.
-- [ ] The packaged addon (`BP_EPGP` folder only) must also carry `LICENSE` and the attribution: copy both into the package (see §10).
+- [ ] The packaged addon (`BPGP` folder only) must also carry `LICENSE` and the attribution: copy both into the package (see §10).
 
 ---
 
@@ -396,8 +397,8 @@ There is no automated test harness for WoW UI code; luacheck catches syntax/glob
 |---|---|
 | We don't know the exact startup error yet | Phase 1 starts by capturing it with BugSack |
 | Midnight restrictions (secret values, chat/addon-message lockdown) are still evolving | Central helpers for chat & comms; test during real boss encounters |
-| All raiders must install BP EPGP to bid | Announce in guild; version check warns outdated clients |
-| Officers on CLM vs BP EPGP during rollout | Separate prefixes → no interference; switch everyone at once on a set date |
+| All raiders must install BPGP to bid | Announce in guild; version check warns outdated clients |
+| Officers on CLM vs BPGP during rollout | Separate prefixes → no interference; switch everyone at once on a set date |
 | Trade helper with personal loot: winner needs the item traded from whoever looted it | v1 keeps CLM behaviour (works when the item is in the officer's bags); revisit if needed |
 | Import of standings is only as good as the list | Preview + officer double-check before applying; Audit tab can undo |
 | Decay settings (EP%, GP%, how often) | Keep all three decay types; configure in-game |
@@ -411,16 +412,16 @@ Research done 2026-10-16. Items marked **(unverified)** could not be confirmed f
 
 ### 10.1 What matters for us
 
-| Fact | Impact on BP EPGP |
+| Fact | Impact on BPGP |
 |---|---|
-| **Projects can't be private.** There is no private or guild-only mode; once approved, a project is public. | Anyone can install BP EPGP. That's fine: all write actions are gated by guild-rank ACL (§4.1 #3), provided the dev blocks are removed (§5.2). |
+| **Projects can't be private.** There is no private or guild-only mode; once approved, a project is public. | Anyone can install BPGP. That's fine: all write actions are gated by guild-rank ACL (§4.1 #3), provided the dev blocks are removed (§5.2). |
 | **Experimental status** keeps a project out of website search and out of app sync; files can still be installed via the app's import. Leaving it requires the *legacy* site. Setting it from the new console is **(unverified)**. | Option for an officer-only beta before the guild rollout. |
 | **Every project and every file is moderated.** The first review happens after the first file is uploaded, and takes "a few minutes to three workdays". Each later file shows *Under Review* until approved. | Upload at least a week before the rollout date. Don't plan a same-day hotfix release. |
 | **Only Release/Beta files sync to the app** for a new project. Alpha-only projects are website-only, and beta/alpha files only reach app users who opt in. | Raiders get the Release channel. Officers can opt in to Beta to test. |
 | **Every file needs a changelog.** | `CHANGELOG.md` via `manual-changelog` in `.pkgmeta`. |
 | **Forks:** credit and link the original, explain what changed, and don't copy the original's description. Name, logo, summary and description must be our own. | Matches the §8 checklist. Write our own description ("Based on Core Loot Manager by Lantis and contributors…"). |
 | **No donation links** (Patreon, Ko-fi) and no external download links. Blizzard's add-on policy also forbids obfuscated code and in-game donation requests. | Remove CLM's Patreon/Discord links (§8). |
-| **Zip layout:** the top-level folder name must match the `.toc` name, or the validator can fail the upload. | Zip contains `BP_EPGP/BP_EPGP.toc`. |
+| **Zip layout:** the top-level folder name must match the `.toc` name, or the validator can fail the upload. | Zip contains `BPGP/BPGP.toc`. |
 
 Sources: [Creating and Submitting a Project](https://support.curseforge.com/support/solutions/articles/9000197241), [File & Project Types](https://support.curseforge.com/support/solutions/articles/9000197242), [Moderation Policies](https://support.curseforge.com/support/solutions/articles/9000197279), [How to become a CurseForge author](https://blog.curseforge.com/how-to-become-a-curseforge-author/), [Multi-TOC for WoW](https://support.curseforge.com/support/solutions/articles/9000209856-multi-toc-for-world-of-warcraft-addons), [Blizzard UI Add-On Development Policy](https://us.forums.blizzard.com/en/wow/t/ui-add-on-development-policy/24534).
 
@@ -429,7 +430,7 @@ Sources: [Creating and Submitting a Project](https://support.curseforge.com/supp
 - [ ] **CurseForge author account.** Sign in at <https://authors.curseforge.com/> with Google, Discord, GitHub or Twitch; there is no password login. Accept the author terms and fill in the profile.
 - [ ] **Logo:** our own icon, 1:1, at least 400×400, PNG (not WebP), not a solid colour. The same artwork can replace the CLM icons in `Media/Icons` (§8).
 - [ ] **Create the project:** Author Portal → Create Project → World of Warcraft → Addons.
-  - **Name:** "BP EPGP". It must be unique on CurseForge; check that it's free.
+  - **Name:** "BPGP". It must be unique on CurseForge; check that it's free.
   - **Summary:** one line, e.g. "Lightweight EPGP loot system with officer sync and open tier bidding."
   - **Description:** in English. Cover what it does, install, officer setup and raider usage, plus the CLM credit and link.
   - **License:** "Apache License version 2.0".
@@ -477,14 +478,14 @@ The packager docs still use the old names `CF_API_KEY` / `GITHUB_OAUTH`; both ar
 ### 10.4 Packaging changes in this repo
 
 - [ ] Rewrite `.pkgmeta`:
-  - `package-as: BP_EPGP`
+  - `package-as: BPGP`
   - Drop all `externals` (libs are vendored) and the CLM `move-folders`.
   - `ignore:` `scripts`, `docs`, `assets`, `ARCHITECTURE.md`, `CLAUDE.md`, `_annotations`, library docs/examples. Dot-files are excluded automatically.
   - `manual-changelog: { filename: CHANGELOG.md, markup-type: markdown }`
   - Optional: `embedded-libraries` with the CurseForge slugs of the vendored libs (`ace3`, `libdbicon-1-0`, …). This only adds metadata on CurseForge.
 - [ ] TOC: `## Interface: 120105` (live 12.1.5 as of Oct 2026; 120107 is on the PTR). The packager reads this to set the CurseForge game version. Add `## X-Curse-Project-ID` and optionally `## X-Wago-ID`.
 - [ ] `CHANGELOG.md`: replace the CLM history with our own, starting at `1.0.0`. Each release section must describe its changes.
-- [ ] Do a dry run first (`release.sh -d`, or the Action on a test tag) and check the zip: a single top-level `BP_EPGP/` folder, no `scripts/`, no `docs/`, and all libs present.
+- [ ] Do a dry run first (`release.sh -d`, or the Action on a test tag) and check the zip: a single top-level `BPGP/` folder, no `scripts/`, no `docs/`, and all libs present.
 
 ### 10.5 Release flow
 
@@ -497,10 +498,10 @@ Tags map to CurseForge release types (packager rules):
 | `v1.0.0` | Release | Everyone |
 
 1. Update `CHANGELOG.md` and the TOC `## Version` (or use `@project-version@`).
-2. Create an annotated tag: `git tag -a v1.0.0 -m "BP EPGP 1.0.0"`, then `git push --tags`.
+2. Create an annotated tag: `git tag -a v1.0.0 -m "BPGP 1.0.0"`, then `git push --tags`.
 3. The Action uploads the build to CurseForge (plus Wago and GitHub Releases).
 4. Wait for moderation. The first upload also triggers the project review.
-5. Tell the guild to install "BP EPGP" from the CurseForge app (or WowUp/Wago).
+5. Tell the guild to install "BPGP" from the CurseForge app (or WowUp/Wago).
 
 For the guild rollout (Phase 11): publish `v1.0.0-beta1` first and have officers opt in to Beta. Then publish `v1.0.0` before rollout day.
 
@@ -511,7 +512,7 @@ For the guild rollout (Phase 11): publish `v1.0.0-beta1` first and have officers
 
 ### 10.7 Open questions
 
-- Is "BP EPGP" free as a CurseForge project name, and do we want a longer, more descriptive name?
+- Is "BPGP" free as a CurseForge project name, and do we want a longer, more descriptive name?
 - Public GitHub repo (source/issue links on CurseForge, WowUp install) or private?
 - Do we want Wago as well, or CurseForge only?
 - Do we use Experimental status for the officer beta? **(unverified)** whether the new console supports it.

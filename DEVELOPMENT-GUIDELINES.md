@@ -1,6 +1,6 @@
-# BP EPGP: development guidelines
+# BPGP: development guidelines
 
-How we build and maintain BP EPGP. These are the conventions every change follows, for people and for Claude.
+How we build and maintain BPGP. These are the conventions every change follows, for people and for Claude.
 
 - **What the addon is and how it works:** [ARCHITECTURE.md](ARCHITECTURE.md).
 - **What we're building and why:** [docs/](docs/README.md) (release plan, decisions, feature specs).
@@ -52,7 +52,7 @@ A change is done when:
 ## 2. Code layout
 
 ```
-BP_EPGP/
+BPGP/
 ├── Core.lua            namespace + staged initialization
 ├── Utils.lua           CLM.UTILS: shared helpers and Midnight-safe wrappers
 ├── Locale/enUS.lua     CLM.L (missing keys return the key itself)
@@ -133,16 +133,16 @@ Never add `--@do-not-package@`, `--@debug@` or `@non-debug@` blocks. They make a
 
 ### 5.3 Global names
 
-The guild still runs the real CLM, and both addons may be loaded together. Anything global gets a BP EPGP name:
+The guild still runs the real CLM, and both addons may be loaded together. Anything global gets a BPGP name:
 
 | Kind | Name |
 |---|---|
-| SavedVariables | `BPEPGP_*` |
-| Comm prefix | `BPEP` (`BPEPT` in test mode); prefix + channel ≤ 16 characters |
-| Frames, popups, tooltips | `BPEPGP_*` (global frame names are needed for Escape-to-close and tabs) |
-| AceGUI widget types, AceConfig app names | `BPEPGP...` / `bpepgp_...` |
-| LibStub names of our forked libs | `BPEPGP-EventSourcing/*`, `BPEPGP-EventDispatcher` |
-| Global functions | only when WoW needs them (`BPEPGP_ToggleMainWindow` for the addon compartment) |
+| SavedVariables | `BPGP_*` |
+| Comm prefix | `BPGP` (`BPGPT` in test mode); prefix + channel ≤ 16 characters |
+| Frames, popups, tooltips | `BPGP_*` (global frame names are needed for Escape-to-close and tabs) |
+| AceGUI widget types, AceConfig app names | `BPGP...` / `bpgp_...` |
+| LibStub names of our forked libs | `BPGP-EventSourcing/*`, `BPGP-EventDispatcher` |
+| Global functions | only when WoW needs them (`BPGP_ToggleMainWindow` for the addon compartment) |
 
 LibStub shares libraries between addons, so a forked lib under CLM's name would silently be swapped for CLM's copy.
 
@@ -190,12 +190,12 @@ LibStub shares libraries between addons, so a forked lib under CLM's name would 
 The full design language is in `docs/features/ui-redesign.md`. The short version:
 
 - **Build windows from `CLM.UI`:** `UI.CreateWindow`, `UI.CreateTabs`, `UI.CreateList`, `UI.CreateButton`, `UI.CreateInput`, `UI.CreateDropdown`, `UI.CreateCheckbox`, `UI.ShowContextMenu`, `UI.CreateItemButton`, `UI.CreateProgressBar`, `UI.CreateForm` (settings rows), `UI.Confirm` (confirmation popup), `UI.AcceptItems` (shift-click / drag an item into a field). No new AceGUI, AceConfigDialog, lib-st or LibUIDropDownMenu code.
-- If a piece is missing, add it to `Modules/UI/` (and to `Demo.lua`, so `/bpepgp uitest` shows it) instead of building a one-off in a window.
+- If a piece is missing, add it to `Modules/UI/` (and to `Demo.lua`, so `/bpgp uitest` shows it) instead of building a one-off in a window.
 - **Spacing:** the 4 px grid in `UI.SPACE`. 8 between controls and from frame edge to inset, 12 between groups, rows 20, buttons 22, inputs 20, a 60 px top band on portrait frames.
 - **Fonts:** GameFont objects only (`GameFontNormal` labels, `GameFontHighlight` values, `GameFontDisableSmall` meta, `NumberFontNormal` numbers, `GameFontNormalHuge` your PR).
 - **Colours:** `UI.COLOR` and `UI.TIER_COLOR`; class colours for names, item quality colours for items. Orange only in test mode.
 - **Buttons:** one primary button per area, bottom-right; secondary buttons to its left.
-- **Confirm every write** with a `StaticPopup` (R6). Popup names are `BPEPGP_*`; the text says exactly what will happen ("Award 100 EP to 18 players in the raid?").
+- **Confirm every write** with a `StaticPopup` (R6). Popup names are `BPGP_*`; the text says exactly what will happen ("Award 100 EP to 18 players in the raid?").
 - **Windows** are movable, clamped, close on Escape, remember their position (`dbKey`), get the test-mode tint, and respect the UI scale setting.
 - **New settings** go in the Settings tab (`Modules/MainWindow/Settings.lua`) as a form row that calls the module's getter and setter. Never add an Options → AddOns page.
 - **Views stay thin:** a window turns manager data into rows and calls manager methods on clicks. Business rules (who can be awarded, what a decay does) stay in managers.
@@ -204,9 +204,9 @@ The full design language is in `docs/features/ui-redesign.md`. The short version
 
 ## 8. Libraries
 
-- All libraries are vendored in `BP_EPGP/Libs/` so a git clone runs as-is. `Libs/README.md` lists each one with its version and licence.
+- All libraries are vendored in `BPGP/Libs/` so a git clone runs as-is. `Libs/README.md` lists each one with its version and licence.
 - **Don't edit third-party libraries.** Work around them in our code. If a library must change, update it to a newer upstream version and note it in `Libs/README.md`.
-- `LibEventSourcing` is the exception: it's CLM source and ours to change. Keep its LibStub names as `BPEPGP-*`.
+- `LibEventSourcing` is the exception: it's CLM source and ours to change. Keep its LibStub names as `BPGP-*`.
 - Adding a library needs a reason (what we can't do with Blizzard APIs), its licence file, and an entry in `Libs/README.md` and `Libs/_filelist.xml`.
 - AceGUI, AceConfigDialog, lib-st, LibUIDropDownMenu and LibSharedMedia were removed in Phase 9f. Don't bring them back: build UI from `Modules/UI`.
 
@@ -229,7 +229,7 @@ There is no Lua interpreter or test harness for WoW UI code, so the static check
 ## 10. Testing in-game
 
 - **The user runs the in-game tests.** After every change that needs testing, give a **numbered, step-by-step checklist**: what to type or click and what they should see. Ask them to report BugSack errors with the step number.
-- **Test mode first** for anything that writes: `/bpepgp test` (reloads the UI), `/bpepgp testgroup 10`, *Simulate bids*. Test mode uses its own ledger and comm prefix.
+- **Test mode first** for anything that writes: `/bpgp test` (reloads the UI), `/bpgp testgroup 10`, *Simulate bids*. Test mode uses its own ledger and comm prefix.
 - **Check that live data is untouched:** note the minimap tooltip's "N events (0x…)" before and after a test-mode session.
 - Test as an officer and, where the change differs for them, as a raider (a non-officer character or the raider view).
 - Test at UI scale 0.64 and 1.15 when the change is visual.

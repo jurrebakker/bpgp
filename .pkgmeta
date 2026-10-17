@@ -1,6 +1,6 @@
-package-as: BP_EPGP
+package-as: BPGP
 
-# All libraries are vendored in BP_EPGP/Libs, so there are no externals.
+# All libraries are vendored in BPGP/Libs, so there are no externals.
 # Full release setup (embedded-libraries etc.): docs/release-plan-v1.md, section 10.4.
 
 ignore:
@@ -10,11 +10,11 @@ ignore:
   - CLAUDE.md
   - DEVELOPMENT-GUIDELINES.md
   - ARCHITECTURE.md
-  - BP_EPGP/_annotations
+  - BPGP/_annotations
 
 # The addon lives in a subfolder of the repository; ship only that folder.
 move-folders:
-  BP_EPGP/BP_EPGP: BP_EPGP
+  BPGP/BPGP: BPGP
 
 manual-changelog:
   filename: CHANGELOG.md

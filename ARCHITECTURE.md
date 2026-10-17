@@ -1,15 +1,15 @@
-# BP EPGP: architecture reference
+# BPGP: architecture reference
 
 > **Audience:** developers working on the addon.
 > Covers structure, key design patterns, data flow and module responsibilities.
-> BP EPGP is a fork of Core Loot Manager (CLM) v5.7.8, trimmed to EPGP only on retail (Midnight, 12.x). The internal Lua namespace is still `CLM`.
+> BPGP is a fork of Core Loot Manager (CLM) v5.7.8, trimmed to EPGP only on retail (Midnight, 12.x). The internal Lua namespace is still `CLM`. Players see effort points as **Boomer Points (BP)**; the code and these docs still call them EP.
 > Plans and decisions live in [`docs/`](docs/README.md).
 
 ---
 
 ## 1. Bird's-eye view
 
-BP EPGP manages EPGP loot for one guild: EP for raiding, GP for loot, priority PR = EP ÷ GP. Two architectural choices define it:
+BPGP manages EPGP loot for one guild: EP for raiding, GP for loot, priority PR = EP ÷ GP. Two architectural choices define it:
 
 1. **Event sourcing via LibEventSourcing.** Every change is appended to a ledger as an immutable entry. State (standings, raids, settings) is rebuilt by replaying the entries. Sync between guild members means syncing the ledger. Undo is another entry.
 2. **Managers and GUI kept apart.** Managers own state and business logic. GUI modules read from managers and change state only through manager methods, which write ledger entries.
@@ -20,13 +20,13 @@ BP EPGP manages EPGP loot for one guild: EP for raiding, GP for loot, priority P
 
 ```
 bp-epgp/
-├── BP_EPGP/                         # The addon (packaged as BP_EPGP)
-│   ├── BP_EPGP.toc
+├── BPGP/                         # The addon (packaged as BPGP)
+│   ├── BPGP.toc
 │   ├── Core.lua                     # Namespace, staged initialization
 │   ├── Utils.lua                    # CLM.UTILS, retail API wrappers, Midnight helpers
 │   ├── MinimapIcon.lua              # LibDBIcon button + tooltip
 │   ├── Locale/                      # enUS only (missing keys fall back to the key)
-│   ├── Media/Icons/                 # bp-epgp-32.png
+│   ├── Media/Icons/                 # bpgp-32.png
 │   ├── Libs/                        # All libraries vendored (see Libs/README.md)
 │   └── Modules/
 │       ├── Common/                  # ACL, Comms, ConfigManager, Database, EventManager, Hooks, Logger, TestMode, Version
@@ -52,7 +52,7 @@ Phase 9 of the release plan replaces the AceGUI/lib-st windows with Blizzard tem
 
 ## 3. Global namespace
 
-All files share one addon table via `local name, CLM = ...`. It's also exposed as `_G.BPEPGP`.
+All files share one addon table via `local name, CLM = ...`. It's also exposed as `_G.BPGP`.
 
 | Namespace | Contents |
 |-----------|----------|
@@ -67,11 +67,11 @@ All files share one addon table via `local name, CLM = ...`. It's also exposed a
 | `CLM.LOG` | Logger (LibLogger) |
 | `CLM.L` | Localisation table |
 
-**Coexisting with CLM:** the guild still runs the real CLM, and both addons can be loaded together. That's why everything global has a BP EPGP name:
-- SavedVariables: `BPEPGP_DB`, `BPEPGP_Logs`, `BPEPGP_Minimap`;
-- comm prefix: `BPEP` (`BPEPT` in test mode);
-- frames and popups: `BPEPGP_*`;
-- AceGUI widget types, and the LibStub names of the forked libraries: `BPEPGP-EventSourcing/*`, `BPEPGP-EventDispatcher`.
+**Coexisting with CLM:** the guild still runs the real CLM, and both addons can be loaded together. That's why everything global has a BPGP name:
+- SavedVariables: `BPGP_DB`, `BPGP_Logs`, `BPGP_Minimap`;
+- comm prefix: `BPGP` (`BPGPT` in test mode);
+- frames and popups: `BPGP_*`;
+- AceGUI widget types, and the LibStub names of the forked libraries: `BPGP-EventSourcing/*`, `BPGP-EventDispatcher`.
 
 ---
 
@@ -137,21 +137,21 @@ CLM.MODULES.LedgerManager:Submit(MyEntry:new(uid, 10), true)
 
 ## 6. Database
 
-`CLM.MODULES.Database` wraps the SavedVariables table `BPEPGP_DB`. The key is `retail <faction> <realm> <guild>` (lowercase).
+`CLM.MODULES.Database` wraps the SavedVariables table `BPGP_DB`. The key is `retail <faction> <realm> <guild>` (lowercase).
 
 | Accessor | Storage | Purpose |
 |----------|---------|---------|
-| `DB:Global()` | `BPEPGP_DB.global` | Account-wide settings |
-| `DB:Personal(table, schema)` | `BPEPGP_DB[key].personal[table]` | Personal data and settings |
-| `DB:GUI(table, schema)` | `BPEPGP_DB[key].personal.gui[table]` | Window positions and GUI state |
-| `DB:Ledger()` | `BPEPGP_DB[key].ledger`, or `.ledger_test` in test mode | The event log |
-| `DB:Server()` | `BPEPGP_DB[key]` | The whole guild-scoped table |
+| `DB:Global()` | `BPGP_DB.global` | Account-wide settings |
+| `DB:Personal(table, schema)` | `BPGP_DB[key].personal[table]` | Personal data and settings |
+| `DB:GUI(table, schema)` | `BPGP_DB[key].personal.gui[table]` | Window positions and GUI state |
+| `DB:Ledger()` | `BPGP_DB[key].ledger`, or `.ledger_test` in test mode | The event log |
+| `DB:Server()` | `BPGP_DB[key]` | The whole guild-scoped table |
 
 The optional `schema` fills in missing keys on load.
 
 **Test mode** is fixed for a session; switching reloads the UI ([docs/features/test-mode.md](docs/features/test-mode.md)). In test mode:
 - `DB:Ledger()` returns the test ledger;
-- comms use the `BPEPT` prefix;
+- comms use the `BPGPT` prefix;
 - chat is printed locally instead of sent.
 
 ---
@@ -160,7 +160,7 @@ The optional `schema` fills in missing keys on load.
 
 ### Roster (`CLM.MODELS.Roster`)
 
-There is **one roster**, created with "Set up BP EPGP" in the Standings tab.
+There is **one roster**, created with "Set up BPGP" in the Standings tab.
 
 ```
 Roster
@@ -248,7 +248,7 @@ Each works for selected players, the whole roster, or the current raid. PR is EP
 - `Modules/MainWindow/MainWindow.lua` hosts the main window (`CLM.GUI.MainWindow`): a portrait frame with bottom tabs, a page header, a footer with the sync state, and a syncing overlay. Pages register with `MainWindow:RegisterPage` and implement `Build`, `Refresh` and optionally `OnShow`. Officers get Standings, Auction, History, Raids, Roster, Audit and Settings; raiders get Standings, History, Raids and Settings. While an auction runs, a Bid button right of the page header reopens the Bidding window (`MainWindow:UpdateBidButton`, called by the Bidding window on auction start and end).
 - Refreshes are coalesced to one per frame and only run while the window is visible (ledger updates, group and guild roster changes).
 - Every write asks first through `UI.Confirm` (a shared `StaticPopup`).
-- The Settings tab (`Settings.lua`) is built with `UI.CreateForm` and calls the modules' own getters and setters. Guild settings and gear values are ledger entries (`RosterManager:SetRosterConfiguration`, `SetRosterDefaultSlotTierValue`, …). `ConfigManager` only registers `/bpepgp` slash commands.
+- The Settings tab (`Settings.lua`) is built with `UI.CreateForm` and calls the modules' own getters and setters. Guild settings and gear values are ledger entries (`RosterManager:SetRosterConfiguration`, `SetRosterDefaultSlotTierValue`, …). `ConfigManager` only registers `/bpgp` slash commands.
 - The auctioning UI is the Auction tab (`MainWindow/Auction.lua`, R12); `CLM.GUI.AuctionManager` is a small adapter that opens it.
 - Separate windows, all on `Modules/UI`: Bidding (`BiddingWindow.lua`), Award (`AwardGUI.lua`), Auction history, Trade list and Import standings (each module's `GUI.lua`).
 - The rule: GUI reads from managers and writes only through manager methods.
@@ -272,5 +272,5 @@ Shared pieces for every window are in `Modules/UI/` ([docs/features/ui-redesign.
 3. **Manager** initialized in `CORE:_InitializeFeatures()` at the right position.
 4. **GUI** in `CLM.GUI`. It reads from managers and writes through them.
 5. **ACL:** gate officer actions with `ACL:CheckLevel(CONSTANTS.ACL.LEVEL.OFFICER, sender)`, also on receive.
-6. **Globals** get BP EPGP names (see §3). Never add packager-only blocks (`@do-not-package@`, `@debug@`).
+6. **Globals** get BPGP names (see §3). Never add packager-only blocks (`@do-not-package@`, `@debug@`).
 7. **Check:** run `python -I scripts/check_addon.py`, then test in-game, in **test mode** first.

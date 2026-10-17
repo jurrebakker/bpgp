@@ -1,4 +1,4 @@
-# Claude Design brief: BP EPGP UI redesign
+# Claude Design brief: BPGP UI redesign
 
 Paste everything below the line into Claude Design, and attach the screenshots listed under "Attachments".
 
@@ -6,7 +6,7 @@ Paste everything below the line into Claude Design, and attach the screenshots l
 
 ## Goal
 
-Redesign the UI of **BP EPGP**, a World of Warcraft addon, so it looks and feels like a native, high-quality Blizzard window instead of a generic addon. Today it's built with the AceGUI library: flat dark panels, generic red buttons everywhere, small dropdown arrows, cramped sidebars, plain tables. I want it to sit next to Blizzard's own frames (Guild & Communities, Group Finder, Auction House, Great Vault, Character frame) and look like it belongs.
+Redesign the UI of **BPGP**, a World of Warcraft addon, so it looks and feels like a native, high-quality Blizzard window instead of a generic addon. Today it's built with the AceGUI library: flat dark panels, generic red buttons everywhere, small dropdown arrows, cramped sidebars, plain tables. I want it to sit next to Blizzard's own frames (Guild & Communities, Group Finder, Auction House, Great Vault, Character frame) and look like it belongs.
 
 Deliver mockups and a component spec that a developer can rebuild **in Lua with Blizzard's own frame templates and texture atlases**. Don't design anything that needs custom art beyond one small addon icon.
 
@@ -41,9 +41,9 @@ Deliver mockups and a component spec that a developer can rebuild **in Lua with 
 
 Sizes are today's values; you can change them. Planned: the main window becomes **resizable**, minimum width around **1050 px**, to fit 9 tabs.
 
-### 1. Main window "BP EPGP" (everyone)
+### 1. Main window "BPGP" (everyone)
 
-Opened from the minimap icon or `/bpepgp gui`. Today it's 800×572: a table on the left and a scrollable options sidebar on the right. Tabs today: **Standings, History, Raids, Manage roster, Audit**. Tabs planned later: **Settings, Guild settings, Gear values, Advanced**. Raiders see every tab but can't edit; officer-only controls are hidden for them.
+Opened from the minimap icon or `/bpgp gui`. Today it's 800×572: a table on the left and a scrollable options sidebar on the right. Tabs today: **Standings, History, Raids, Manage roster, Audit**. Tabs planned later: **Settings, Guild settings, Gear values, Advanced**. Raiders see every tab but can't edit; officer-only controls are hidden for them.
 
 **1a. Standings tab** (the most used screen)
 - **Table:** class icon · Name (class colour) · **PR** (green if > 0, red if < 0, sorted high→low by default) · EP · GP. About 25 visible rows, multi-select. Your own row is highlighted.
@@ -53,14 +53,14 @@ Opened from the minimap icon or `/bpepgp gui`. Today it's 800×572: a table on t
   - the latest point changes (EP/GP, note, date).
 - **Right-click a player (officers):** "Remove from roster".
 - **Officer sidebar:**
-  - "Set up BP EPGP" button. It only appears when no roster exists yet, before the first use.
+  - "Set up BPGP" button. It only appears when no roster exists yet, before the first use.
   - **Action context** dropdown: *Selected players / Whole roster / Current raid*.
   - **Note** text field (max 25 characters; goes into history).
   - **EP** number field + **Award EP** button.
   - **GP** number field + **Award GP** button.
   - **Decay %** number field + **Decay** button + type dropdown (*EP/GP*, *EP*, *GP*).
   - Every award or decay asks for confirmation ("Award 100 EP to 5 selected players?").
-- **Empty state:** no roster yet (officer: setup button; raider: "Waiting for an officer to set up BP EPGP").
+- **Empty state:** no roster yet (officer: setup button; raider: "Waiting for an officer to set up BPGP").
 
 **1b. History tab**
 - **Table:** icon (item icon for loot, a coin/points icon for EP/GP) · Info (item link or reason + note) · Value (green, with "EP"/"GP") · Date · Player.
@@ -171,7 +171,7 @@ It opens automatically when an auction starts. Today the title reads "Bidding | 
 ### 7. Minimap button
 - Our round icon. Left-click opens the main window. Orange tint in test mode.
 - **Tooltip:**
-  - "BP EPGP vX",
+  - "BPGP vX",
   - "TEST MODE" (orange, when on),
   - sync status ("In-Sync" green / "Sync ongoing" yellow / "Incoherent state" red),
   - number of events.
@@ -181,7 +181,7 @@ It opens automatically when an auction starts. Today the title reads "Bidding | 
 
 ## Attachments (screenshots)
 
-Current BP EPGP UI:
+Current BPGP UI:
 - Standings tab (officer view, with sidebar)
 - History, Raids, Manage roster, Audit tabs
 - Auctioning window during an auction
@@ -204,7 +204,7 @@ Blizzard reference frames:
    - realistic EP/GP/PR (e.g. EP 1250, GP 830, PR 1.51),
    - Midnight-era item names.
    For the main window, give both an officer view and a raider (read-only) view.
-3. **States:** empty, loading/syncing ("BP EPGP is processing…" today), test mode, read-only, auction running vs finished, bid accepted/denied.
+3. **States:** empty, loading/syncing ("BPGP is processing…" today), test mode, read-only, auction running vs finished, bid accepted/denied.
 4. A **component list** with sizes, paddings and the Blizzard template/atlas to use for each, so it can be built in Lua.
 5. Suggestions for what to **simplify or merge** (fewer clicks during raids), with the reasoning.
 

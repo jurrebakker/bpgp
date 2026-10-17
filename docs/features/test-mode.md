@@ -5,7 +5,7 @@
 
 ## Problem
 
-Everything in BP EPGP writes to the **live ledger**, and the live ledger syncs to the whole guild. Testing an EP award, a decay, an auction or the standings import today means doing it for real: everyone receives it, and the only way back is an undo that stays visible in the Audit tab forever.
+Everything in BPGP writes to the **live ledger**, and the live ledger syncs to the whole guild. Testing an EP award, a decay, an auction or the standings import today means doing it for real: everyone receives it, and the only way back is an undo that stays visible in the Audit tab forever.
 
 There is also no way to test alone. Auctions need you to be raid leader/assistant in a real raid (`RaidManager:IsAllowedToAuction`), loot has to come from a corpse or your bags, and bids need other players.
 
@@ -18,12 +18,12 @@ There is also no way to test alone. Auctions need you to be raid leader/assistan
 
 ## Proposal: an isolated test environment
 
-A **Test mode** switch (Advanced tab + `/bpepgp test`). While it's on, BP EPGP runs against a completely separate world:
+A **Test mode** switch (Advanced tab + `/bpgp test`). While it's on, BPGP runs against a completely separate world:
 
 | Area | Live mode | Test mode |
 |---|---|---|
-| Ledger | `BPEPGP_DB` live section | separate **test** section in the same SavedVariables. Live data is never read or written. |
-| Sync / auction comms | prefix `BPEP…` | prefix `BPEPT…`. Only other clients in test mode see this traffic, and live clients never do. |
+| Ledger | `BPGP_DB` live section | separate **test** section in the same SavedVariables. Live data is never read or written. |
+| Sync / auction comms | prefix `BPGP…` | prefix `BPGPT…`. Only other clients in test mode see this traffic, and live clients never do. |
 | Chat output (raid warnings, award announcements) | RAID_WARNING / RAID / GUILD | printed locally with a `[TEST]` prefix only (T3). Raid warnings are never sent in test mode. |
 | Permissions | "Is Officer" ranks | **the same.** Test mode never loosens who may write data. |
 | Indicator | — | orange **TEST MODE** banner on the main window and a different minimap icon colour |
@@ -52,8 +52,8 @@ Because test data lives on its own comm prefix, **several people can test togeth
 
 ## Design notes
 
-- **Isolation is enforced structurally:** the mode is fixed when the addon starts (switching reloads the UI), `Database:Ledger()` returns the `ledger_test` section in test mode, and every comm prefix is `BPEPT…` instead of `BPEP…`. A live client never registers a test prefix, so it can't receive test data, and a test client never holds a reference to the live ledger table. This replaces the planned `test` flag in the ledger header: it gives the same guarantee without changing the entry format.
-- **Comm prefix length:** WoW allows 16 characters. `BPEPT` + channel name must fit, so channel names stay ≤ 11 characters.
+- **Isolation is enforced structurally:** the mode is fixed when the addon starts (switching reloads the UI), `Database:Ledger()` returns the `ledger_test` section in test mode, and every comm prefix is `BPGPT…` instead of `BPGP…`. A live client never registers a test prefix, so it can't receive test data, and a test client never holds a reference to the live ledger table. This replaces the planned `test` flag in the ledger header: it gives the same guarantee without changing the entry format.
+- **Comm prefix length:** WoW allows 16 characters. `BPGPT` + channel name must fit, so channel names stay ≤ 11 characters.
 - **Switching modes** reloads the UI. Switching during a running auction is blocked.
 - The simulation tools are normal, shipped code, guarded by `TestMode:IsOn()`, so they behave the same in a git clone and in a packaged build. That's the opposite of the CLM dev fakes, which only existed in unpackaged builds.
 
@@ -62,7 +62,7 @@ Because test data lives on its own comm prefix, **several people can test togeth
 - **Simulated raid group:** `TestMode:GetSimulatedGroup()` returns you (raid leader) plus guild members, roster members first. `RaidManager` reads it instead of `GetRaidRosterInfo` / `IsInRaid()` while you're in test mode and not in a real group. It's stored in the personal DB, so it survives a reload.
 - **Solo auctions:** in test mode without a real group, `Comms:Send` turns RAID/PARTY traffic into a whisper to yourself, so your own bidding window receives the auction. Whispers to simulated players are dropped, so real guild members never receive test traffic.
 - **Simulated bidders:** each other raid member gets a random tier bid, off-spec bid, pass or no response per item. Bids are passed straight to `AuctionManager:HandleSubmitBid`, the same path as a received bid.
-- **In a real group** (several testers together), the real raid roster and real comms are used, on the `BPEPT` prefix.
+- **In a real group** (several testers together), the real raid roster and real comms are used, on the `BPGPT` prefix.
 
 ## Effect on the feature list
 

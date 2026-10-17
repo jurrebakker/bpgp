@@ -171,7 +171,7 @@ The Rank Permissions screen in 12.x no longer has separate *View officer note* /
 
 Our guild's ranks:
 
-| # | Rank | Is Officer | Role in BP EPGP |
+| # | Rank | Is Officer | Role in BPGP |
 |---|---|---|---|
 | 1 | Guild Master | (always) | GUILD_MASTER |
 | 2 | Officer | ✅ | officer |

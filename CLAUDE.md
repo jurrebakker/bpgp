@@ -1,4 +1,4 @@
-# BP EPGP: notes for Claude
+# BPGP: notes for Claude
 
 EPGP loot addon for our guild, **WoW retail (Midnight, 12.x) only**. It's a fork of Core Loot Manager (CLM) v5.7.8, stripped down to EPGP only. The plan and every decision live in `docs/`. Read `docs/release-plan-v1.md` (phases), `docs/sync-and-security.md` and `docs/features/*` before changing behaviour.
 
@@ -18,9 +18,10 @@ EPGP loot addon for our guild, **WoW retail (Midnight, 12.x) only**. It's a fork
 
 ## Layout
 
-- `BP_EPGP/` is the addon (was `ClassicLootManager/`). The internal Lua namespace stays `CLM` in v1 to keep diffs reviewable.
-- `BP_EPGP/Libs/` holds all libraries, vendored (see `Libs/README.md`). Don't edit third-party libs. `LibEventSourcing` is the exception: it's part of the CLM source and is ours to change (Phase 8 hardened it).
-- `BP_EPGP/Modules/UI/` holds the shared Blizzard-template UI pieces for the redesign: `UI.lua` (windows, tabs, buttons, inputs, dropdown, menus, item buttons, progress bar) and `List.lua` (ScrollBox list with headers, sort and selection). `Demo.lua` is `/bpepgp uitest`. New windows are built from these, not from AceGUI.
+- `BPGP/` is the addon (was `ClassicLootManager/`). The internal Lua namespace stays `CLM` in v1 to keep diffs reviewable.
+- **Names:** the addon is BPGP, and effort points are called **Boomer Points (BP)** in everything players see (PR = BP/GP). Code, ledger fields and the internal docs still say EP (`ep`, `UI.COLOR.EP`); write "BP" in new `CLM.L[...]` strings.
+- `BPGP/Libs/` holds all libraries, vendored (see `Libs/README.md`). Don't edit third-party libs. `LibEventSourcing` is the exception: it's part of the CLM source and is ours to change (Phase 8 hardened it).
+- `BPGP/Modules/UI/` holds the shared Blizzard-template UI pieces for the redesign: `UI.lua` (windows, tabs, buttons, inputs, dropdown, menus, item buttons, progress bar) and `List.lua` (ScrollBox list with headers, sort and selection). `Demo.lua` is `/bpgp uitest`. New windows are built from these, not from AceGUI.
 - `scripts/check_addon.py` checks that TOC/XML references resolve, that no packager markers remain, and that Lua blocks are balanced.
 - See `ARCHITECTURE.md` for the module map.
 
@@ -29,15 +30,15 @@ EPGP loot addon for our guild, **WoW retail (Midnight, 12.x) only**. It's a fork
 - **Event sourcing.** State (standings, raids, settings) is never written directly. Every change is a ledger entry submitted with `CLM.MODULES.LedgerManager:Submit(entry)`, and state is rebuilt by replaying entries through mutators registered with `LedgerManager:RegisterEntryType`. Undo = `LedgerManager:Remove(entry)` (an ignore entry).
 - **Sync.** Officers broadcast week hashes to GUILD; clients request and merge missing weeks (`Libs/LibEventSourcing/source/ListSync.lua`). Receivers check the *sender's* guild rank (`Modules/Common/ACL`). A bad entry is skipped, not fatal. Checksums include each entry's content.
 - **Permissions.** One officer level: guild ranks with "Is Officer" (rank flags 11/12, verified in-game). Every officer check must also be enforced on **receive**, not only in the UI.
-- **One roster.** It's created with "Set up BP EPGP" in the Standings tab. Only guild members can be on it; raids never add players.
+- **One roster.** It's created with "Set up BPGP" in the Standings tab. Only guild members can be on it; raids never add players.
 - **Auctions** are always Open, with named tier buttons (5 tiers, each with its own GP), OS, Pass and Cancel.
 - **Test mode** (`Modules/Common/TestMode`) is fixed per session; switching reloads the UI. In test mode:
   - the ledger is `ledger_test`;
-  - comms use the `BPEPT` prefix;
+  - comms use the `BPGPT` prefix;
   - chat is printed locally;
   - a simulated raid group and bidders are available.
 - **Startup** is staged (`Core.lua`, `CORE:_Initialize`, stages 0.1 s apart).
-- **GUI:** every window is built on `Modules/UI` (Blizzard templates). The main window is `Modules/MainWindow/` (pages register with `MainWindow:RegisterPage`). AceGUI, lib-st and LibUIDropDownMenu are gone (9f); only AceConfigCmd remains, for the `/bpepgp` slash commands.
+- **GUI:** every window is built on `Modules/UI` (Blizzard templates). The main window is `Modules/MainWindow/` (pages register with `MainWindow:RegisterPage`). AceGUI, lib-st and LibUIDropDownMenu are gone (9f); only AceConfigCmd remains, for the `/bpgp` slash commands.
 
 ## Rules
 
@@ -48,12 +49,12 @@ EPGP loot addon for our guild, **WoW retail (Midnight, 12.x) only**. It's a fork
   - secret values: check with `UTILS.IsSecret`.
 - **Blizzard templates can change between patches.** Create frames with fallbacks (`UI.CreateWithTemplates`), so a missing template degrades the look instead of breaking the load.
 - **We start a fresh ledger in v1.0**, so entry types and fields may change until the 1.0 release. After 1.0, entry formats are frozen: an unknown or changed entry type breaks replay for everyone. `RosterConfiguration` fields are stored by position in raid entries, so add new ones at the end only.
-- **Coexist with CLM.** The guild still runs the real CLM, and both addons may be loaded together. Anything global must have a BP EPGP name:
-  - SavedVariables: `BPEPGP_*`;
-  - comm prefix: `BPEP`;
-  - frame and popup names: `BPEPGP_*`;
+- **Coexist with CLM.** The guild still runs the real CLM, and both addons may be loaded together. Anything global must have a BPGP name:
+  - SavedVariables: `BPGP_*`;
+  - comm prefix: `BPGP`;
+  - frame and popup names: `BPGP_*`;
   - AceGUI widget types and AceConfig app names;
-  - the LibStub names of our forked libraries: `BPEPGP-EventSourcing/*`, `BPEPGP-EventDispatcher`.
+  - the LibStub names of our forked libraries: `BPGP-EventSourcing/*`, `BPGP-EventDispatcher`.
 
   LibStub shares libraries between addons, so a forked lib under CLM's name would be silently swapped for CLM's copy.
 - Comment density and naming follow the existing code.
@@ -62,7 +63,7 @@ EPGP loot addon for our guild, **WoW retail (Midnight, 12.x) only**. It's a fork
 
 - `python -I scripts/check_addon.py` must report 0 problems.
 - luacheck (config `.luacheckrc`) runs in CI (`.github/workflows/lint.yml`). It isn't installed locally, so add any new WoW globals to `.luacheckrc` by hand.
-- **In-game testing is done by the user.** After every change that needs testing, give a **numbered step-by-step checklist**: what to type or click, and what they should see. Ask them to report BugSack errors with the step number. Do risky things in **test mode** first (`/bpepgp test`, `/bpepgp testgroup 10`, *Simulate bids*). To check that live data is untouched, compare the minimap tooltip's "N events (0x…)" before and after.
+- **In-game testing is done by the user.** After every change that needs testing, give a **numbered step-by-step checklist**: what to type or click, and what they should see. Ask them to report BugSack errors with the step number. Do risky things in **test mode** first (`/bpgp test`, `/bpgp testgroup 10`, *Simulate bids*). To check that live data is untouched, compare the minimap tooltip's "N events (0x…)" before and after.
 - The addon folder is linked into `C:\Program Files (x86)\World of Warcraft\_retail_\Interface\AddOns\` with a directory junction, so `/reload` picks up changes. Adding or removing files that WoW loads by itself (like `Bindings.xml`) needs a full game restart.
 
 ## Tooling notes (this machine)

@@ -1,6 +1,6 @@
-# BP EPGP docs
+# BPGP docs
 
-Planning documents for BP EPGP. Code-level documentation stays next to the code (`ARCHITECTURE.md`, comments).
+Planning documents for BPGP. Code-level documentation stays next to the code (`ARCHITECTURE.md`, comments).
 
 **Where are we?** See the status table at the top of [release-plan-v1.md §6](release-plan-v1.md#6-work-plan-phases).
 
