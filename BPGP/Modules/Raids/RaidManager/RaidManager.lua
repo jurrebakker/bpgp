@@ -394,6 +394,34 @@ function RaidManager:EndRaid(raid)
     end
 end
 
+-- Raid feedback 4 (2026-10-18): asks before ending the raid and warns when awarded items still
+-- wait for a trade. With skipConfirm the raid ends right away unless there are pending trades.
+---@param raid Raid
+---@param skipConfirm boolean?
+function RaidManager:ConfirmEndRaid(raid, skipConfirm)
+    local raidUid = raid:UID()
+    -- Look the raid up again on accept: a ledger replay in the meantime replaces the Raid objects
+    local function EndIt()
+        local current = self:GetRaidByUid(raidUid)
+        if current and current:IsActive() then
+            self:EndRaid(current)
+        else
+            LOG:Message(CLM.L["You can only end an active raid."])
+        end
+    end
+    local players, items = CLM.MODULES.TradeHelper:GetPending()
+    if #players == 0 then
+        if skipConfirm then
+            EndIt()
+        else
+            CLM.UI.Confirm(string.format(CLM.L["End raid %s?"], raid:Name()), EndIt)
+        end
+        return
+    end
+    CLM.UI.Confirm(string.format(CLM.L["%s awarded item(s) still need to be traded to: %s.\n\nEnd raid %s anyway?"],
+        items, table.concat(players, ", "), raid:Name()), EndIt, CLM.L["End raid"], CANCEL)
+end
+
 local END_OF_RAID_DECAY = 10
 
 ---@param raid Raid

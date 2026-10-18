@@ -384,12 +384,17 @@ local function BuildControlRow(self, panel)
         self:Refresh()
     end)
     self.rollButton:SetPoint("RIGHT", self.clearButton, "LEFT", -S.S, 0)
+    self.lootRollsButton = UI.CreateIconButton(panel, "Interface\\Icons\\INV_Misc_Bag_10", CLM.L["Add from loot rolls: the items you won at the last boss that aren't in the list yet"], function()
+        Manager():AddFromLootRolls()
+        self:Refresh()
+    end)
+    self.lootRollsButton:SetPoint("RIGHT", self.rollButton, "LEFT", -S.S, 0)
     if UI.IsTestMode() then
         self.simulateButton = UI.CreateButton(panel, CLM.L["Simulate bids"], 100, function()
             CLM.MODULES.TestMode:SimulateBids()
             self:Refresh()
         end)
-        self.simulateButton:SetPoint("RIGHT", self.rollButton, "LEFT", -S.S, 0)
+        self.simulateButton:SetPoint("RIGHT", self.lootRollsButton, "LEFT", -S.S, 0)
     end
     return y - S.INPUT - S.M
 end

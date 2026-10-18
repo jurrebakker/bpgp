@@ -81,7 +81,9 @@ function RaidReminders:CheckStart()
     self.db.startShownFor = raid:UID()
     Show(self, string.format(CLM.L["Raid %s is created but not started yet. Start it now? Raid members are added to it and the on-time bonus is awarded."], raid:Name()),
         CLM.L["Start raid"], function()
-            if raidManager:GetRaid() == raid then raidManager:StartRaid(raid) end
+            -- By UID: a ledger replay since the reminder was shown replaces the Raid objects
+            local current = raidManager:GetRaidByUid(raid:UID())
+            if current then raidManager:StartRaid(current) end
         end)
 end
 
@@ -94,7 +96,9 @@ function RaidReminders:CheckEnd()
     if InRaidGroup() then return end
     Show(self, string.format(CLM.L["You left the raid group, but raid %s is still in progress. End it now?"], raid:Name()),
         CLM.L["End raid"], function()
-            if raidManager:GetRaid() == raid then raidManager:EndRaid(raid) end
+            -- By UID: a ledger replay since the reminder was shown replaces the Raid objects
+            local current = raidManager:GetRaidByUid(raid:UID())
+            if current then raidManager:ConfirmEndRaid(current, true) end
         end)
 end
 

@@ -71,7 +71,7 @@ local function ShowRowMenu(self, row, rowFrame)
                 function() CLM.MODULES.RaidManager:StartRaid(raid) end)
         end },
         { text = CLM.L["End raid"], disabled = not raid:IsActive(), func = function()
-            UI.Confirm(string.format(CLM.L["End raid %s?"], name), function() CLM.MODULES.RaidManager:EndRaid(raid) end)
+            CLM.MODULES.RaidManager:ConfirmEndRaid(raid)
         end },
         { text = CLM.L["Join raid"], disabled = not raid:IsActive(), func = function()
             UI.Confirm(string.format(CLM.L["Join raid %s?"], name), function() CLM.MODULES.RaidManager:JoinRaid(raid) end)
