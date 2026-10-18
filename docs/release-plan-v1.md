@@ -340,7 +340,7 @@ Built from the Claude Design spec (`docs/design/`). Decisions R1-R11 in ui-redes
 - [x] New README (what it is, install, officer setup, raider usage), CHANGELOG starting at 1.0.0. *(README rewritten 2026-10-17; CHANGELOG is kept up to date per phase.)*
 - [ ] Packaging: BigWigs packager with a new `.pkgmeta` (no externals, libs are vendored), see §10.4.
 - [x] Release pipeline, built 2026-10-18: `.github/workflows/release.yml` (`v*` tag → addon zip release). BPGP Updater has its own repo and releases ([Blood-Promise/bpgp-updater](https://github.com/Blood-Promise/bpgp-updater)). Replaces the CurseForge plan (§10).
-- [ ] Tag `v1.0.0` and check the GitHub Release; raiders install with BPGP Updater. Full flow in §10.
+- [x] Tag `v1.0.0` and check the GitHub Release; raiders install with BPGP Updater. Full flow in §10. *(Released 2026-10-18, your call: before the Phase 10 test run. From here on, ledger entry formats are frozen (CLAUDE.md "Rules"); fixes found in the test run go out as 1.0.x.)*
 - [ ] Guild rollout: officers first, import standings, then raiders install.
 
 ---
