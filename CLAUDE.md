@@ -67,7 +67,10 @@ EPGP loot addon for our guild, **WoW retail (Midnight, 12.x) only**. It's a fork
 - luacheck (config `.luacheckrc`) runs in CI (`.github/workflows/lint.yml`). It isn't installed locally, so add any new WoW globals to `.luacheckrc` by hand. `lint` is a required check on master: the job always runs, but skips the addon checks on PRs that only touch `updater/` or docs.
 - `.github/workflows/updater-build.yml` builds the updater on PRs (and master pushes) that touch `updater/`, and keeps the exe as an artifact for 14 days.
 - **In-game testing is done by the user.** After every change that needs testing, give a **numbered step-by-step checklist**: what to type or click, and what they should see. Ask them to report BugSack errors with the step number. Do risky things in **test mode** first (`/bpgp test`, `/bpgp testgroup 10`, *Simulate bids*). To check that live data is untouched, compare the minimap tooltip's "N events (0x…)" before and after.
-- The addon folder is linked into `C:\Program Files (x86)\World of Warcraft\_retail_\Interface\AddOns\` with a directory junction, so `/reload` picks up changes. Adding or removing files that WoW loads by itself (like `Bindings.xml`) needs a full game restart.
+- **How the addon gets into WoW on this machine (since 2026-10-18):** the repo lives in `C:\Users\patri\dev\bpgp`, and `E:\Games\Blizzard\World of Warcraft\_retail_\Interface\AddOns\BPGP` is a normal folder that **BPGP Updater installs and keeps up to date from the GitHub releases**. So the game runs the latest release, not the branch you're working on. To test a change in-game before it's released:
+  - **Test zip (preferred):** zip the `BPGP` folder as `BPGP/...` with a version in the TOC (as `--test-zip` expects) and run the updater with `--test-zip <zip>`, then Install. The next real release replaces it again.
+  - **Temporary junction:** replace `AddOns\BPGP` with a junction to `C:\Users\patri\dev\bpgp\BPGP`, so `/reload` picks up every edit. The updater leaves a junction alone. Remove only the link afterwards (`[System.IO.Directory]::Delete(path)`, never a recursive delete, which would follow the link into the repo), then let the updater install the release again.
+  - Adding or removing files that WoW loads by itself (like `Bindings.xml`) needs a full game restart.
 
 ## Tooling notes (this machine)
 
