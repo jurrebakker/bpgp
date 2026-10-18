@@ -729,14 +729,16 @@ end
 --[[
  * Confirmations *
     Every write asks first (ui-redesign.md R6). One shared StaticPopup; the text says exactly
-    what will happen, onAccept runs on Accept.
+    what will happen, onAccept runs on Accept. The buttons say Yes / No unless other texts are given.
 ]]--
 
 local CONFIRM_POPUP = "BPGP_CONFIRM"
 
 ---@param text string
 ---@param onAccept function
-function UI.Confirm(text, onAccept)
+---@param acceptText string?
+---@param cancelText string?
+function UI.Confirm(text, onAccept, acceptText, cancelText)
     if not StaticPopupDialogs[CONFIRM_POPUP] then
         StaticPopupDialogs[CONFIRM_POPUP] = {
             text = "%s",
@@ -753,6 +755,9 @@ function UI.Confirm(text, onAccept)
         }
     end
     StaticPopup_Hide(CONFIRM_POPUP)
+    local dialog = StaticPopupDialogs[CONFIRM_POPUP]
+    dialog.button1 = acceptText or YES
+    dialog.button2 = cancelText or NO
     StaticPopup_Show(CONFIRM_POPUP, text, nil, onAccept)
 end
 

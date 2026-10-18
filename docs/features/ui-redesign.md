@@ -32,6 +32,9 @@ The design proposes a few things that conflict with earlier choices. Your calls:
 | R20 | (2026-10-18, raid feedback) Which looted items fill the auction list | **Only tradeable ones**: not bound, or bound with the trade timer. The rarity and ignore filters still apply. |
 | R21 | (2026-10-18, raid feedback) Raid reminders | **A small draggable window.** *Start raid?* for the creator of a not-yet-started raid, once per raid, on entering a raid instance (right away when created inside one). *End raid?* for the officer who started a raid still in progress, on leaving the raid group. |
 | R22 | (2026-10-18, raid feedback) Items the auctioneer awards to themselves | **Not put on the trade list.** |
+| R23 | (2026-10-18, raid feedback 3) Weekly decay after the raid | **Ending a raid with *Need on everything* on asks "Decay 10% BP & GP to everyone in roster?"** (Yes / Not now). Yes decays the whole roster (total, like the Standings decay). |
+| R24 | (2026-10-18, raid feedback 3) *Need on everything* when you are not raid leader or assistant | **Turning it on then asks for confirmation first** (a warning popup; cancelling leaves it off). |
+| R25 | (2026-10-18, raid feedback 3) Auction tab: loading the next item | **The preselected winner (the first player in the bid list) is highlighted in the list**, so the selection always matches who Award gives the item to. |
 
 Things in the design that conflict with earlier decisions are left out without asking:
 - the "Set alt" right-click item (alt linking removed in Phase 3);
