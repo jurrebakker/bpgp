@@ -293,11 +293,28 @@ function TradeHelper:GetTracked()
     return self.tracking
 end
 
+-- Players that still have awarded items waiting for a trade, and how many items in total
+---@return table players
+---@return number items
+function TradeHelper:GetPending()
+    local players, items = {}, 0
+    for player, trackedList in pairs(self.tracking) do
+        if #trackedList > 0 then
+            tinsert(players, Ambiguate(player, "none"))
+            items = items + #trackedList
+        end
+    end
+    table.sort(players)
+    return players, items
+end
+
 ---@param itemLink string
 ---@param target string
 function TradeHelper:Handle(itemLink, target)
     -- Nothing to trade when the auctioneer wins the item themselves
     if UTILS.Disambiguate(target) == UTILS.whoami() then return end
+    -- Raid feedback 4 (2026-10-18): ask the winner to open a trade
+    UTILS.SendChatMessage(string.format(CLM.L["You won %s. Please open a trade with me to receive it."], tostring(itemLink)), "WHISPER", nil, target)
     if not self:IsIgnored(itemLink) then
         if CLM.MODULES.AuctionManager:GetAutoTrade() then
             self:Track(itemLink, target)

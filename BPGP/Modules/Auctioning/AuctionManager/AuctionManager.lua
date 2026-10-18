@@ -197,25 +197,75 @@ local function AddItemToAuctionList(self, item, callbackFn)
     callbackFn(auctionItem)
 end
 
-local function AutoAddItemInternal(self, item)
+--[[
+    The same drop can be seen by several sources: the boss corpse, our own "You receive loot" chat
+    line and the Loot Rolls history. Each source counts the copies of an item id it added; a source
+    only adds a copy when it is ahead of every other source, so each drop lands in the list once
+    whichever source sees it first, and a source that misses a drop doesn't stop the others.
+    Counts start over on every boss pull.
+]]--
+local LOOT_SOURCE = { CORPSE = "corpse", CHAT = "chat", HISTORY = "history" }
+local lootSourceCounts = {}
+
+local function ResetLootSourceCounts()
+    lootSourceCounts = {}
+    for _, source in pairs(LOOT_SOURCE) do
+        lootSourceCounts[source] = {}
+    end
+end
+ResetLootSourceCounts()
+
+-- Counts one copy of itemId for source; true when it's a new drop that should be added
+local function CreditLootSource(source, itemId)
+    local counts = lootSourceCounts[source]
+    counts[itemId] = (counts[itemId] or 0) + 1
+    for other, otherCounts in pairs(lootSourceCounts) do
+        if other ~= source and (otherCounts[itemId] or 0) >= counts[itemId] then
+            return false
+        end
+    end
+    return true
+end
+
+local function AutoAddItemInternal(self, item, source)
     local _, _, _, _, _, _, _, _, _, _, _, classId = UTILS.GetItemInfo(item:GetItemID())
     if (item:GetItemQuality() >= self:GetFillRarity())
     and not (self.db.ignoredClasses[classId])
     and not (self.db.ignoredItems[item:GetItemID()]) then
+        if source and not CreditLootSource(source, item:GetItemID()) then
+            LOG:Debug("%s already added from another loot source", item:GetItemLink())
+            return
+        end
         AddItemToAuctionList(self, item)
     end
 end
 
-local function AutoAddItemProxy(self, item)
+local function AutoAddItemProxy(self, item, source)
     if not item:IsItemEmpty() then
         if item:IsItemDataCached() then
-            AutoAddItemInternal(self, item)
+            AutoAddItemInternal(self, item, source)
         else
             item:ContinueOnItemLoad(function()
-                AutoAddItemInternal(self, item)
+                AutoAddItemInternal(self, item, source)
             end)
         end
     end
+end
+
+-- Seconds between bag checks for looted items: loot can take a while to land in the bags
+local BAG_CHECK_DELAYS = { 1, 2, 3, 5, 8 }
+
+local function AddWhenTradeable(self, itemLink, attempt)
+    attempt = attempt or 1
+    C_Timer.After(BAG_CHECK_DELAYS[attempt], function()
+        if CLM.MODULES.TradeHelper:IsTradeableInBags(itemLink) then
+            AutoAddItemProxy(self, Item:CreateFromItemLink(itemLink), LOOT_SOURCE.CHAT)
+        elseif attempt < #BAG_CHECK_DELAYS then
+            AddWhenTradeable(self, itemLink, attempt + 1)
+        else
+            LOG:Debug("Looted %s is not tradeable, not adding it", itemLink)
+        end
+    end)
 end
 
 local function HandleLootMessage(addon, event, message, _, _, _, playerName, ...)
@@ -232,14 +282,123 @@ local function HandleLootMessage(addon, event, message, _, _, _, playerName, ...
     end
     if not itemLink then return end
     -- Only loot that can still go to another player (raid feedback 2026-10-18). Give the
-    -- item a moment to land in the bags, then look for it there.
-    C_Timer.After(1, function()
-        if not CLM.MODULES.TradeHelper:IsTradeableInBags(itemLink) then
-            LOG:Debug("Looted %s is not tradeable, not adding it", itemLink)
-            return
+    -- item a moment to land in the bags, then look for it there, a few times.
+    AddWhenTradeable(self, itemLink)
+end
+
+--[[
+    Loot Rolls history (raid feedback 2026-10-18: drops were missing from the list). Every group
+    loot roll we win is added; won rolls can always be traded to the rest of the raid, so there is
+    no bag check here.
+]]--
+local processedDrops = {}
+
+local function DropKey(encounterID, lootListID)
+    return tostring(encounterID) .. ":" .. tostring(lootListID)
+end
+
+-- Item link of a drop we won, or nil
+local function WonDropLink(drop)
+    if type(drop) ~= "table" then return nil end
+    local winner = drop.winner
+    if type(winner) ~= "table" or UTILS.IsSecret(winner.isSelf) or not winner.isSelf then return nil end
+    local itemLink = drop.itemHyperlink
+    if not itemLink or UTILS.IsSecret(itemLink) then return nil end
+    return itemLink
+end
+
+-- Every drop we won in an encounter: { {key = ..., link = ...}, ... }
+local function WonDrops(encounterID)
+    local won = {}
+    if not (C_LootHistory and C_LootHistory.GetSortedDropsForEncounter) then return won end
+    local ok, drops = pcall(C_LootHistory.GetSortedDropsForEncounter, encounterID)
+    if not ok or type(drops) ~= "table" then return won end
+    for _, drop in ipairs(drops) do
+        local itemLink = WonDropLink(drop)
+        if itemLink then
+            tinsert(won, { key = DropKey(encounterID, drop.lootListID), link = itemLink })
         end
-        AutoAddItemProxy(self, Item:CreateFromItemLink(itemLink))
-    end)
+    end
+    return won
+end
+
+-- Drops that were already in the history before this session (e.g. after a /reload) are not new
+local function MarkKnownDrops()
+    if not (C_LootHistory and C_LootHistory.GetAllEncounterInfos) then return end
+    local ok, encounters = pcall(C_LootHistory.GetAllEncounterInfos)
+    if not ok or type(encounters) ~= "table" then return end
+    for _, encounter in ipairs(encounters) do
+        for _, drop in ipairs(WonDrops(encounter.encounterID)) do
+            processedDrops[drop.key] = true
+        end
+    end
+end
+
+local function HandleLootHistoryDrop(addon, event, encounterID, lootListID)
+    local self = AuctionManager
+    if UTILS.IsSecret(encounterID) or UTILS.IsSecret(lootListID) then return end
+    local key = DropKey(encounterID, lootListID)
+    if processedDrops[key] then return end
+    if not (C_LootHistory and C_LootHistory.GetSortedInfoForDrop) then return end
+    local ok, drop = pcall(C_LootHistory.GetSortedInfoForDrop, encounterID, lootListID)
+    if not ok then return end
+    local itemLink = WonDropLink(drop)
+    if not itemLink then return end -- not decided yet, or someone else won it
+    processedDrops[key] = true
+    if not CLM.MODULES.RaidManager:IsInActiveRaid() then return end
+    if not self:IsAuctioneer() then return end
+    if not self:GetFillFromLoot() then return end
+    AutoAddItemProxy(self, Item:CreateFromItemLink(itemLink), LOOT_SOURCE.HISTORY)
+end
+
+-- Count the auction and pending lists' copies per item link
+local function CountListedItems(self)
+    local listed = {}
+    for _, auction in ipairs({ self.currentAuction, self.pendingAuction }) do
+        for _, auctionItem in pairs(auction:GetItems()) do
+            local itemLink = auctionItem:GetItemLink()
+            listed[itemLink] = (listed[itemLink] or 0) + auctionItem:GetTotal()
+        end
+    end
+    return listed
+end
+
+-- Add from loot rolls: every drop we won in the last boss's Loot Rolls that isn't listed yet.
+-- Returns the number of items added.
+---@return number
+function AuctionManager:AddFromLootRolls()
+    if not CLM.MODULES.RaidManager:IsInRaid() then
+        LOG:Message(CLM.L["Auctioning requires active raid or roster mode."])
+        return 0
+    end
+    if not (C_LootHistory and C_LootHistory.GetAllEncounterInfos) then return 0 end
+    local ok, encounters = pcall(C_LootHistory.GetAllEncounterInfos)
+    if not ok or type(encounters) ~= "table" or #encounters == 0 then
+        LOG:Message(CLM.L["No loot rolls found."])
+        return 0
+    end
+    -- The most recent encounter is the one that started last
+    local last
+    for _, encounter in ipairs(encounters) do
+        if not last or (encounter.startTime or 0) > (last.startTime or 0) then last = encounter end
+    end
+    local listed = CountListedItems(self)
+    local added = 0
+    for _, drop in ipairs(WonDrops(last.encounterID)) do
+        processedDrops[drop.key] = true
+        if (listed[drop.link] or 0) > 0 then
+            listed[drop.link] = listed[drop.link] - 1
+        else
+            -- Counts as the history's copy, so a late chat line doesn't add it again
+            local counts = lootSourceCounts[LOOT_SOURCE.HISTORY]
+            local itemId = UTILS.GetItemIdFromLink(drop.link)
+            counts[itemId] = (counts[itemId] or 0) + 1
+            AutoAddItemProxy(self, Item:CreateFromItemLink(drop.link))
+            added = added + 1
+        end
+    end
+    LOG:Message(CLM.L["Loot rolls of %s: %d won item(s) not in the list yet."], tostring(last.encounterName or "?"), added)
+    return added
 end
 
 local function HookAuctionFilling(self)
@@ -270,7 +429,7 @@ local function FillLootFromCorpse()
     for lootIndex = 1, numLootItems do
         local itemLink = GetLootSlotLink(lootIndex)
         if itemLink then
-            AutoAddItemProxy(AuctionManager, Item:CreateFromItemLink(itemLink))
+            AutoAddItemProxy(AuctionManager, Item:CreateFromItemLink(itemLink), LOOT_SOURCE.CORPSE)
         end
     end
 end
@@ -372,6 +531,9 @@ function AuctionManager:Initialize()
     HookAuctionFilling(self)
     CLM.MODULES.EventManager:RegisterWoWEvent({"LOOT_OPENED"}, HandleLootOpenedEvent)
     CLM.MODULES.EventManager:RegisterWoWEvent({"CHAT_MSG_LOOT"}, HandleLootMessage)
+    CLM.MODULES.EventManager:RegisterWoWEvent({"LOOT_HISTORY_UPDATE_DROP"}, HandleLootHistoryDrop)
+    CLM.MODULES.EventManager:RegisterWoWEvent({"ENCOUNTER_START"}, ResetLootSourceCounts)
+    MarkKnownDrops()
 
     CLM.MODULES.LedgerManager:RegisterOnUpdate(function(lag, uncommitted)
         if lag ~= 0 or uncommitted ~= 0 then return end

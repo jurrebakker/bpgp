@@ -141,6 +141,9 @@ globals = {
 	"C_AddOns.GetAddOnInfo",
 	"C_Timer.After",
 	"C_Timer.NewTicker",
+	"C_LootHistory.GetAllEncounterInfos",
+	"C_LootHistory.GetSortedDropsForEncounter",
+	"C_LootHistory.GetSortedInfoForDrop",
 	"GetMaxLevelForPlayerExpansion",
 	"GetNumGuildMembers",
 	"IsInGroup",
@@ -250,6 +253,7 @@ globals = {
 	"ReloadUI",
 	"YES",
 	"NO",
+	"CANCEL",
 	"GetBuildInfo",
 	"UnitFullName",
 	-- Retail only
