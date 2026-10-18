@@ -254,5 +254,7 @@ The full process is in `docs/release-plan-v1.md` §10. In short:
 
 - Version in the TOC is `@project-version@`; the packager fills it from the git tag.
 - Tags: `v1.0.0-alpha1` (alpha), `v1.0.0-beta1` (beta, officers), `v1.0.0` (release).
+- Pushing a `v*` tag runs `.github/workflows/release.yml`: the BigWigs packager creates a GitHub Release with `BPGP-<tag>.zip`. No CurseForge. Raiders install and update with BPGP Updater; alpha/beta tags become pre-releases, which the updater skips.
+- BPGP Updater has its own repository and releases: [Blood-Promise/bpgp-updater](https://github.com/Blood-Promise/bpgp-updater). It needs each addon release to have a `BPGP-*.zip` containing `BPGP/BPGP.toc` with a filled-in `## Version:`. Don't change that layout without changing the updater.
 - Before tagging: `CHANGELOG.md` has a section for the version, checks pass, and the in-game checklist (§7 of the release plan) has been run.
 - After 1.0, ledger entry formats are frozen (§4) and every client in the guild must run a compatible version.

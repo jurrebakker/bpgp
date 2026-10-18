@@ -17,7 +17,9 @@ BPGP is EPGP with our own name for the points: Boomer Points (BP) instead of eff
 
 ## Install
 
-1. Install **BPGP** with the CurseForge app (or another addon manager), or unzip it into `World of Warcraft\_retail_\Interface\AddOns\BPGP`.
+1. Download **BPGPUpdater.exe** from the latest [BPGP Updater release](https://github.com/Blood-Promise/bpgp-updater/releases/latest) and run it. It finds your WoW folder (or click **Browse**), and **Install** puts BPGP in `_retail_\Interface\AddOns\BPGP`. Run it again, or tick **Start with Windows**, to get updates; it also updates itself.
+   - Windows may show "Windows protected your PC" the first time, because the exe isn't signed: click **More info → Run anyway**.
+   - Without the updater: unzip `BPGP-<version>.zip` from the [latest addon release](https://github.com/jurrebakker/bpgp/releases/latest) into `World of Warcraft\_retail_\Interface\AddOns\`.
 2. Log in on a character in the guild. The minimap icon (or `/bpgp gui`) opens the main window.
 3. Wait for the first sync: the footer of the main window shows "In-Sync" once your data is up to date.
 
@@ -26,7 +28,7 @@ BPGP can be installed next to Core Loot Manager; they don't share data or channe
 ## For raiders
 
 - **Standings** shows everyone's BP, GP and PR. Your own row is pinned on top, and your PR is shown in the header.
-- **When an auction starts**, the bidding window opens with the item, the time left and one button per tier (each with its GP). Click a tier to bid; clicking another tier replaces your bid. You can also bid **OS**, **Pass** or **Cancel**. The status line tells you whether your bid was accepted. Closed it? Open the main window (minimap icon) and click **Bid**, or type `/bpgp bid`.
+- **When an auction starts**, the bidding window opens with the item, the time left and one button per tier (each with its GP). Click a tier to bid; clicking another tier replaces your bid. You can also bid **OS**, **Transmog** (free, highest roll wins), **Pass** or **Cancel**. The status line tells you whether your bid was accepted. Closed it? Open the main window (minimap icon) and click **Bid**, or type `/bpgp bid`.
 - **Settings → Personal**: bidding window options (open automatically, close after bidding, skip unusable items, timer bar), sounds, minimap icon and **Pass on loot**.
 - **Pass on loot** (on by default): in *our own* raids you automatically pass on boss loot, so the officer running the auctions can loot everything. It never passes outside our raids (pugs, other guilds, dungeons).
 
@@ -74,6 +76,7 @@ Practise first in **test mode** (`/bpgp test`): a separate ledger and sync chann
 - Test in **test mode** (`/bpgp test`, `/bpgp testgroup 10`, *Simulate bids*). See [docs/features/test-mode.md](docs/features/test-mode.md).
 - `python -I scripts/check_addon.py` checks file references, packager-only markers and Lua block balance. luacheck runs in CI (config in `.luacheckrc`).
 - All libraries are vendored in `BPGP/Libs` (see its README), so a git clone runs as-is.
+- Releasing: push a tag like `v1.0.0`. `.github/workflows/release.yml` builds the addon zip and publishes it as a GitHub Release, which [BPGP Updater](https://github.com/Blood-Promise/bpgp-updater) installs from.
 
 ## License
 

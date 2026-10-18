@@ -23,6 +23,8 @@ EPGP loot addon for our guild, **WoW retail (Midnight, 12.x) only**. It's a fork
 - `BPGP/Libs/` holds all libraries, vendored (see `Libs/README.md`). Don't edit third-party libs. `LibEventSourcing` is the exception: it's part of the CLM source and is ours to change (Phase 8 hardened it).
 - `BPGP/Modules/UI/` holds the shared Blizzard-template UI pieces for the redesign: `UI.lua` (windows, tabs, buttons, inputs, dropdown, menus, item buttons, progress bar) and `List.lua` (ScrollBox list with headers, sort and selection). `Demo.lua` is `/bpgp uitest`. New windows are built from these, not from AceGUI.
 - `scripts/check_addon.py` checks that TOC/XML references resolve, that no packager markers remain, and that Lua blocks are balanced.
+- **Releases:** a `v*` tag runs `.github/workflows/release.yml`, which builds `BPGP-<tag>.zip` with the packager and attaches it to the GitHub Release. There is no CurseForge release (release-plan §10, decision 2026-10-18).
+- **BPGP Updater**, the Windows app raiders use to install and update the addon from those releases, lives in its own repo: [Blood-Promise/bpgp-updater](https://github.com/Blood-Promise/bpgp-updater), cloned at `C:\Users\patri\dev\bpgp-updater` (split out of this repo's `updater/` on 2026-10-18). It expects each addon release to have a `BPGP-*.zip` with `BPGP/BPGP.toc` and a filled-in `## Version:`. Keep that layout, or change the updater with it.
 - See `ARCHITECTURE.md` for the module map.
 
 ## How the code works
@@ -62,9 +64,12 @@ EPGP loot addon for our guild, **WoW retail (Midnight, 12.x) only**. It's a fork
 ## Checking changes
 
 - `python -I scripts/check_addon.py` must report 0 problems.
-- luacheck (config `.luacheckrc`) runs in CI (`.github/workflows/lint.yml`). It isn't installed locally, so add any new WoW globals to `.luacheckrc` by hand.
+- luacheck (config `.luacheckrc`) runs in CI (`.github/workflows/lint.yml`). It isn't installed locally, so add any new WoW globals to `.luacheckrc` by hand. `lint` is a required check on master.
 - **In-game testing is done by the user.** After every change that needs testing, give a **numbered step-by-step checklist**: what to type or click, and what they should see. Ask them to report BugSack errors with the step number. Do risky things in **test mode** first (`/bpgp test`, `/bpgp testgroup 10`, *Simulate bids*). To check that live data is untouched, compare the minimap tooltip's "N events (0x…)" before and after.
-- The addon folder is linked into `C:\Program Files (x86)\World of Warcraft\_retail_\Interface\AddOns\` with a directory junction, so `/reload` picks up changes. Adding or removing files that WoW loads by itself (like `Bindings.xml`) needs a full game restart.
+- **How the addon gets into WoW on this machine (since 2026-10-18):** the repo lives in `C:\Users\patri\dev\bpgp`, and `E:\Games\Blizzard\World of Warcraft\_retail_\Interface\AddOns\BPGP` is a normal folder that **BPGP Updater installs and keeps up to date from the GitHub releases**. So the game runs the latest release, not the branch you're working on. To test a change in-game before it's released:
+  - **Test zip (preferred):** zip the `BPGP` folder as `BPGP/...` with a version in the TOC and run `C:\Users\patri\dev\bpgp-updater\out\BPGPUpdater.exe --test-zip <zip>`, then Install. The next real release replaces it again.
+  - **Temporary junction:** replace `AddOns\BPGP` with a junction to `C:\Users\patri\dev\bpgp\BPGP`, so `/reload` picks up every edit. The updater leaves a junction alone. Remove only the link afterwards (`[System.IO.Directory]::Delete(path)`, never a recursive delete, which would follow the link into the repo), then let the updater install the release again.
+  - Adding or removing files that WoW loads by itself (like `Bindings.xml`) needs a full game restart.
 
 ## Tooling notes (this machine)
 
