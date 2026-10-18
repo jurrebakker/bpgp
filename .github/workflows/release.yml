@@ -1,0 +1,26 @@
+name: Release
+
+# Pushing a tag like v1.0.0 publishes the addon as a GitHub Release with BPGP-v1.0.0.zip,
+# built by the BigWigs packager (fills in @project-version@, uses .pkgmeta).
+# Tags with "alpha" or "beta" become a pre-release, which BPGP Updater skips.
+# BPGP Updater has its own releases (tags updater-v*, see updater-release.yml).
+# No CurseForge or Wago upload: see docs/release-plan-v1.md §10.
+
+on:
+  push:
+    tags: ['v*']
+
+permissions:
+  contents: write
+
+jobs:
+  package:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0 # the packager needs history and tags
+
+      - uses: BigWigsMods/packager@v2
+        env:
+          GITHUB_OAUTH: ${{ secrets.GITHUB_TOKEN }}

@@ -339,7 +339,8 @@ Built from the Claude Design spec (`docs/design/`). Decisions R1-R11 in ui-redes
 - [ ] Licensing checklist (§8).
 - [x] New README (what it is, install, officer setup, raider usage), CHANGELOG starting at 1.0.0. *(README rewritten 2026-10-17; CHANGELOG is kept up to date per phase.)*
 - [ ] Packaging: BigWigs packager with a new `.pkgmeta` (no externals, libs are vendored), see §10.4.
-- [ ] Publish on CurseForge (and optionally Wago) under the new name; tag `v1.0.0`. Full checklist in §10.
+- [x] Release pipelines, built 2026-10-18: `.github/workflows/release.yml` (`v*` tag → addon zip release) and `.github/workflows/updater-release.yml` (`updater-v*` tag → `BPGPUpdater.exe` release). Replaces the CurseForge plan (§10).
+- [ ] Tag `v1.0.0` and check the GitHub Release; raiders install with BPGP Updater. Full flow in §10.
 - [ ] Guild rollout: officers first, import standings, then raiders install.
 
 ---
@@ -409,7 +410,17 @@ There is no automated test harness for WoW UI code; luacheck catches syntax/glob
 
 ---
 
-## 10. Releasing to CurseForge
+## 10. Releasing
+
+> **Decision 2026-10-18: GitHub Releases + BPGP Updater, no CurseForge.** Raiders install and update with **BPGP Updater** (`updater/`), a small Windows app that downloads the addon from this repo's GitHub Releases. The repo is public, so no token is needed. Pushing a tag `v*` runs `.github/workflows/release.yml`: the BigWigs packager builds `BPGP-<tag>.zip` and creates the release (no CurseForge or Wago token). Alpha/beta tags become pre-releases, which the updater skips.
+>
+> **The updater is released separately** (same day, your call): an `updater-v*` tag (e.g. `updater-v1.0.0`) runs `.github/workflows/updater-release.yml`, which builds `BPGPUpdater.exe` and creates its own release, never marked "Latest". The updater reads the release list and picks the newest `v*` release for the addon and the newest `updater-v*` release for its self-update.
+>
+> - The updater finds WoW (saved folder, registry, common locations, or Browse), shows the installed and latest version and the changelog, and installs or updates `AddOns\BPGP`. It also updates itself and can start with Windows (tray, checks every 6 hours).
+> - The exe isn't signed: Windows SmartScreen asks once (*More info → Run anyway*).
+> - The CurseForge research below (§10.1-10.2, the CurseForge parts of §10.3-10.5) is kept for reference only and is **not** part of the release anymore. §10.4 (`.pkgmeta`, TOC, CHANGELOG, dry run) still applies.
+>
+> **Release flow now:** update `CHANGELOG.md` → `git tag -a v1.0.0 -m "BPGP 1.0.0"` → `git push --tags` → check that the GitHub Release has the zip → raiders click **Update** in BPGP Updater (or get the tray notification). For the officer beta, publish `v1.0.0-beta1`: officers run the updater with `--prerelease`. Before the first raider installs, publish the updater once: `git tag updater-v1.0.0` → `git push origin updater-v1.0.0`.
 
 Research done 2026-10-16. Items marked **(unverified)** could not be confirmed from an official source; check them when we get there.
 

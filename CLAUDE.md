@@ -23,6 +23,8 @@ EPGP loot addon for our guild, **WoW retail (Midnight, 12.x) only**. It's a fork
 - `BPGP/Libs/` holds all libraries, vendored (see `Libs/README.md`). Don't edit third-party libs. `LibEventSourcing` is the exception: it's part of the CLM source and is ours to change (Phase 8 hardened it).
 - `BPGP/Modules/UI/` holds the shared Blizzard-template UI pieces for the redesign: `UI.lua` (windows, tabs, buttons, inputs, dropdown, menus, item buttons, progress bar) and `List.lua` (ScrollBox list with headers, sort and selection). `Demo.lua` is `/bpgp uitest`. New windows are built from these, not from AceGUI.
 - `scripts/check_addon.py` checks that TOC/XML references resolve, that no packager markers remain, and that Lua blocks are balanced.
+- `updater/` is **BPGP Updater**, the Windows app raiders use to install and update the addon from GitHub Releases (C#, .NET Framework 4.8 WinForms, a single exe without NuGet runtime dependencies). Build: `dotnet publish updater/BPGPUpdater.csproj -c Release -o updater/out` (.NET 8 SDK is installed on this machine). It never touches a junction/symlinked `AddOns\BPGP`. Test switches: `--test-zip <zip>` (a local zip acts as the latest addon release) and `--prerelease`.
+- **Two kinds of releases:** a `v*` tag runs `.github/workflows/release.yml` (addon zip via the packager); an `updater-v*` tag runs `.github/workflows/updater-release.yml` (its own release with `BPGPUpdater.exe`, never marked "Latest"). The updater reads both from the releases list by tag. There is no CurseForge release (release-plan §10, decision 2026-10-18).
 - See `ARCHITECTURE.md` for the module map.
 
 ## How the code works
