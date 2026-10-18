@@ -17,7 +17,7 @@ BPGP is EPGP with our own name for the points: Boomer Points (BP) instead of eff
 
 ## Install
 
-1. Download **BPGPUpdater.exe** from the newest [BPGP Updater release](https://github.com/jurrebakker/bpgp/releases?q=updater-v&expanded=true) and run it. It finds your WoW folder (or click **Browse**), and **Install** puts BPGP in `_retail_\Interface\AddOns\BPGP`. Run it again, or tick **Start with Windows**, to get updates; it also updates itself.
+1. Download **BPGPUpdater.exe** from the latest [BPGP Updater release](https://github.com/Blood-Promise/bpgp-updater/releases/latest) and run it. It finds your WoW folder (or click **Browse**), and **Install** puts BPGP in `_retail_\Interface\AddOns\BPGP`. Run it again, or tick **Start with Windows**, to get updates; it also updates itself.
    - Windows may show "Windows protected your PC" the first time, because the exe isn't signed: click **More info → Run anyway**.
    - Without the updater: unzip `BPGP-<version>.zip` from the [latest addon release](https://github.com/jurrebakker/bpgp/releases/latest) into `World of Warcraft\_retail_\Interface\AddOns\`.
 2. Log in on a character in the guild. The minimap icon (or `/bpgp gui`) opens the main window.
@@ -74,11 +74,9 @@ Practise first in **test mode** (`/bpgp test`): a separate ledger and sync chann
 - Link the addon folder into `World of Warcraft\_retail_\Interface\AddOns\` (a directory junction works on Windows) and use `/reload` in-game.
 - Install BugSack + !BugGrabber to see Lua errors.
 - Test in **test mode** (`/bpgp test`, `/bpgp testgroup 10`, *Simulate bids*). See [docs/features/test-mode.md](docs/features/test-mode.md).
-- `python -I scripts/check_addon.py` checks file references, packager-only markers and Lua block balance. luacheck runs in CI (config in `.luacheckrc`). Pull requests that change `updater/` also build the updater in CI; the exe can be downloaded from the run's artifacts.
+- `python -I scripts/check_addon.py` checks file references, packager-only markers and Lua block balance. luacheck runs in CI (config in `.luacheckrc`).
 - All libraries are vendored in `BPGP/Libs` (see its README), so a git clone runs as-is.
-- `updater/` is the Windows updater (C#, WPF on .NET Framework 4.8), styled like the addon, with tabs BPGP, Settings and About. Build it with `dotnet publish updater/BPGPUpdater.csproj -c Release -o updater/out` (.NET 8 SDK). It leaves a linked (junction) `AddOns\BPGP` alone.
-- Releasing the addon: push a tag like `v1.0.0`. `.github/workflows/release.yml` builds the addon zip and publishes it as a GitHub Release.
-- Releasing the updater (separately): push a tag like `updater-v1.0.0`. `.github/workflows/updater-release.yml` builds `BPGPUpdater.exe` and publishes its own release, which is never marked "Latest".
+- Releasing: push a tag like `v1.0.0`. `.github/workflows/release.yml` builds the addon zip and publishes it as a GitHub Release, which [BPGP Updater](https://github.com/Blood-Promise/bpgp-updater) installs from.
 
 ## License
 

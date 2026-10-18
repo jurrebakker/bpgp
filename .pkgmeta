@@ -5,7 +5,6 @@ package-as: BPGP
 
 ignore:
   - scripts
-  - updater
   - docs
   - assets
   - CLAUDE.md

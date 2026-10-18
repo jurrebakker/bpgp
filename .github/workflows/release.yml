@@ -3,7 +3,8 @@ name: Release
 # Pushing a tag like v1.0.0 publishes the addon as a GitHub Release with BPGP-v1.0.0.zip,
 # built by the BigWigs packager (fills in @project-version@, uses .pkgmeta).
 # Tags with "alpha" or "beta" become a pre-release, which BPGP Updater skips.
-# BPGP Updater has its own releases (tags updater-v*, see updater-release.yml).
+# BPGP Updater (Blood-Promise/bpgp-updater) installs from these releases and needs the zip to
+# contain BPGP/BPGP.toc with the version filled in.
 # No CurseForge or Wago upload: see docs/release-plan-v1.md §10.
 
 on:

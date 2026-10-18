@@ -1,11 +1,6 @@
 # Packager output (BigWigsMods/packager)
 .release/
 
-# Updater build output (dotnet)
-updater/bin/
-updater/obj/
-updater/out/
-
 # Editors / OS
 .vscode/
 .idea/
