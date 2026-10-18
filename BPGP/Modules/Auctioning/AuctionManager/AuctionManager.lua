@@ -38,6 +38,8 @@ local function InitializeDB(self)
         lootThreshold = 4,
         removeOnNoBids = false,
         postAllBidsOnAward = false,
+        lootDebug = false,
+        lootDebugLog = {},
         notes = {},
         ignoredClasses = {
             false, false, false, false,
@@ -149,6 +151,82 @@ function AuctionManager:GetIncludeCancels()
     return true
 end
 
+--[[
+    Loot debug (/bpgp lootdebug): every decision the list filling makes (corpse, chat, Loot Rolls
+    history, the "Add from loot rolls" button) is printed to chat and kept in lootDebugLog, which
+    is saved with BPGP_DB so it can be read from the SavedVariables file after the raid.
+    Raid feedback 2026-10-18: 5 drops, 4 in the list.
+]]--
+local LOOT_DEBUG_MAX_LINES = 2000
+
+local function LootTrace(fmt, ...)
+    local ok, line = pcall(string.format, fmt, ...)
+    if not ok then line = fmt .. " (format error)" end
+    LOG:Debug("[loot] %s", line)
+    local db = AuctionManager.db
+    if not (db and db.lootDebug) then return end
+    LOG:Message("|cff88ccff[loot]|r %s", line)
+    local log = db.lootDebugLog
+    tinsert(log, date("%Y-%m-%d %H:%M:%S") .. " " .. line)
+    while #log > LOOT_DEBUG_MAX_LINES do
+        tremove(log, 1)
+    end
+end
+
+-- Safe text for a value that may be nil or secret
+local function Show(value)
+    if UTILS.IsSecret(value) then return "<secret>" end
+    return tostring(value)
+end
+
+-- "4 (Epic)"
+local function ShowQuality(quality)
+    if quality == nil then return "nil" end
+    return string.format("%s (%s)", tostring(quality), tostring(_G["ITEM_QUALITY" .. tostring(quality) .. "_DESC"] or "?"))
+end
+
+-- "15 (Miscellaneous)"
+local function ShowClass(classId)
+    if classId == nil then return "nil" end
+    local ok, name = pcall(C_Item.GetItemClassInfo, classId)
+    return string.format("%s (%s)", tostring(classId), tostring(ok and name or "?"))
+end
+
+-- The filters every auto-added item goes through
+local function LogFilterSettings(self)
+    LootTrace("filter: fill rarity %s or better", ShowQuality(self:GetFillRarity()))
+    local classes = {}
+    for classId, ignored in pairs(self.db.ignoredClasses) do
+        if ignored then tinsert(classes, ShowClass(classId)) end
+    end
+    LootTrace("filter: ignored item classes: %s", #classes > 0 and table.concat(classes, ", ") or "none")
+    local items = {}
+    for itemId, ignored in pairs(self.db.ignoredItems) do
+        if ignored then tinsert(items, tostring(itemId)) end
+    end
+    LootTrace("filter: ignored items: %s", #items > 0 and table.concat(items, ", ") or "none")
+    LootTrace("filter: fill from corpse %s, fill from loot %s, auctioneer %s, active raid %s",
+        Show(self:GetFillFromCorpse()), Show(self:GetFillFromLoot()), Show(self:IsAuctioneer()),
+        Show(CLM.MODULES.RaidManager:IsInActiveRaid()))
+end
+
+---@param value boolean
+function AuctionManager:SetLootDebug(value)
+    self.db.lootDebug = value and true or false
+    LOG:Message(CLM.L["Loot debug is %s."], self.db.lootDebug and CLM.L["on"] or CLM.L["off"])
+    if self.db.lootDebug then LogFilterSettings(self) end
+end
+
+---@return boolean
+function AuctionManager:GetLootDebug()
+    return self.db.lootDebug
+end
+
+function AuctionManager:ClearLootDebugLog()
+    wipe(self.db.lootDebugLog)
+    LOG:Message(CLM.L["Loot debug log cleared."])
+end
+
 -- Filling
 local ItemClasses = {}
 do
@@ -194,6 +272,9 @@ local function AddItemToAuctionList(self, item, callbackFn)
     if auctionItem then
         auctionItem:SetNote(self.db.notes[item:GetItemID()])
     end
+    LootTrace("%s -> %s list, row total now %s", Show(item:GetItemLink()),
+        auctionInfo == self.pendingAuction and "PENDING" or "auction",
+        auctionItem and Show(auctionItem:GetTotal()) or "nil (not added)")
     callbackFn(auctionItem)
 end
 
@@ -228,27 +309,43 @@ local function CreditLootSource(source, itemId)
 end
 
 local function AutoAddItemInternal(self, item, source)
-    local _, _, _, _, _, _, _, _, _, _, _, classId = UTILS.GetItemInfo(item:GetItemID())
-    if (item:GetItemQuality() >= self:GetFillRarity())
-    and not (self.db.ignoredClasses[classId])
-    and not (self.db.ignoredItems[item:GetItemID()]) then
-        if source and not CreditLootSource(source, item:GetItemID()) then
-            LOG:Debug("%s already added from another loot source", item:GetItemLink())
-            return
-        end
-        AddItemToAuctionList(self, item)
+    local _, _, _, _, _, _, subType, _, _, _, _, classId, subclassId, bindType = UTILS.GetItemInfo(item:GetItemID())
+    local itemLink, quality = Show(item:GetItemLink()), item:GetItemQuality()
+    local sourceName = tostring(source or "button")
+    LootTrace("%s (%s): quality %s, class %s, subclass %s (%s), bind %s", itemLink, sourceName, ShowQuality(quality),
+        ShowClass(classId), Show(subclassId), Show(subType), Show(bindType))
+    if not (quality and quality >= self:GetFillRarity()) then
+        LootTrace("%s (%s): SKIPPED by the rarity filter, %s is below %s", itemLink, sourceName, ShowQuality(quality), ShowQuality(self:GetFillRarity()))
+        return
     end
+    if self.db.ignoredClasses[classId] then
+        LootTrace("%s (%s): SKIPPED by the class filter, %s is ignored", itemLink, sourceName, ShowClass(classId))
+        return
+    end
+    if self.db.ignoredItems[item:GetItemID()] then
+        LootTrace("%s (%s): SKIPPED by the item filter, %s is on the ignore list", itemLink, sourceName, Show(item:GetItemID()))
+        return
+    end
+    if source and not CreditLootSource(source, item:GetItemID()) then
+        LootTrace("%s (%s): SKIPPED, already added from another loot source", itemLink, sourceName)
+        return
+    end
+    LootTrace("%s (%s): passed the filters, adding", itemLink, sourceName)
+    AddItemToAuctionList(self, item)
 end
 
 local function AutoAddItemProxy(self, item, source)
-    if not item:IsItemEmpty() then
-        if item:IsItemDataCached() then
+    if item:IsItemEmpty() then
+        LootTrace("%s: SKIPPED, empty item", tostring(source or "button"))
+        return
+    end
+    if item:IsItemDataCached() then
+        AutoAddItemInternal(self, item, source)
+    else
+        LootTrace("%s (%s): waiting for item data", Show(item:GetItemLink()), tostring(source or "button"))
+        item:ContinueOnItemLoad(function()
             AutoAddItemInternal(self, item, source)
-        else
-            item:ContinueOnItemLoad(function()
-                AutoAddItemInternal(self, item, source)
-            end)
-        end
+        end)
     end
 end
 
@@ -263,7 +360,7 @@ local function AddWhenTradeable(self, itemLink, attempt)
         elseif attempt < #BAG_CHECK_DELAYS then
             AddWhenTradeable(self, itemLink, attempt + 1)
         else
-            LOG:Debug("Looted %s is not tradeable, not adding it", itemLink)
+            LootTrace("%s (chat): SKIPPED, not found as tradeable in the bags after %d checks", Show(itemLink), attempt)
         end
     end)
 end
@@ -281,6 +378,7 @@ local function HandleLootMessage(addon, event, message, _, _, _, playerName, ...
         itemLink = deformat(message, LOOT_ITEM_SELF)
     end
     if not itemLink then return end
+    LootTrace("%s (chat): looted, checking the bags for it", Show(itemLink))
     -- Only loot that can still go to another player (raid feedback 2026-10-18). Give the
     -- item a moment to land in the bags, then look for it there, a few times.
     AddWhenTradeable(self, itemLink)
@@ -292,19 +390,34 @@ end
     no bag check here.
 ]]--
 local processedDrops = {}
+local lastDropReasons = {}
 
 local function DropKey(encounterID, lootListID)
     return tostring(encounterID) .. ":" .. tostring(lootListID)
 end
 
--- Item link of a drop we won, or nil
+-- Item link of a drop we won, or nil and the reason (for the loot debug)
 local function WonDropLink(drop)
-    if type(drop) ~= "table" then return nil end
+    if type(drop) ~= "table" then return nil, "no drop info" end
     local winner = drop.winner
-    if type(winner) ~= "table" or UTILS.IsSecret(winner.isSelf) or not winner.isSelf then return nil end
+    if type(winner) ~= "table" then
+        return nil, drop.allPassed and "everyone passed" or "no winner yet"
+    end
+    if UTILS.IsSecret(winner.isSelf) then return nil, "winner is a secret value" end
+    if not winner.isSelf then return nil, "won by " .. Show(winner.playerName) end
     local itemLink = drop.itemHyperlink
-    if not itemLink or UTILS.IsSecret(itemLink) then return nil end
+    if not itemLink then return nil, "no item link" end
+    if UTILS.IsSecret(itemLink) then return nil, "item link is a secret value" end
     return itemLink
+end
+
+-- One line about a drop for the loot debug
+local function DescribeDrop(drop)
+    if type(drop) ~= "table" then return "not a table: " .. Show(drop) end
+    local winner = type(drop.winner) == "table" and drop.winner or {}
+    return string.format("drop %s %s winner=%s isSelf=%s roll=%s state=%s allPassed=%s rollState=%s",
+        Show(drop.lootListID), Show(drop.itemHyperlink), Show(winner.playerName), Show(winner.isSelf),
+        Show(winner.roll), Show(winner.state), Show(drop.allPassed), Show(drop.playerRollState))
 end
 
 -- Every drop we won in an encounter: { {key = ..., link = ...}, ... }
@@ -341,13 +454,31 @@ local function HandleLootHistoryDrop(addon, event, encounterID, lootListID)
     if processedDrops[key] then return end
     if not (C_LootHistory and C_LootHistory.GetSortedInfoForDrop) then return end
     local ok, drop = pcall(C_LootHistory.GetSortedInfoForDrop, encounterID, lootListID)
-    if not ok then return end
-    local itemLink = WonDropLink(drop)
-    if not itemLink then return end -- not decided yet, or someone else won it
+    if not ok then
+        LootTrace("history %s: GetSortedInfoForDrop failed: %s", key, Show(drop))
+        return
+    end
+    local itemLink, reason = WonDropLink(drop)
+    if not itemLink then -- not decided yet, or someone else won it
+        if lastDropReasons[key] ~= reason then -- the event fires on every roll; log changes only
+            lastDropReasons[key] = reason
+            LootTrace("history %s: not added, %s (%s)", key, reason, DescribeDrop(drop))
+        end
+        return
+    end
     processedDrops[key] = true
-    if not CLM.MODULES.RaidManager:IsInActiveRaid() then return end
-    if not self:IsAuctioneer() then return end
-    if not self:GetFillFromLoot() then return end
+    if not CLM.MODULES.RaidManager:IsInActiveRaid() then
+        LootTrace("history %s: %s SKIPPED, not in an active raid", key, Show(itemLink))
+        return
+    end
+    if not self:IsAuctioneer() then
+        LootTrace("history %s: %s SKIPPED, not the auctioneer", key, Show(itemLink))
+        return
+    end
+    if not self:GetFillFromLoot() then
+        LootTrace("history %s: %s SKIPPED, filling from loot is off", key, Show(itemLink))
+        return
+    end
     AutoAddItemProxy(self, Item:CreateFromItemLink(itemLink), LOOT_SOURCE.HISTORY)
 end
 
@@ -380,15 +511,35 @@ function AuctionManager:AddFromLootRolls()
     -- The most recent encounter is the one that started last
     local last
     for _, encounter in ipairs(encounters) do
+        LootTrace("button: encounter %s %s startTime=%s", Show(encounter.encounterID), Show(encounter.encounterName), Show(encounter.startTime))
         if not last or (encounter.startTime or 0) > (last.startTime or 0) then last = encounter end
     end
+    LootTrace("button: using encounter %s %s", Show(last.encounterID), Show(last.encounterName))
+    LogFilterSettings(self)
+    if self:GetLootDebug() and C_LootHistory.GetSortedDropsForEncounter then
+        local okDrops, drops = pcall(C_LootHistory.GetSortedDropsForEncounter, last.encounterID)
+        if okDrops and type(drops) == "table" then
+            LootTrace("button: %d drop(s) in the Loot Rolls", #drops)
+            for _, drop in ipairs(drops) do
+                local _, reason = WonDropLink(drop)
+                LootTrace("button: %s -> %s", DescribeDrop(drop), reason or "won by us")
+            end
+        else
+            LootTrace("button: GetSortedDropsForEncounter failed: %s", Show(drops))
+        end
+    end
     local listed = CountListedItems(self)
+    for link, count in pairs(listed) do
+        LootTrace("button: already listed %dx %s", count, Show(link))
+    end
     local added = 0
     for _, drop in ipairs(WonDrops(last.encounterID)) do
         processedDrops[drop.key] = true
         if (listed[drop.link] or 0) > 0 then
+            LootTrace("button: %s %s SKIPPED, a copy with this exact link is already listed", drop.key, Show(drop.link))
             listed[drop.link] = listed[drop.link] - 1
         else
+            LootTrace("button: %s %s not listed, adding", drop.key, Show(drop.link))
             -- Counts as the history's copy, so a late chat line doesn't add it again
             local counts = lootSourceCounts[LOOT_SOURCE.HISTORY]
             local itemId = UTILS.GetItemIdFromLink(drop.link)
@@ -421,14 +572,19 @@ local function FillLootFromCorpse()
     local targetGuid = UnitGUID("target")
     if UTILS.IsSecret(targetGuid) then targetGuid = nil end
     if targetGuid then
-        if alreadyAddedLoot[targetGuid] then return end
+        if alreadyAddedLoot[targetGuid] then
+            LootTrace("corpse: already looked at this corpse")
+            return
+        end
         alreadyAddedLoot[targetGuid] = true
     end
 
     local numLootItems = GetNumLootItems()
+    LootTrace("corpse: %s loot slot(s)", Show(numLootItems))
     for lootIndex = 1, numLootItems do
         local itemLink = GetLootSlotLink(lootIndex)
         if itemLink then
+            LootTrace("corpse: slot %d %s", lootIndex, Show(itemLink))
             AutoAddItemProxy(AuctionManager, Item:CreateFromItemLink(itemLink), LOOT_SOURCE.CORPSE)
         end
     end
@@ -532,8 +688,29 @@ function AuctionManager:Initialize()
     CLM.MODULES.EventManager:RegisterWoWEvent({"LOOT_OPENED"}, HandleLootOpenedEvent)
     CLM.MODULES.EventManager:RegisterWoWEvent({"CHAT_MSG_LOOT"}, HandleLootMessage)
     CLM.MODULES.EventManager:RegisterWoWEvent({"LOOT_HISTORY_UPDATE_DROP"}, HandleLootHistoryDrop)
-    CLM.MODULES.EventManager:RegisterWoWEvent({"ENCOUNTER_START"}, ResetLootSourceCounts)
+    CLM.MODULES.EventManager:RegisterWoWEvent({"ENCOUNTER_START"}, function()
+        LootTrace("boss pull: loot source counts reset")
+        ResetLootSourceCounts()
+    end)
     MarkKnownDrops()
+
+    CLM.MODULES.ConfigManager:RegisterSlash({
+        lootdebug = {
+            type = "input",
+            name = "Loot debug",
+            desc = "Print every auction list filling decision to chat and keep it in the saved log: on, off or clear",
+            set = function(_, value)
+                value = UTILS.Trim(strlower(value or ""))
+                if value == "clear" then
+                    self:ClearLootDebugLog()
+                elseif value == "on" or value == "off" then
+                    self:SetLootDebug(value == "on")
+                else
+                    self:SetLootDebug(not self:GetLootDebug())
+                end
+            end,
+        }
+    })
 
     CLM.MODULES.LedgerManager:RegisterOnUpdate(function(lag, uncommitted)
         if lag ~= 0 or uncommitted ~= 0 then return end
