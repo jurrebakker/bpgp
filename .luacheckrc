@@ -172,6 +172,7 @@ globals = {
 	"ITEM_SOULBOUND",
 	"CreateFrame",
 	"UIParent",
+	"GetCursorPosition",
 	"C_Container.GetContainerItemInfo",
 	"C_Container.GetContainerNumSlots",
 	"C_Container.UseContainerItem",

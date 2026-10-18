@@ -173,11 +173,31 @@ local function AddResizeGrip(frame, options)
     grip:SetNormalTexture("Interface\\ChatFrame\\UI-ChatIM-SizeGrabber-Up")
     grip:SetHighlightTexture("Interface\\ChatFrame\\UI-ChatIM-SizeGrabber-Highlight")
     grip:SetPushedTexture("Interface\\ChatFrame\\UI-ChatIM-SizeGrabber-Down")
-    grip:SetScript("OnMouseDown", function() frame:StartSizing("BOTTOMRIGHT") end)
-    grip:SetScript("OnMouseUp", function()
-        frame:StopMovingOrSizing()
+    -- Manual sizing instead of StartSizing: with a CENTER anchor and a custom
+    -- scale, StartSizing makes the window jump bigger on the first click.
+    local minWidth = options.minWidth or options.width
+    local minHeight = options.minHeight or options.height
+    grip:SetScript("OnMouseDown", function(self, button)
+        if button ~= "LeftButton" then return end
+        -- Pin the top-left corner so only the bottom-right edge moves
+        local left, top = frame:GetLeft(), frame:GetTop()
+        frame:ClearAllPoints()
+        frame:SetPoint("TOPLEFT", UIParent, "BOTTOMLEFT", left, top)
+        local scale = frame:GetEffectiveScale()
+        local startX, startY = GetCursorPosition()
+        local startWidth, startHeight = frame:GetWidth(), frame:GetHeight()
+        self:SetScript("OnUpdate", function()
+            local x, y = GetCursorPosition()
+            frame:SetSize(
+                math.max(minWidth, startWidth + (x - startX) / scale),
+                math.max(minHeight, startHeight - (y - startY) / scale))
+        end)
+    end)
+    grip:SetScript("OnMouseUp", function(self)
+        self:SetScript("OnUpdate", nil)
         if options.dbKey then SavePosition(frame, options.dbKey) end
     end)
+    grip:SetScript("OnHide", function(self) self:SetScript("OnUpdate", nil) end)
     frame.ResizeGrip = grip
 end
 
