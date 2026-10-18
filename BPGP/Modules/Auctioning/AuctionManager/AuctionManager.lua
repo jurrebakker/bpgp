@@ -231,7 +231,15 @@ local function HandleLootMessage(addon, event, message, _, _, _, playerName, ...
         itemLink = deformat(message, LOOT_ITEM_SELF)
     end
     if not itemLink then return end
-    AutoAddItemProxy(self, Item:CreateFromItemLink(itemLink))
+    -- Only loot that can still go to another player (raid feedback 2026-10-18). Give the
+    -- item a moment to land in the bags, then look for it there.
+    C_Timer.After(1, function()
+        if not CLM.MODULES.TradeHelper:IsTradeableInBags(itemLink) then
+            LOG:Debug("Looted %s is not tradeable, not adding it", itemLink)
+            return
+        end
+        AutoAddItemProxy(self, Item:CreateFromItemLink(itemLink))
+    end)
 end
 
 local function HookAuctionFilling(self)
@@ -513,7 +521,7 @@ function AuctionManager:StartAuction()
         return
     end
     if not self:IsAuctioneer() then
-        LOG:Message(CLM.L["You are not allowed to auction items"])
+        LOG:Message(CLM.L["You are not allowed to auction items. Auctioneers are officers who are raid leader or assistant, or who have Need on everything on."])
         return
     end
     -- Auction parameters sanity checks
@@ -634,7 +642,7 @@ function AuctionManager:StartRoll(auctionItem)
         return
     end
     if not self:IsAuctioneer() then
-        LOG:Message(CLM.L["You are not allowed to auction items"])
+        LOG:Message(CLM.L["You are not allowed to auction items. Auctioneers are officers who are raid leader or assistant, or who have Need on everything on."])
         return
     end
     -- Auction parameters sanity checks

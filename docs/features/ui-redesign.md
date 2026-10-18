@@ -28,6 +28,10 @@ The design proposes a few things that conflict with earlier choices. Your calls:
 | R16 | (2026-10-18, raid test) Fewer bid buttons now OS and Transmog are built in | **Three fixed tiers: BiS (purple), Major (blue), Minor (green).** Names are hardcoded (the *button name* settings are gone). They reuse the Base / Small / Medium GP keys (Minor = Base, Major = Small, BiS = Medium), so the guild's GP values keep their meaning. Large and Max stay valid ledger keys but are never offered or accepted as a bid. OS still costs the Minor value. |
 | R17 | (2026-10-18, raid test) Trade list | **A Trade tab in the main window**, right of Auction, officers only. Replaces R7's "stays its own window". `/bpgp trade` opens the tab. |
 | R18 | (2026-10-18, raid test) Bidding window shows "Item 1 of 3" as text | **An item icon strip on the left, like the Auction tab.** The shown item is highlighted; items you bid on get a green border, passed grey, denied red. Click an icon to switch. The "Item N of M" text is gone. |
+| R19 | (2026-10-18, raid feedback) Hand the auctioneer role to the officer who collects the loot | **The officer with *Need on everything* on may auction**, no assist needed (others: officer + lead/assist as before). Raiders accept auction messages from any officer in their raid group; the officer rank is still checked on receive (S9). |
+| R20 | (2026-10-18, raid feedback) Which looted items fill the auction list | **Only tradeable ones**: not bound, or bound with the trade timer. The rarity and ignore filters still apply. |
+| R21 | (2026-10-18, raid feedback) Raid reminders | **A small draggable window.** *Start raid?* for the creator of a not-yet-started raid, once per raid, on entering a raid instance (right away when created inside one). *End raid?* for the officer who started a raid still in progress, on leaving the raid group. |
+| R22 | (2026-10-18, raid feedback) Items the auctioneer awards to themselves | **Not put on the trade list.** |
 
 Things in the design that conflict with earlier decisions are left out without asking:
 - the "Set alt" right-click item (alt linking removed in Phase 3);

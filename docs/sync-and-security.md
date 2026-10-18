@@ -224,6 +224,6 @@ What this means:
 | S6 | Timestamp rules (H3) | a) reject > 10 min future + flag stale live entries · b) nothing | **a** | **a** ✅ |
 | S7 | Creator checks (H3) | a) live pushes need `creator == sender`; relays only from officers · b) additionally reject relayed entries whose creator isn't an officer *now* (breaks entries from demoted officers on fresh installs) · c) nothing | **a** | **a** ✅ |
 | S8 | Undo rules (M3), only relevant if S1 = a | a) undo needs ≥ level of the undone entry · b) only MANAGER may undo others' entries | **a** | n/a (S1 = b) |
-| S9 | Auction control (M4) | require officer **and** raid lead/assist | **yes** | **yes** ✅ |
+| S9 | Auction control (M4) | require officer **and** raid lead/assist | **yes** | **yes** ✅. Widened 2026-10-18 (raid feedback, ui-redesign R19): an officer with *Need on everything* on may also auction without assist; receivers accept auction messages from any officer in their raid group. The officer rank is still checked on receive. |
 
 These are scheduled in the release plan: C1 in Phase 1, everything else in Phase 8 (Sync hardening).

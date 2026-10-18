@@ -43,7 +43,8 @@ function Raid:New(uid, name, roster, config, creator, entry)
     o.name = strsub(tostring(name or ""), 1, 128)
 
     o.status = CONSTANTS.RAID_STATUS.CREATED
-    -- o.owner = creator
+    o.creator = creator -- GUID of the officer who created the raid
+    o.starter = nil     -- GUID of the officer who started it
 
     o.startTime = 0
     o.endTime = 0
@@ -71,9 +72,22 @@ function Raid:Name()
 end
 
 ---@param time number
-function Raid:Start(time)
+---@param starter string? GUID of the officer who started the raid
+function Raid:Start(time, starter)
     self.status = CONSTANTS.RAID_STATUS.IN_PROGRESS
     self.startTime = time
+    self.starter = starter
+end
+
+---@return string GUID
+function Raid:Creator()
+    return self.creator
+end
+
+-- Who started the raid (the creator when unknown)
+---@return string GUID
+function Raid:Starter()
+    return self.starter or self.creator
 end
 
 ---@param time number

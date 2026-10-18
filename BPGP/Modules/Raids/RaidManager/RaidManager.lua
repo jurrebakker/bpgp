@@ -55,6 +55,7 @@ end
 ---@field IsMasterLootSystem boolean
 ---@field IsGroupLootSystem boolean
 ---@field RaidAssistants table
+---@field RaidMembers table
 ---@field _initialized boolean
 ---@field cache table
 ---@field isEventHandlingRegistered boolean
@@ -71,6 +72,7 @@ function RaidManager:Initialize()
     self.IsMasterLootSystem = false
     self.IsGroupLootSystem = true
     self.RaidAssistants = {}
+    self.RaidMembers = {}
 
     -- Register mutators
     CLM.MODULES.LedgerManager:RegisterEntryType(
@@ -158,7 +160,7 @@ function RaidManager:Initialize()
                     LOG:Debug("RaidManager mutator(): Missing profile for: %s", GUID)
                 end
             end
-            raid:Start(entry:time())
+            raid:Start(entry:time(), getGuidFromInteger(entry:creatorFull()))
         end)
     )
 
@@ -454,6 +456,7 @@ function RaidManager:UpdateGameRaidInformation()
     local lootmethod, _, masterlooterRaidID = UTILS.GetLootMethod()
     LOG:Info("Loot method: %s (id: %s)", lootmethod, masterlooterRaidID)
     self.RaidAssistants = {}
+    self.RaidMembers = {}
     self.IsMasterLootSystem = false
     self.IsGroupLootSystem = false
     if UTILS.IsLootMasterLootMethod() and masterlooterRaidID then
@@ -473,6 +476,7 @@ function RaidManager:UpdateGameRaidInformation()
         local name, rank = GroupMemberInfo(i)
         if name then
             name = UTILS.Disambiguate(name)
+            self.RaidMembers[name] = true
             if rank >= 1 then
                 self.RaidAssistants[name] = true
             end
@@ -564,7 +568,13 @@ function RaidManager:IsMasterLooter(name)
     return self.IsMasterLootSystem and (self.MasterLooter == (name or UTILS.whoami())) or false
 end
 
--- An auctioneer is an officer who is also raid leader or assistant (S9)
+--[[
+    An auctioneer is an officer who is raid leader or assistant (S9), or (2026-10-18, raid
+    feedback) the officer collecting the loot with "Need on everything" on, so the loot can go to
+    an officer who isn't an assistant. Other players can't see that setting, so they accept
+    auction messages from any officer in their raid group; the officer rank is still checked on
+    receive.
+]]--
 ---@param name string?
 ---@return boolean
 function RaidManager:IsAllowedToAuction(name)
@@ -577,6 +587,14 @@ function RaidManager:IsAllowedToAuction(name)
     end
 
     local allow = self.RaidAssistants[name]
+    if not allow then
+        if name == UTILS.whoami() then
+            allow = CLM.GlobalConfigs:GetNeedOnEverything() and GroupIsInRaid()
+        else
+            allow = self.RaidMembers[name]
+        end
+    end
+    allow = allow and true or false
     if not allow then
         LOG:Debug("%s is not allowed to auction.", name)
     end
