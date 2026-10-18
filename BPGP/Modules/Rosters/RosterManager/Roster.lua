@@ -404,13 +404,12 @@ function Roster:GetFieldName(field)
     return self.fieldNames[field] or ""
 end
 
--- Button name for display: the custom name, or the tier name (Base/Small/...) when it's left empty
+-- Button name for display. The names are fixed since 2026-10-18 (BiS / Major / Minor); custom
+-- names from RosterFieldRename entries are still replayed but no longer shown.
 ---@param field string
 ---@return string
 function Roster:GetFieldDisplayName(field)
-    local name = self:GetFieldName(field)
-    if name == "" then name = CONSTANTS.SLOT_VALUE_TIERS_GUI[field] or "" end
-    return name
+    return CONSTANTS.SLOT_VALUE_TIERS_GUI[field] or ""
 end
 
 ---@param field string
@@ -711,13 +710,34 @@ CONSTANTS.SLOT_VALUE_TIERS = UTILS.Set({
     CONSTANTS.SLOT_VALUE_TIER.MAX
 })
 
+--[[
+    Bid tiers (raid test feedback, 2026-10-18): auctions offer three fixed tiers, BiS > Major > Minor.
+    They reuse the Base / Small / Medium keys our guild already filled in, so the GP values in the
+    ledger keep their meaning. Large and Max stay valid ledger keys (old entries replay) but are
+    never offered, accepted as a bid or shown in the settings.
+]]--
 CONSTANTS.SLOT_VALUE_TIERS_GUI = {
-    ["b"] = CLM.L["Base"],
-    ["s"] = CLM.L["Small"],
-    ["m"] = CLM.L["Medium"],
-    ["l"] = CLM.L["Large"],
-    ["x"] = CLM.L["Max"],
+    ["b"] = CLM.L["Minor"],
+    ["s"] = CLM.L["Major"],
+    ["m"] = CLM.L["BiS"],
+    ["l"] = CLM.L["Large (unused)"],
+    ["x"] = CLM.L["Max (unused)"],
 }
+
+-- The tiers raiders can bid on, lowest first
+CONSTANTS.BID_TIERS_ORDERED = {
+    CONSTANTS.SLOT_VALUE_TIER.BASE,
+    CONSTANTS.SLOT_VALUE_TIER.SMALL,
+    CONSTANTS.SLOT_VALUE_TIER.MEDIUM,
+}
+
+CONSTANTS.BID_TIERS_ORDERED_REVERSED = {
+    CONSTANTS.SLOT_VALUE_TIER.MEDIUM,
+    CONSTANTS.SLOT_VALUE_TIER.SMALL,
+    CONSTANTS.SLOT_VALUE_TIER.BASE,
+}
+
+CONSTANTS.BID_TIERS = UTILS.Set(CONSTANTS.BID_TIERS_ORDERED)
 
 CONSTANTS.SLOT_VALUE_TIERS_ORDERED = {
     CONSTANTS.SLOT_VALUE_TIER.BASE,

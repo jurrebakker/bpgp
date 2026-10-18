@@ -52,9 +52,9 @@ local function TierHint(itemLink)
     if not (roster and itemLink) then return "" end
     local values = roster:GetItemValuesFromItemLink(itemLink) or {}
     local parts = {}
-    for _, tier in ipairs(CONSTANTS.SLOT_VALUE_TIERS_ORDERED) do
+    for _, tier in ipairs(CONSTANTS.BID_TIERS_ORDERED_REVERSED) do
         if values[tier] then
-            local name = UTILS.GetRosterConditionalFieldName(tier, roster, "", "")
+            local name = CONSTANTS.SLOT_VALUE_TIERS_GUI[tier]
             parts[#parts + 1] = UI.TIER_COLOR[tier]:WrapTextInColorCode(name .. " " .. tostring(values[tier]))
         end
     end

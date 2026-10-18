@@ -26,7 +26,7 @@ local FAKE_PLAYERS = {
     {"Perrin", "PALADIN", 620, 640}, {"Quill", "MONK", 540, 600}, {"Rhosyn", "SHAMAN", 410, 520},
 }
 
-local TIERS = { {"x", "Max", 300}, {"l", "Large", 200}, {"m", "Medium", 120}, {"s", "Small", 60}, {"b", "Base", 20} }
+local TIERS = { {"m", "BiS", 100}, {"s", "Major", 80}, {"b", "Minor", 50} }
 
 local function FakeRows()
     local rows = {}

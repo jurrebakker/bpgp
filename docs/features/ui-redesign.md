@@ -24,6 +24,10 @@ The design proposes a few things that conflict with earlier choices. Your calls:
 | R12 | (2026-10-17, after 9d) How do officers open auctioning from the GUI? | **An Auction tab in the main window with the full auctioning UI** (officers only, right after Standings). The separate Auctioning window is gone; alt-click and `/bpgp auction` open the tab. |
 | R13 | (2026-10-17) How does a raider reopen the Bidding window after closing it? (only `/bpgp bid` did) | **A Bid button in the main window header**, shown to everyone while an auction runs. |
 | R14 | (2026-10-18) A **Transmog** bid next to OS | **Yes.** Transmog costs **0 GP** and ranks below OS (tiers → OS → Transmog). Among Transmog bids PR doesn't count: the highest roll wins. It has its own guild setting *Transmog* (`useTransmog`, default on), separate from OS. Bid type `TRANSMOG = 5`; auction comm version 5, so older clients are told to update. |
+| R15 | (2026-10-18, raid test) Officer collects all loot | **Need on everything**: a checkbox under *Pass on loot*, officers only, off by default. Rolls Need, else Greed, else Transmog on boss loot, with the same safety rules and exclusions as Pass on loot, and wins over it. BoP confirmations are accepted automatically. |
+| R16 | (2026-10-18, raid test) Fewer bid buttons now OS and Transmog are built in | **Three fixed tiers: BiS (purple), Major (blue), Minor (green).** Names are hardcoded (the *button name* settings are gone). They reuse the Base / Small / Medium GP keys (Minor = Base, Major = Small, BiS = Medium), so the guild's GP values keep their meaning. Large and Max stay valid ledger keys but are never offered or accepted as a bid. OS still costs the Minor value. |
+| R17 | (2026-10-18, raid test) Trade list | **A Trade tab in the main window**, right of Auction, officers only. Replaces R7's "stays its own window". `/bpgp trade` opens the tab. |
+| R18 | (2026-10-18, raid test) Bidding window shows "Item 1 of 3" as text | **An item icon strip on the left, like the Auction tab.** The shown item is highlighted; items you bid on get a green border, passed grey, denied red. Click an icon to switch. The "Item N of M" text is gone. |
 
 Things in the design that conflict with earlier decisions are left out without asking:
 - the "Set alt" right-click item (alt linking removed in Phase 3);
@@ -89,7 +93,7 @@ Things in the design that conflict with earlier decisions are left out without a
 | **Alert toasts** | 276×72 | Existing AlertFrame subsystems with `LootWonAlertFrameTemplate` art. |
 | **Award** | 300×205 | Item, player dropdown, GP + tier/slot hint, Cancel · **Award**. Opened by right-click in Standings (prefilled) or the award modifier click. |
 | **Auction history** | 265×400 | Entries expandable to show bids; right-click (MenuUtil): Post bids · Remove auction · Remove older than 7 days · Remove all…. |
-| **Trade list** | 350×230 | Columns: item · winner · trade time left; right-click: Open trade · Remove. Stays its own window (R7). |
+| **Trade list** | Trade tab (R17) | Columns: item · winner; right-click: Open trade · Remove; Alt-click opens the trade. |
 | **Minimap** | 31×31 | Tooltip: version, TEST MODE, sync status, events, "Left-click: open BPGP". |
 | **Popups** | 320 wide | `StaticPopup` for every confirmation (R6). |
 

@@ -19,6 +19,7 @@ function GlobalConfigs:Initialize()
         alerts = true,
         sounds = true,
         pass_on_loot2 = true, -- renamed when the default became "on" (2026-10-17)
+        need_on_everything = false, -- officers only (2026-10-18)
         raid_warnings = {
             raid = true,
             auction = true,
@@ -43,6 +44,16 @@ end
 ---@return boolean
 function GlobalConfigs:GetPassOnLoot()
     return self.db.pass_on_loot2
+end
+
+---@param value boolean
+function GlobalConfigs:SetNeedOnEverything(value)
+    self.db.need_on_everything = value and true or false
+end
+
+---@return boolean
+function GlobalConfigs:GetNeedOnEverything()
+    return self.db.need_on_everything and true or false
 end
 
 ---@param value boolean

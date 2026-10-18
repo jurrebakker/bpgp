@@ -14,7 +14,7 @@ local S = UI.SPACE
     Auction tab (officers): the auctioning UI lives in the main window (decision R12, 2026-10-17;
     it was a separate window in 9d). Alt-clicking an item or /bpgp auction opens this tab.
       left   item queue (36 px item buttons; the border shows the state)
-      right  item + note, five tier GP fields, length / anti-snipe / roll / clear / Start-Stop,
+      right  item + note, three tier GP fields (BiS, Major, Minor), length / anti-snipe / roll / clear / Start-Stop,
              bid list (Name · Bid · PR · Roll · equipped items), Remove on award · Value · Award
       header state and countdown
     States: idle (building the list), running (inputs locked, countdown in the header) and finished
@@ -338,7 +338,7 @@ end
 local function BuildTierRow(self, panel)
     self.tierInputs = {}
     local previous
-    for _, tier in ipairs(CONSTANTS.SLOT_VALUE_TIERS_ORDERED_REVERSED) do
+    for _, tier in ipairs(CONSTANTS.BID_TIERS_ORDERED_REVERSED) do
         local input = LabeledInput(panel, "", TIER_INPUT_WIDTH, UI.TIER_COLOR[tier])
         if previous then
             input:SetPoint("LEFT", previous, "RIGHT", S.M, 0)
@@ -561,7 +561,7 @@ local function RefreshItem(self, auction)
     SetInputEnabled(self.noteInput, item ~= nil and not locked)
     SetInputEnabled(self.addInput, not auction:IsInProgress())
     for _, input in ipairs(self.tierInputs) do
-        input.Label:SetText(UTILS.GetAuctionConditionalFieldName(input.tier, auction, "", ""))
+        input.Label:SetText(CONSTANTS.SLOT_VALUE_TIERS_GUI[input.tier])
         if not input:HasFocus() then
             input:SetText(item and tostring(item.values[input.tier] or 0) or "")
         end

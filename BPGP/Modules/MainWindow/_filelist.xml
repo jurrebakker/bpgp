@@ -3,6 +3,7 @@
 	<Script file="MainWindow.lua"/>
 	<Script file="Standings.lua"/>
 	<Script file="Auction.lua"/>
+	<Script file="Trade.lua"/>
 	<Script file="History.lua"/>
 	<Script file="Raids.lua"/>
 	<Script file="Roster.lua"/>
