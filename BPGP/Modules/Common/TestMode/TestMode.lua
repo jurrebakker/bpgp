@@ -136,6 +136,7 @@ function TestMode:ClearSimulatedGroup()
     if not self.db then return end
     self.db.group = {}
     LOG:Message(CLM.L["Simulated raid group removed."])
+    CLM.GUI.RaidReminders:CheckEnd() -- like leaving the raid group
 end
 
 --[[

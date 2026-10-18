@@ -16,6 +16,12 @@ local UTILS     = CLM.UTILS
 local GetContainerNumSlots = GetContainerNumSlots or C_Container.GetContainerNumSlots
 local UseContainerItem     = UseContainerItem or C_Container.UseContainerItem
 
+-- Tooltip lines that mean the item can't go to another player (warbound counts as bound)
+local boundLines = {}
+for _, text in ipairs({ ITEM_SOULBOUND, ITEM_ACCOUNTBOUND, ITEM_BNETACCOUNTBOUND, ITEM_ACCOUNTBOUND_UNTIL_EQUIP }) do
+    if type(text) == "string" then boundLines[text] = true end
+end
+
 local function ScanTooltip(self)
     local query = string.gsub(BIND_TRADE_TIME_REMAINING, "%%s", ".*")
     local lineWithTimer
@@ -23,7 +29,8 @@ local function ScanTooltip(self)
         local line = _G["BPGPTradeHelperBagItemCheckerFakeTooltipTextLeft" .. i]
         if line then
             line = line:GetText() or ""
-            if line == ITEM_SOULBOUND then
+            if UTILS.IsSecret(line) then line = "" end
+            if boundLines[line] then
                 self.itemInfo.soulbound = true
             end
             if string.find(line, query) then
@@ -289,11 +296,32 @@ end
 ---@param itemLink string
 ---@param target string
 function TradeHelper:Handle(itemLink, target)
+    -- Nothing to trade when the auctioneer wins the item themselves
+    if UTILS.Disambiguate(target) == UTILS.whoami() then return end
     if not self:IsIgnored(itemLink) then
         if CLM.MODULES.AuctionManager:GetAutoTrade() then
             self:Track(itemLink, target)
         end
     end
+end
+
+-- Is this item in our bags and can it still go to another player (not bound, or bound with
+-- a trade timer)? Matches the exact link first, then any copy with the same item id.
+---@param itemLink string
+---@return boolean
+function TradeHelper:IsTradeableInBags(itemLink)
+    if #ScanBagsForItem(itemLink, true) > 0 then return true end
+    local itemId = UTILS.GetItemIdFromLink(itemLink)
+    if itemId == 0 then return false end
+    for bag = 0, 4 do
+        for slot = 1, GetContainerNumSlots(bag) do
+            BagItemChecker:Set(bag, slot)
+            if BagItemChecker:GetItemId() == itemId and BagItemChecker:IsTradeable() then
+                return true
+            end
+        end
+    end
+    return false
 end
 
 ---@param target string

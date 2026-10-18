@@ -101,7 +101,7 @@ local function BuildPersonal(self, form)
         get = function() return globals:GetPassOnLoot() end, set = function(v) globals:SetPassOnLoot(v) end })
     if self.isOfficer then
         form:Toggle({ label = CLM.L["Need on everything"],
-            desc = CLM.L["Officers only. During our own BPGP raids, automatically roll Need on boss loot, or Greed or Transmog when Need isn't possible, so you collect the items for the auction. Overrides Pass on loot. The same items as above are left to you."],
+            desc = CLM.L["Officers only. During our own BPGP raids, automatically roll Need on boss loot, or Greed or Transmog when Need isn't possible, so you collect the items for the auction. While it's on you may run auctions in the raid without being assistant. Overrides Pass on loot. The same items as above are left to you."],
             warning = CLM.L["Same safety rules as Pass on loot: only in our own BPGP raid, led by one of our officers."],
             get = function() return globals:GetNeedOnEverything() end, set = function(v) globals:SetNeedOnEverything(v) end })
     end
