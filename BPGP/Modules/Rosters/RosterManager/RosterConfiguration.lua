@@ -48,6 +48,8 @@ function RosterConfiguration:New(i)
     o._.basePoints = 0
     -- Base GP
     o._.baseSpent = 0
+    -- Transmog (free bid, ranked below OS by roll only)
+    o._.useTransmog = true
 
     return o
 end
@@ -70,7 +72,8 @@ function RosterConfiguration:fields()
         "rollTime",
         "multiplyTime",
         "basePoints",
-        "baseSpent"
+        "baseSpent",
+        "useTransmog"
     }
 end
 
@@ -96,6 +99,7 @@ local TRANSFORMS = {
     multiplyTime = transform_boolean,
     basePoints = transform_number,
     baseSpent = transform_number,
+    useTransmog = transform_boolean,
 }
 
 ---@param data table
@@ -171,6 +175,7 @@ function RosterConfiguration._validate_rollTime(value) value = tonumber(value); 
 function RosterConfiguration._validate_multiplyTime(value) return IsBoolean(value) end
 function RosterConfiguration._validate_basePoints(value) value = tonumber(value); return IsNumeric(value) and IsPositive(value) end
 function RosterConfiguration._validate_baseSpent(value) value = tonumber(value); return IsNumeric(value) and IsPositive(value) end
+function RosterConfiguration._validate_useTransmog(value) return IsBoolean(value) end
 
 
 CLM.MODELS.RosterConfiguration = RosterConfiguration

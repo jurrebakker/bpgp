@@ -31,7 +31,7 @@ EPGP loot addon for our guild, **WoW retail (Midnight, 12.x) only**. It's a fork
 - **Sync.** Officers broadcast week hashes to GUILD; clients request and merge missing weeks (`Libs/LibEventSourcing/source/ListSync.lua`). Receivers check the *sender's* guild rank (`Modules/Common/ACL`). A bad entry is skipped, not fatal. Checksums include each entry's content.
 - **Permissions.** One officer level: guild ranks with "Is Officer" (rank flags 11/12, verified in-game). Every officer check must also be enforced on **receive**, not only in the UI.
 - **One roster.** It's created with "Set up BPGP" in the Standings tab. Only guild members can be on it; raids never add players.
-- **Auctions** are always Open, with named tier buttons (5 tiers, each with its own GP), OS, Pass and Cancel.
+- **Auctions** are always Open, with named tier buttons (5 tiers, each with its own GP), OS, Transmog, Pass and Cancel. Ranking: tier → OS → Transmog, then PR, then roll; Transmog is free and ignores PR (ui-redesign.md R14).
 - **Test mode** (`Modules/Common/TestMode`) is fixed per session; switching reloads the UI. In test mode:
   - the ledger is `ledger_test`;
   - comms use the `BPGPT` prefix;

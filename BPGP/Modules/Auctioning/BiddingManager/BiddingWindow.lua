@@ -14,7 +14,7 @@ local S = UI.SPACE
     Bidding window (Phase 9d, ui-redesign.md "Bidding", R9). Every raider sees it during an auction.
       header  "Item 2 of 4 · 14s left" (docked countdown) and YOUR PR
       body    item with item level and slot, Next ›; one row of tier buttons with their GP;
-              OS · Pass · Cancel; a status line (accepted / denied); the open bid list
+              OS · Transmog · Pass · Cancel; a status line (accepted / denied); the open bid list
     Clicking another tier replaces your bid. Only an unusable item asks for confirmation.
     The separate timer bar is optional and off by default.
 ]]--
@@ -24,6 +24,7 @@ local ITEM_SIZE = 36
 
 local HIDDEN_BID = UI.COLOR.GREY
 local OS_COLOR = CreateColor(1, 0.82, 0.5)
+local TRANSMOG_COLOR = CreateColor(1, 0.5, 1)
 
 ---@class BiddingManagerGUI
 ---@field window table?
@@ -275,9 +276,12 @@ local function BuildButtons(self, area)
     self.osButton = UI.CreateButton(area, CLM.L["OS"], 74, function(frame) SendBid(self, frame.value, CONSTANTS.BID_TYPE.OFF_SPEC) end)
     self.osButton:SetHeight(24)
     self.osButton:SetPoint("TOPLEFT", 0, y)
+    self.transmogButton = UI.CreateButton(area, CLM.L["Transmog"], 84, function() SendBid(self, 0, CONSTANTS.BID_TYPE.TRANSMOG) end)
+    self.transmogButton:SetHeight(24)
+    self.transmogButton:SetPoint("LEFT", self.osButton, "RIGHT", 6, 0)
     self.passButton = UI.CreateButton(area, CLM.L["Pass"], 74, function() SendBid(self, 0, CONSTANTS.BID_TYPE.PASS) end)
     self.passButton:SetHeight(24)
-    self.passButton:SetPoint("LEFT", self.osButton, "RIGHT", 6, 0)
+    self.passButton:SetPoint("LEFT", self.transmogButton, "RIGHT", 6, 0)
     self.cancelButton = UI.CreateButton(area, CLM.L["Cancel"], 74, function() SendBid(self, 0, CONSTANTS.BID_TYPE.CANCEL) end)
     self.cancelButton:SetHeight(24)
     self.cancelButton:SetPoint("LEFT", self.passButton, "RIGHT", 6, 0)
@@ -292,6 +296,7 @@ local function BidLabel(auction, response)
     if bidType == CONSTANTS.BID_TYPE.CANCEL then return CLM.L["Cancel"] end
     if bidType == CONSTANTS.BID_TYPE.PASS then return CLM.L["Pass"] end
     if bidType == CONSTANTS.BID_TYPE.OFF_SPEC then return CLM.L["OS"] .. " " .. tostring(response:Value()) end
+    if bidType == CONSTANTS.BID_TYPE.TRANSMOG then return CLM.L["Transmog"] end
     if CONSTANTS.SLOT_VALUE_TIERS[bidType] then
         return auction:GetFieldDisplayName(bidType) .. " " .. tostring(response:Value())
     end
@@ -302,6 +307,7 @@ local function BidColor(response)
     local bidType = response:Type()
     if CONSTANTS.BID_TYPE_HIDDEN[bidType] then return HIDDEN_BID end
     if bidType == CONSTANTS.BID_TYPE.OFF_SPEC then return OS_COLOR end
+    if bidType == CONSTANTS.BID_TYPE.TRANSMOG then return TRANSMOG_COLOR end
     return UI.TIER_COLOR[bidType] or UI.COLOR.WHITE
 end
 
@@ -430,13 +436,26 @@ local function RefreshButtons(self, auction)
             button:SetEnabled(running)
         end
     end
-    local useOS = auction and auction:GetUseOS()
-    self.osButton:SetShown(useOS and true or false)
+    local useOS = auction and auction:GetUseOS() and true or false
+    local useTransmog = auction and auction:GetUseTransmog() and true or false
+    self.osButton:SetShown(useOS)
     self.osButton.value = item and tonumber(item:GetValues()[CONSTANTS.SLOT_VALUE_TIER.BASE]) or 0
     self.osButton:SetEnabled(running)
+    self.transmogButton:SetShown(useTransmog)
+    self.transmogButton:SetEnabled(running)
     self.passButton:SetEnabled(running)
     self.cancelButton:SetEnabled(running and myBid ~= nil)
+    -- Close the gap of a hidden OS or Transmog button
+    self.transmogButton:ClearAllPoints()
     if useOS then
+        self.transmogButton:SetPoint("LEFT", self.osButton, "RIGHT", 6, 0)
+    else
+        self.transmogButton:SetPoint("LEFT", self.osButton, "LEFT", 0, 0)
+    end
+    self.passButton:ClearAllPoints()
+    if useTransmog then
+        self.passButton:SetPoint("LEFT", self.transmogButton, "RIGHT", 6, 0)
+    elseif useOS then
         self.passButton:SetPoint("LEFT", self.osButton, "RIGHT", 6, 0)
     else
         self.passButton:SetPoint("LEFT", self.osButton, "LEFT", 0, 0)
@@ -485,7 +504,8 @@ local function RefreshBids(self, auction)
                 hidden = CONSTANTS.BID_TYPE_HIDDEN[response:Type()] and true or false,
                 values = {
                     name = name,
-                    score = CLM.MODULES.AuctionManager:GetBidTypeOrder(response:Type()) * 1e9 + math.floor(pr * 1000) * 1000 + roll,
+                    score = CLM.MODULES.AuctionManager:GetBidTypeOrder(response:Type()) * 1e9
+                        + math.floor(CLM.MODULES.AuctionManager:GetRankingPR(response:Type(), pr) * 1000) * 1000 + roll,
                     bid = BidLabel(auction, response),
                     pr = pr,
                     roll = roll,

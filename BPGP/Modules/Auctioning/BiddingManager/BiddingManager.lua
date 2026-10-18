@@ -213,6 +213,7 @@ local function StartAuction(self, data)
         else -- Extended configuration came from channel
             auction = CLM.MODELS.AuctionInfo:NewShim(
                 data:GetUseOS(),
+                data:GetUseTransmog(),
                 data:GetFieldNames()
             )
         end
@@ -393,7 +394,8 @@ CONSTANTS.BID_TYPE = {
     OFF_SPEC = 2,
     PASS = 3,
     CANCEL = 4,
-    [CONSTANTS.SLOT_VALUE_TIER.BASE]    = CONSTANTS.SLOT_VALUE_TIER.BASE,
+    TRANSMOG = 5,
+    [CONSTANTS.SLOT_VALUE_TIER.BASE]   = CONSTANTS.SLOT_VALUE_TIER.BASE,
     [CONSTANTS.SLOT_VALUE_TIER.SMALL]   = CONSTANTS.SLOT_VALUE_TIER.SMALL,
     [CONSTANTS.SLOT_VALUE_TIER.MEDIUM]  = CONSTANTS.SLOT_VALUE_TIER.MEDIUM,
     [CONSTANTS.SLOT_VALUE_TIER.LARGE]   = CONSTANTS.SLOT_VALUE_TIER.LARGE,
@@ -412,8 +414,14 @@ CONSTANTS.BID_TYPE_REMOVING_BIDS = UTILS.Set({
 
 CONSTANTS.BID_TYPE_NOT_AFFECTING_HIGHEST_BID = UTILS.Set({
     CONSTANTS.BID_TYPE.OFF_SPEC,
+    CONSTANTS.BID_TYPE.TRANSMOG,
     CONSTANTS.BID_TYPE.PASS,
     CONSTANTS.BID_TYPE.CANCEL
+})
+
+-- Transmog bids are ranked by roll only: PR doesn't matter
+CONSTANTS.BID_TYPE_IGNORES_PR = UTILS.Set({
+    CONSTANTS.BID_TYPE.TRANSMOG
 })
 
 CONSTANTS.BID_TYPE_ORDER_DSC = {
@@ -422,8 +430,9 @@ CONSTANTS.BID_TYPE_ORDER_DSC = {
     [CONSTANTS.SLOT_VALUE_TIER.MEDIUM]  = 102,
     [CONSTANTS.SLOT_VALUE_TIER.SMALL]   = 101,
     [CONSTANTS.SLOT_VALUE_TIER.BASE]    = 100,
-    MAIN_SPEC                           = 4,
-    OFF_SPEC                            = 3,
+    MAIN_SPEC                           = 5,
+    OFF_SPEC                            = 4,
+    TRANSMOG                            = 3,
     PASS                                = 2,
     CANCEL                              = 1,
 }
@@ -433,7 +442,8 @@ CONSTANTS.BID_TYPES = UTILS.Set(CONSTANTS.BID_TYPE)
 CONSTANTS.BID_TYPE_NAMES = {
     [CONSTANTS.BID_TYPE.MAIN_SPEC]    = CLM.L["MS"],
     [CONSTANTS.BID_TYPE.OFF_SPEC]     = CLM.L["OS"],
-    [CONSTANTS.BID_TYPE.PASS]         = CLM.L["Pass"],
+    [CONSTANTS.BID_TYPE.TRANSMOG]     = CLM.L["Transmog"],
+    [CONSTANTS.BID_TYPE.PASS]        = CLM.L["Pass"],
     [CONSTANTS.BID_TYPE.CANCEL]       = CLM.L["Cancel"]
 }
 

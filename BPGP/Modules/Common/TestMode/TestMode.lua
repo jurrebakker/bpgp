@@ -172,6 +172,8 @@ function TestMode:SimulateBids()
                     value, bidType = 0, CLM.CONSTANTS.BID_TYPE.PASS
                 elseif roll <= 40 and auction:GetUseOS() then
                     value, bidType = tonumber(values[CLM.CONSTANTS.SLOT_VALUE_TIER.BASE]) or 0, CLM.CONSTANTS.BID_TYPE.OFF_SPEC
+                elseif roll <= 50 and auction:GetUseTransmog() then
+                    value, bidType = 0, CLM.CONSTANTS.BID_TYPE.TRANSMOG
                 elseif #tiers > 0 then
                     local tier = tiers[math.random(#tiers)]
                     value, bidType = tonumber(values[tier]) or 0, tier

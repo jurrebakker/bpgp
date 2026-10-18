@@ -751,6 +751,10 @@ local function ValidateBid(auction, uid, item, name, userResponse)
     if (not auction:GetUseOS()) and (userResponse:Type() == CONSTANTS.BID_TYPE.OFF_SPEC) then
         return false, CONSTANTS.AUCTION_COMM.DENY_BID_REASON.OFF_SPEC_NOT_ALLOWED
     end
+    local isTransmog = userResponse:Type() == CONSTANTS.BID_TYPE.TRANSMOG
+    if isTransmog and not auction:GetUseTransmog() then
+        return false, CONSTANTS.AUCTION_COMM.DENY_BID_REASON.TRANSMOG_NOT_ALLOWED
+    end
     local value = userResponse:Value()
     -- sanity check
     local profile = CLM.MODULES.ProfileManager:GetProfileByName(name)
@@ -761,8 +765,12 @@ local function ValidateBid(auction, uid, item, name, userResponse)
     local current = roster:Standings(GUID)
     local minimumPoints = auction:GetMinimumPoints()
     if current < minimumPoints then return false, CONSTANTS.AUCTION_COMM.DENY_BID_REASON.BELOW_MIN_BIDDER end
-    -- tiered: the bid must be one of the item's tier values
-    if not item:IsValueAccepted(value) then return false, CONSTANTS.AUCTION_COMM.DENY_BID_REASON.BID_VALUE_INVALID end
+    -- transmog is free; tiered: the bid must be one of the item's tier values
+    if isTransmog then
+        if value ~= 0 then return false, CONSTANTS.AUCTION_COMM.DENY_BID_REASON.BID_VALUE_INVALID end
+    elseif not item:IsValueAccepted(value) then
+        return false, CONSTANTS.AUCTION_COMM.DENY_BID_REASON.BID_VALUE_INVALID
+    end
     -- accept otherwise
     return true
 end
@@ -780,6 +788,9 @@ local function ValidateBidLimited(auction, item, name, userResponse)
     end
     if (not auction:GetUseOS()) and (userResponse:Type() == CONSTANTS.BID_TYPE.OFF_SPEC) then
         return false, CONSTANTS.AUCTION_COMM.DENY_BID_REASON.OFF_SPEC_NOT_ALLOWED
+    end
+    if (not auction:GetUseTransmog()) and (userResponse:Type() == CONSTANTS.BID_TYPE.TRANSMOG) then
+        return false, CONSTANTS.AUCTION_COMM.DENY_BID_REASON.TRANSMOG_NOT_ALLOWED
     end
     -- sanity check
     local profile = CLM.MODULES.ProfileManager:GetProfileByName(name)
@@ -889,7 +900,16 @@ function AuctionManager:GetTimeLeft()
     return math.max(0, self.auctionTickerEndTime - GetServerTime())
 end
 
--- Sort weight of a bid type: tiers (Max first) above MS, OS, Pass, Cancel
+-- PR used when ranking a bid: transmog bids ignore PR, so only the roll decides
+---@param bidType any
+---@param pr number
+---@return number
+function AuctionManager:GetRankingPR(bidType, pr)
+    if CONSTANTS.BID_TYPE_IGNORES_PR[bidType] then return 0 end
+    return pr
+end
+
+-- Sort weight of a bid type: tiers (Max first) above MS, OS, Transmog, Pass, Cancel
 ---@param bidType any
 ---@return number
 function AuctionManager:GetBidTypeOrder(bidType)
@@ -902,8 +922,8 @@ end
 
 --[[
     The winner the Auction tab preselects when an auction ends (ui-redesign.md R10):
-    the highest tier, then the highest PR, then the highest roll. Passes, cancels and invalid
-    bids never win. `exclude` holds names already awarded this item (items with a count > 1).
+    the highest tier, then the highest PR, then the highest roll. OS ranks above Transmog, and
+    Transmog ignores PR (highest roll wins). Passes, cancels and invalid bids never win. `exclude` holds names already awarded this item (items with a count > 1).
 ]]--
 ---@param item AuctionItem
 ---@param exclude table? { [name] = true }
@@ -915,7 +935,7 @@ function AuctionManager:GetWinner(item, exclude)
         if not CONSTANTS.BID_TYPE_HIDDEN[response:Type()] and not response:IsInvalid() and not (exclude and exclude[name]) then
             local profile = CLM.MODULES.ProfileManager:GetProfileByName(name)
             local pr = (profile and roster) and roster:Priority(profile:GUID()) or 0
-            local key = { self:GetBidTypeOrder(response:Type()), pr, response:Roll() or 0 }
+            local key = { self:GetBidTypeOrder(response:Type()), self:GetRankingPR(response:Type(), pr), response:Roll() or 0 }
             local better = not bestKey
             if bestKey then
                 for i = 1, 3 do
@@ -975,7 +995,7 @@ function AuctionManager:RefreshGUI()
 end
 
 CONSTANTS.AUCTION_COMM = {
-    CURRENT_VERSION = 4,
+    CURRENT_VERSION = 5,
     BID_PASS  = CLM.L["PASS"],
     NUM_ANNOUNCE_CHANNELS = 2,
     TYPE = {
@@ -1008,6 +1028,7 @@ CONSTANTS.AUCTION_COMM = {
         OFF_SPEC_NOT_ALLOWED = 11,
         INVALID_ITEM = 12,
         SPEC_CHANGE = 13,
+        TRANSMOG_NOT_ALLOWED = 14,
     },
     DENY_BID_REASONS = UTILS.Set({
         1, -- NOT_IN_ROSTER
@@ -1023,6 +1044,7 @@ CONSTANTS.AUCTION_COMM = {
         11,-- OFF_SPEC_NOT_ALLOWED
         12,-- INVALID_ITEM
         13,-- SPEC_CHANGE
+        14,-- TRANSMOG_NOT_ALLOWED
     }),
     DENY_BID_REASONS_STRING = {
         [1] = CLM.L["Not in a roster"],
@@ -1037,7 +1059,8 @@ CONSTANTS.AUCTION_COMM = {
         [10] = CLM.L["Passing after bidding not allowed"],
         [11] = CLM.L["Off-spec bidding not allowed"],
         [12] = CLM.L["Invalid item"],
-        [13] = CLM.L["Changing bid from Main-spec to Off-Spec not allowed"]
+        [13] = CLM.L["Changing bid from Main-spec to Off-Spec not allowed"],
+        [14] = CLM.L["Transmog bidding not allowed"]
     }
 }
 

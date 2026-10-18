@@ -221,6 +221,7 @@ local function BuildGuild(self, form)
     end
     Number(CLM.L["Minimum standing"], "minimumPoints", CLM.L["Minimum BP needed to bid."])
     Toggle(CLM.L["OS"], "useOS", CLM.L["Raiders get an Off-spec button."])
+    Toggle(CLM.L["Transmog"], "useTransmog", CLM.L["Raiders get a free Transmog button. It ranks below OS and the highest roll wins, PR doesn't count."])
     Number(CLM.L["Auction length"], "auctionTime", CLM.L["Seconds per auction."])
     Number(CLM.L["Anti-snipe time"], "antiSnipe", CLM.L["Seconds an auction is extended by when someone bids at the end."])
     Toggle(CLM.L["Multiply time"], "multiplyTime", CLM.L["Auction length is multiplied by the number of items."])
