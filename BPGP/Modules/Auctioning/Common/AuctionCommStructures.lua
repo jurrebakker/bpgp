@@ -52,6 +52,7 @@ local function GetConfig(auction)
     local c = {
         r = auction:GetRoster():UID(),
         o = auction:GetUseOS(),
+        t = auction:GetUseTransmog(),
         f = {}
     }
 
@@ -108,6 +109,11 @@ end
 function AuctionCommStartAuction:GetUseOS()
     if self.c.o == nil then return true end
     return self.c.o and true or false
+end
+
+---@return boolean
+function AuctionCommStartAuction:GetUseTransmog()
+    return self.c.t and true or false
 end
 
 ---@return table

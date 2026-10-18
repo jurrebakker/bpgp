@@ -29,6 +29,7 @@ local assertType = UTILS.assertType
 ---@field hasUsableItems boolean|nil
 ---@field rollItem table|nil
 ---@field useOS boolean
+---@field useTransmog boolean
 ---@field fieldNames table
 local AuctionInfo = {} -- AuctionInfo
 AuctionInfo.__index = AuctionInfo
@@ -94,6 +95,9 @@ end
 local function _GetUseOS(s)
     return s.useOS
 end
+local function _GetUseTransmog(s)
+    return s.useTransmog
+end
 local function _GetFieldName(s, tier)
     return s.fieldNames[tier] or ""
 end
@@ -110,9 +114,10 @@ end
 
 -- Auction built from the START_AUCTION message, for raiders who aren't in the raid in their own ledger
 ---@param useOS boolean
+---@param useTransmog boolean
 ---@param fieldNames table
 ---@return AuctionInfo
-function AuctionInfo:NewShim(useOS, fieldNames)
+function AuctionInfo:NewShim(useOS, useTransmog, fieldNames)
     local o = {}
     setmetatable(o, self)
 
@@ -135,9 +140,11 @@ function AuctionInfo:NewShim(useOS, fieldNames)
 
     -- Overwrite new ones
     o.useOS = useOS
+    o.useTransmog = useTransmog
     o.fieldNames = UTILS.DeepCopy(fieldNames)
 
     o.GetUseOS = _GetUseOS
+    o.GetUseTransmog = _GetUseTransmog
     o.GetFieldName = _GetFieldName
 
     return o
@@ -498,6 +505,11 @@ end
 ---@return boolean
 function AuctionInfo:GetUseOS()
     return Config(self, "useOS", false)
+end
+
+---@return boolean
+function AuctionInfo:GetUseTransmog()
+    return Config(self, "useTransmog", false)
 end
 
 ---@return number

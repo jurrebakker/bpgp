@@ -40,6 +40,7 @@ local QUEUE_STATE = {
 local INVALID_TINT = CreateColor(1, 0.13, 0.13, 0.15)
 local HIDDEN_BID = UI.COLOR.GREY
 local OS_COLOR = CreateColor(1, 0.82, 0.5)
+local TRANSMOG_COLOR = CreateColor(1, 0.5, 1)
 
 local AuctionWindow = {
     key = "auction",
@@ -79,6 +80,7 @@ local function BidLabel(auction, response)
     if bidType == CONSTANTS.BID_TYPE.CANCEL then return CLM.L["Cancel"] end
     if bidType == CONSTANTS.BID_TYPE.PASS then return CLM.L["Pass"] end
     if bidType == CONSTANTS.BID_TYPE.OFF_SPEC then return CLM.L["OS"] .. " " .. tostring(response:Value()) end
+    if bidType == CONSTANTS.BID_TYPE.TRANSMOG then return CLM.L["Transmog"] end
     if CONSTANTS.SLOT_VALUE_TIERS[bidType] then
         return auction:GetFieldDisplayName(bidType) .. " " .. tostring(response:Value())
     end
@@ -89,6 +91,7 @@ local function BidColor(response)
     local bidType = response:Type()
     if CONSTANTS.BID_TYPE_HIDDEN[bidType] then return HIDDEN_BID end
     if bidType == CONSTANTS.BID_TYPE.OFF_SPEC then return OS_COLOR end
+    if bidType == CONSTANTS.BID_TYPE.TRANSMOG then return TRANSMOG_COLOR end
     return UI.TIER_COLOR[bidType] or UI.COLOR.WHITE
 end
 
@@ -117,7 +120,8 @@ local function BuildBidRows(item)
             values = {
                 name = name,
                 -- tier first, then PR, then roll: the same order the winner is picked in
-                score = Manager():GetBidTypeOrder(response:Type()) * 1e9 + math.floor(pr * 1000) * 1000 + roll,
+                score = Manager():GetBidTypeOrder(response:Type()) * 1e9
+                    + math.floor(Manager():GetRankingPR(response:Type(), pr) * 1000) * 1000 + roll,
                 bid = BidLabel(auction, response),
                 pr = pr,
                 roll = roll,

@@ -84,6 +84,7 @@ A runs everything. The testers switch on test mode before the raid and bid norma
 - [ ] 3.8 A tester closes the bidding window and reopens it with **Bid** in the main window during the auction.
 - [ ] 3.9 Testers with *Hide in combat*: the window hides when combat starts and comes back after combat while the auction still runs.
 - [ ] 3.10 Two testers bid the same tier. The higher PR is preselected. With equal PR, the roll phase (`/roll`) decides.
+- [ ] 3.10a One tester bids OS, another Transmog: OS is preselected. With only Transmog bids, the highest roll is preselected even if that tester has the lower PR, and the award charges 0 GP.
 - [ ] 3.11 A awards (Enter). GP is charged, the PR updates for everyone, the tester sees the "won" toast, and the auction history and trade list have the item.
 - [ ] 3.12 A trades the item to the winner. The trade list updates (note what it shows).
 - [ ] 3.13 **Auction during a boss** (if a boss drops loot mid-fight, or start one while in combat on trash). It runs without errors, and messages that are queued arrive after the fight.
