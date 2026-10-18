@@ -11,17 +11,17 @@ local UI = CLM.UI
 local S = UI.SPACE
 
 --[[
-    Trade list window (Phase 9e, ui-redesign.md "Trade list", R7: stays its own window). Officers only.
-    Awarded items still to trade, with the winner. Right-click: Open trade · Remove.
-    Alt-click opens the trade directly.
+    Trade tab (officers): awarded items still to trade, with the winner. It was its own window
+    (9e, R7) until the raid test (2026-10-18) moved it into the main window, right of Auction.
+    Right-click: Open trade · Remove. Alt-click opens the trade directly. /bpgp trade opens the tab.
 ]]--
 
-local WIDTH, HEIGHT = 350, 230
-
----@class TradeListGUI
----@field window table?
----@field _initialized boolean
-local TradeListGUI = {}
+local Trade = {
+    key = "trade",
+    order = 1.6, -- right after Auction
+    title = CLM.L["Trade"],
+    officerOnly = true,
+}
 
 local function BuildRows()
     local rows = {}
@@ -47,23 +47,13 @@ local function Remove(row)
     end)
 end
 
-local function Build(self)
-    local window = UI.CreateWindow({
-        name = "BPGP_TradeListWindow",
-        title = CLM.L["Trade List"],
-        width = WIDTH, height = HEIGHT,
-        dbKey = "tradelistwindow",
-    })
-    self.window = window
-    local inset = UI.CreateInset(window)
-    inset:SetPoint("TOPLEFT", S.S, -28)
-    inset:SetPoint("BOTTOMRIGHT", -S.S, S.S + 16)
-    local footer = UI.CreateLabel(window, CLM.L["Alt-click: open trade · right-click: more"], "GameFontDisableSmall")
-    footer:SetPoint("BOTTOMLEFT", S.M, S.S)
+function Trade:Build(content)
+    local inset = UI.CreateInset(content)
+    inset:SetAllPoints(content)
     self.list = UI.CreateList(inset, {
         columns = {
             { key = "item", title = CLM.L["Item"], width = 0 },
-            { key = "winner", title = CLM.L["Winner"], width = 110, classIcon = true,
+            { key = "winner", title = CLM.L["Winner"], width = 160, classIcon = true,
               color = function(row) return UI.GetClassColor(row.classFile) end },
         },
         sortKey = "winner",
@@ -87,15 +77,25 @@ local function Build(self)
     })
     self.list:SetPoint("TOPLEFT", S.XS, -S.XS)
     self.list:SetPoint("BOTTOMRIGHT", -S.XS, S.XS)
-    window:HookScript("OnShow", function() self:Refresh() end)
 end
 
----@param visible boolean? only refresh when the window is shown
-function TradeListGUI:Refresh(visible)
-    if not self._initialized or not self.window then return end
-    if visible and not self.window:IsShown() then return end
-    self.list:SetData(BuildRows())
+function Trade:Refresh()
+    if not self.list then return end
+    local rows = BuildRows()
+    self.list:SetData(rows)
+    self.window:SetSubtitle(#rows > 0 and string.format(CLM.L["%s to trade"], #rows) or "")
+    self.window:SetPageFooter(CLM.L["Alt-click: open trade · right-click: more"])
 end
+
+CLM.GUI.MainWindow:RegisterPage(Trade)
+
+--[[
+ * CLM.GUI.TradeList: what TradeHelper and /bpgp trade call *
+]]--
+
+---@class TradeListGUI
+---@field _initialized boolean
+local TradeListGUI = {}
 
 function TradeListGUI:Initialize()
     LOG:Trace("TradeListGUI:Initialize()")
@@ -104,7 +104,7 @@ function TradeListGUI:Initialize()
         trade = {
             type = "execute",
             name = "Trade List",
-            desc = CLM.L["Toggle Trade List window display"],
+            desc = CLM.L["Open the Trade tab"],
             handler = self,
             func = "Toggle",
         }
@@ -112,16 +112,17 @@ function TradeListGUI:Initialize()
     self._initialized = true
 end
 
+-- Open the main window on the Trade tab
 function TradeListGUI:Toggle()
     if not self._initialized then return end
-    if not self.window then Build(self) end
-    self.window:SetShown(not self.window:IsShown())
+    CLM.GUI.MainWindow:Open(Trade.key)
 end
 
-function TradeListGUI:Reset()
-    if not self.window then return end
-    self.window:ClearAllPoints()
-    self.window:SetPoint("CENTER", 0, 0)
+---@param visible boolean? only refresh when the tab is shown
+function TradeListGUI:Refresh(visible)
+    if not (Trade.content and Trade.list) then return end
+    if visible and not Trade.content:IsVisible() then return end
+    Trade:Refresh()
 end
 
 CLM.GUI.TradeList = TradeListGUI

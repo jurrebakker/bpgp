@@ -12,15 +12,25 @@ local S = UI.SPACE
 
 --[[
     Bidding window (Phase 9d, ui-redesign.md "Bidding", R9). Every raider sees it during an auction.
-      header  "Item 2 of 4 · 14s left" (docked countdown) and YOUR PR
-      body    item with item level and slot, Next ›; one row of tier buttons with their GP;
+      header  "14s left" (docked countdown) and YOUR PR
+      left    the auctioned items as icons (like the Auction tab): the shown item is highlighted,
+              items you bid on get a green border, items you passed a grey one; click to switch
+      body    item with item level and slot, Next ›; BiS · Major · Minor with their GP;
               OS · Transmog · Pass · Cancel; a status line (accepted / denied); the open bid list
     Clicking another tier replaces your bid. Only an unusable item asks for confirmation.
     The separate timer bar is optional and off by default.
 ]]--
 
-local WIDTH, HEIGHT = 480, 440
+local WIDTH, HEIGHT = 530, 440
 local ITEM_SIZE = 36
+local QUEUE_WIDTH = 44
+
+local QUEUE_STATE = {
+    selected = CreateColor(0.25, 0.88, 0.82),
+    bid      = UI.COLOR.EP,
+    passed   = UI.COLOR.GREY,
+    denied   = UI.COLOR.BAD,
+}
 
 local HIDDEN_BID = UI.COLOR.GREY
 local OS_COLOR = CreateColor(1, 0.82, 0.5)
@@ -208,28 +218,14 @@ local function SendBid(self, value, bidType)
     end
 end
 
--- Tiers shown as buttons: named (or valued) tiers with a value of 0 or more, Max first
-local function VisibleTiers(auction, item)
+-- Tiers shown as buttons: BiS, Major, Minor; a negative value hides a tier
+local function VisibleTiers(item)
     local tiers = {}
     local values = item and item:GetValues() or {}
-    for _, tier in ipairs(CONSTANTS.SLOT_VALUE_TIERS_ORDERED_REVERSED) do
+    for _, tier in ipairs(CONSTANTS.BID_TIERS_ORDERED_REVERSED) do
         local value = tonumber(values[tier]) or 0
-        local name = auction:GetFieldName(tier)
-        -- Unnamed tier with a value: use the tier's own name instead of hiding the button
-        if (not name or name == "") and value > 0 then
-            name = CONSTANTS.SLOT_VALUE_TIERS_GUI[tier]
-        end
-        if name and name ~= "" and value >= 0 then
-            tiers[#tiers + 1] = { tier = tier, name = name, value = value }
-        end
-    end
-    -- No named or valued tier (e.g. every value 0): still offer the Base tier, so there is always a bid button
-    if #tiers == 0 then
-        local base = CONSTANTS.SLOT_VALUE_TIER.BASE
-        local value = tonumber(values[base]) or 0
         if value >= 0 then
-            local name = auction:GetFieldName(base)
-            tiers[1] = { tier = base, name = (name and name ~= "") and name or CONSTANTS.SLOT_VALUE_TIERS_GUI[base], value = value }
+            tiers[#tiers + 1] = { tier = tier, name = CONSTANTS.SLOT_VALUE_TIERS_GUI[tier], value = value }
         end
     end
     return tiers
@@ -250,6 +246,41 @@ local function BuildHeader(self, window)
     self.myPRLabel:SetPoint("RIGHT", self.myPR, "LEFT", -S.S, 0)
 end
 
+local function BuildQueue(self, area)
+    local inset = UI.CreateInset(area)
+    inset:SetPoint("TOPLEFT")
+    inset:SetPoint("BOTTOMLEFT")
+    inset:SetWidth(QUEUE_WIDTH + S.S)
+    local scroll = CreateFrame("ScrollFrame", nil, inset)
+    scroll:SetPoint("TOPLEFT", S.XS, -S.XS)
+    scroll:SetPoint("BOTTOMRIGHT", -S.XS, S.XS)
+    local content = CreateFrame("Frame", nil, scroll)
+    content:SetSize(ITEM_SIZE, 1)
+    scroll:SetScrollChild(content)
+    scroll:EnableMouseWheel(true)
+    scroll:SetScript("OnMouseWheel", function(frame, delta)
+        local offset = frame:GetVerticalScroll() - delta * (ITEM_SIZE + S.XS)
+        frame:SetVerticalScroll(math.max(0, math.min(offset, frame:GetVerticalScrollRange())))
+    end)
+    self.queueContent = content
+    self.queueButtons = {}
+    return inset
+end
+
+local function QueueButton(self, index)
+    local button = self.queueButtons[index]
+    if button then return button end
+    button = UI.CreateItemButton(self.queueContent, ITEM_SIZE)
+    button:SetPoint("TOP", 0, -(index - 1) * (ITEM_SIZE + S.XS) - 2)
+    button:SetScript("OnClick", function(frame)
+        if not frame.orderIndex then return end
+        ShowIndex(self, frame.orderIndex)
+        self:Refresh()
+    end)
+    self.queueButtons[index] = button
+    return button
+end
+
 local function BuildItemRow(self, area)
     self.itemButton = UI.CreateItemButton(area, ITEM_SIZE)
     self.itemButton:SetPoint("TOPLEFT")
@@ -267,7 +298,7 @@ end
 
 local function BuildButtons(self, area)
     self.tierButtons = {}
-    for i = 1, #CONSTANTS.SLOT_VALUE_TIERS_ORDERED do
+    for i = 1, #CONSTANTS.BID_TIERS_ORDERED do
         local button = UI.CreateTierButton(area, function(frame) SendBid(self, frame.value, frame.tier) end)
         button:SetPoint("TOPLEFT", (i - 1) * (74 + 6), -(ITEM_SIZE + S.M))
         self.tierButtons[i] = button
@@ -355,6 +386,11 @@ local function Build(self)
     local area = CreateFrame("Frame", nil, window)
     area:SetPoint("TOPLEFT", S.M, -top)
     area:SetPoint("BOTTOMRIGHT", -S.M, S.M)
+    local queue = BuildQueue(self, area)
+    local body = CreateFrame("Frame", nil, area)
+    body:SetPoint("TOPLEFT", queue, "TOPRIGHT", S.M, 0)
+    body:SetPoint("BOTTOMRIGHT")
+    area = body
     BuildItemRow(self, area)
     local listTop = BuildButtons(self, area)
     BuildBidList(self, area, listTop)
@@ -377,9 +413,6 @@ function BiddingWindow:UpdateHeader()
     if not self.window then return end
     local auction = Auction()
     local parts = {}
-    if auction and #self.auctionOrder > 0 then
-        parts[#parts + 1] = string.format(CLM.L["Item %s of %s"], self.nextItem, #self.auctionOrder)
-    end
     if auction and auction:IsInProgress() and auction:GetEndTime() then
         local left = math.max(0, math.ceil(auction:GetEndTime() - GetServerTime()))
         local text = string.format(CLM.L["%ss left"], left)
@@ -400,6 +433,37 @@ local function RefreshMyPR(self, auction)
         self.myPR:SetText("")
         self.myPRLabel:Hide()
     end
+end
+
+local function RefreshQueue(self, auction)
+    local shown = 0
+    for index, uid in ipairs(self.auctionOrder) do
+        local item = auction and auction:GetItemByUID(uid)
+        if item and IsShownItem(self, item) then
+            shown = shown + 1
+            local button = QueueButton(self, shown)
+            button.orderIndex = index
+            button:SetItem(item:GetItemLink())
+            local bid = item:GetBid()
+            local state
+            if item == self.auctionItem then
+                state = QUEUE_STATE.selected
+            elseif bid and item:BidDenied() then
+                state = QUEUE_STATE.denied
+            elseif bid and bid:Type() == CONSTANTS.BID_TYPE.PASS then
+                state = QUEUE_STATE.passed
+            elseif bid and bid:Type() ~= CONSTANTS.BID_TYPE.CANCEL then
+                state = QUEUE_STATE.bid
+            end
+            button:SetState(state)
+            button:Show()
+        end
+    end
+    for i = shown + 1, #self.queueButtons do
+        self.queueButtons[i].orderIndex = nil
+        self.queueButtons[i]:Hide()
+    end
+    self.queueContent:SetHeight(math.max(shown * (ITEM_SIZE + S.XS), 1))
 end
 
 local function RefreshItem(self)
@@ -425,7 +489,7 @@ local function RefreshButtons(self, auction)
     local item = self.auctionItem
     local running = auction and auction:IsInProgress() and item ~= nil
     local myBid = item and item:GetBid()
-    local tiers = (auction and item) and VisibleTiers(auction, item) or {}
+    local tiers = (auction and item) and VisibleTiers(item) or {}
     for i, button in ipairs(self.tierButtons) do
         local tier = tiers[i]
         button:SetShown(tier ~= nil)
@@ -520,6 +584,7 @@ function BiddingWindow:Refresh()
     if not self._initialized or not self.window then return end
     local auction = Auction()
     RefreshMyPR(self, auction)
+    RefreshQueue(self, auction)
     RefreshItem(self)
     RefreshButtons(self, auction)
     if auction then RefreshStatus(self, auction) else self.status:SetText("") end

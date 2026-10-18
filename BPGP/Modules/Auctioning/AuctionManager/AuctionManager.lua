@@ -765,9 +765,16 @@ local function ValidateBid(auction, uid, item, name, userResponse)
     local current = roster:Standings(GUID)
     local minimumPoints = auction:GetMinimumPoints()
     if current < minimumPoints then return false, CONSTANTS.AUCTION_COMM.DENY_BID_REASON.BELOW_MIN_BIDDER end
-    -- transmog is free; tiered: the bid must be one of the item's tier values
+    -- transmog is free; a tier bid must be BiS / Major / Minor at exactly that tier's value;
+    -- anything else must be one of the item's tier values
+    local bidType = userResponse:Type()
     if isTransmog then
         if value ~= 0 then return false, CONSTANTS.AUCTION_COMM.DENY_BID_REASON.BID_VALUE_INVALID end
+    elseif CONSTANTS.SLOT_VALUE_TIERS[bidType] then
+        local tierValue = tonumber(item:GetValues()[bidType])
+        if not CONSTANTS.BID_TIERS[bidType] or not tierValue or tierValue < 0 or tonumber(value) ~= tierValue then
+            return false, CONSTANTS.AUCTION_COMM.DENY_BID_REASON.BID_VALUE_INVALID
+        end
     elseif not item:IsValueAccepted(value) then
         return false, CONSTANTS.AUCTION_COMM.DENY_BID_REASON.BID_VALUE_INVALID
     end
@@ -909,7 +916,7 @@ function AuctionManager:GetRankingPR(bidType, pr)
     return pr
 end
 
--- Sort weight of a bid type: tiers (Max first) above MS, OS, Transmog, Pass, Cancel
+-- Sort weight of a bid type: tiers (BiS first) above MS, OS, Transmog, Pass, Cancel
 ---@param bidType any
 ---@return number
 function AuctionManager:GetBidTypeOrder(bidType)

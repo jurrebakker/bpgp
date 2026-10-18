@@ -161,7 +161,7 @@ function TestMode:SimulateBids()
             for uid, item in pairs(auction:GetItems()) do
                 local values = item:GetValues()
                 local tiers = {}
-                for _, tier in ipairs(CLM.CONSTANTS.SLOT_VALUE_TIERS_ORDERED) do
+                for _, tier in ipairs(CLM.CONSTANTS.BID_TIERS_ORDERED) do
                     if (tonumber(values[tier]) or 0) > 0 then tiers[#tiers + 1] = tier end
                 end
                 local roll = math.random(100)

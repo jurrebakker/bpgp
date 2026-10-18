@@ -4,7 +4,7 @@ local  _, CLM = ...
 -- ------ CLM common cache ------- --
 local LOG       = CLM.LOG
 local CONSTANTS = CLM.CONSTANTS
-local UTILS     = CLM.UTILS
+-- local UTILS     = CLM.UTILS
 -- ------------------------------- --
 
 local UI = CLM.UI
@@ -99,6 +99,12 @@ local function BuildPersonal(self, form)
         desc = CLM.L["During our own BPGP raids, automatically pass on boss loot rolls, so the officer who runs the auctions can loot the items. Quest items, legendaries, stacks, recipes, mounts, toys and cosmetics are never passed."],
         warning = CLM.L["Only in a BPGP raid started by our officers (less than 12 hours ago), in a raid group led by one of our officers. Outside our own raids (pugs, other guilds, dungeons) you NEVER pass automatically."],
         get = function() return globals:GetPassOnLoot() end, set = function(v) globals:SetPassOnLoot(v) end })
+    if self.isOfficer then
+        form:Toggle({ label = CLM.L["Need on everything"],
+            desc = CLM.L["Officers only. During our own BPGP raids, automatically roll Need on boss loot, or Greed or Transmog when Need isn't possible, so you collect the items for the auction. Overrides Pass on loot. The same items as above are left to you."],
+            warning = CLM.L["Same safety rules as Pass on loot: only in our own BPGP raid, led by one of our officers."],
+            get = function() return globals:GetNeedOnEverything() end, set = function(v) globals:SetNeedOnEverything(v) end })
+    end
 
     local bidding = CLM.GUI.BiddingManager
     form:Header(CLM.L["Bidding window"])
@@ -213,12 +219,6 @@ local function BuildGuild(self, form)
     Number(CLM.L["On-time bonus BP"], "onTimeBonusValue")
 
     form:Header(CLM.L["Auction rules"])
-    for _, tier in ipairs(CONSTANTS.SLOT_VALUE_TIERS_ORDERED) do
-        form:Text({ label = string.format(CLM.L["%s button name"], CONSTANTS.SLOT_VALUE_TIERS_GUI[tier]), readOnly = readOnly, hidden = NoRoster,
-            maxLetters = 20, desc = CLM.L["Text on the raiders' bid button. Empty uses the default name."],
-            get = function() local roster = GetRoster() return roster and roster:GetFieldName(tier) or "" end,
-            set = function(v) local roster = GetRoster() if roster then CLM.MODULES.RosterManager:SetFieldName(roster, tier, v) end end })
-    end
     Number(CLM.L["Minimum standing"], "minimumPoints", CLM.L["Minimum BP needed to bid."])
     Toggle(CLM.L["OS"], "useOS", CLM.L["Raiders get an Off-spec button."])
     Toggle(CLM.L["Transmog"], "useTransmog", CLM.L["Raiders get a free Transmog button. It ranks below OS and the highest roll wins, PR doesn't count."])
@@ -257,18 +257,14 @@ end
 local function TierHeaderRow(form)
     form:Custom(18, function(frame)
         frame.labels = {}
-        for i, tier in ipairs(CONSTANTS.SLOT_VALUE_TIERS_ORDERED) do
-            local label = UI.CreateLabel(frame, "", "GameFontNormalSmall", UI.TIER_COLOR[tier])
+        for i, tier in ipairs(CONSTANTS.BID_TIERS_ORDERED_REVERSED) do
+            local label = UI.CreateLabel(frame, CONSTANTS.SLOT_VALUE_TIERS_GUI[tier], "GameFontNormalSmall", UI.TIER_COLOR[tier])
             label:SetPoint("LEFT", GEAR_LABEL_WIDTH + (i - 1) * (GEAR_INPUT_WIDTH + S.S) + 6, 0)
             label:SetWidth(GEAR_INPUT_WIDTH)
             label:SetJustifyH("RIGHT")
             frame.labels[tier] = label
         end
-    end, function(frame)
-        for tier, label in pairs(frame.labels) do
-            label:SetText(UTILS.GetRosterConditionalFieldName(tier, GetRoster(), "", ""))
-        end
-    end, NoRoster)
+    end, nil, NoRoster)
 end
 
 local function OverrideSignature()
@@ -284,7 +280,7 @@ local function BuildGearValues(self, form)
     local readOnly = function() return not self.isOfficer end
     form:Description(function()
         if NoRoster() then return CLM.L["Set up BPGP first (Standings tab)."] end
-        return CLM.L["GP per gear slot for each bid tier. A negative value, or the same value as another tier, hides that tier's button."]
+        return CLM.L["GP per gear slot for each bid tier (BiS, Major, Minor). A negative value hides that tier's button. OS costs the Minor value."]
     end)
 
     form:Header(CLM.L["Default slot values"])
@@ -298,7 +294,7 @@ local function BuildGearValues(self, form)
             local label = UI.CreateLabel(frame, slot.name, "GameFontHighlight")
             label:SetPoint("LEFT", icon, "RIGHT", S.XS, 0)
             frame.inputs = {}
-            for i, tier in ipairs(CONSTANTS.SLOT_VALUE_TIERS_ORDERED) do
+            for i, tier in ipairs(CONSTANTS.BID_TIERS_ORDERED_REVERSED) do
                 local input = GearInput(frame,
                     function() local roster = GetRoster() return roster and roster:GetDefaultSlotTierValue(slot.type, tier) end,
                     function(v) CLM.MODULES.RosterManager:SetRosterDefaultSlotTierValue(GetRoster(), slot.type, tier, v) end,
@@ -338,7 +334,7 @@ local function BuildGearValues(self, form)
             end
             frame.inputs = {}
             local last
-            for i, tier in ipairs(CONSTANTS.SLOT_VALUE_TIERS_ORDERED) do
+            for i, tier in ipairs(CONSTANTS.BID_TIERS_ORDERED_REVERSED) do
                 local input = GearInput(frame,
                     function() local current = GetRoster() return current and current:GetItemValues(id)[tier] end,
                     function(v) CLM.MODULES.RosterManager:SetRosterItemTierValue(GetRoster(), id, tier, v) end,

@@ -12,7 +12,7 @@ local S = UI.SPACE
 
 --[[
     The main window (Phase 9b, docs/features/ui-redesign.md): one portrait frame with bottom tabs.
-    Officers get Standings, Auction (R12), History, Raids, Roster, Audit and Settings; raiders get Standings,
+    Officers get Standings, Auction (R12), Trade, History, Raids, Roster, Audit and Settings; raiders get Standings,
     History, Raids and Settings (R11).
 
     Pages register themselves with MainWindow:RegisterPage(page). A page is a table with:

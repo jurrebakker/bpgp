@@ -859,34 +859,6 @@ function UTILS.randomString(length, customCharset)
     return result
 end
 
-function UTILS.GetAuctionConditionalFieldName(key, auction, prefix, suffix)
-    local name
-    prefix = prefix or "["
-    suffix = suffix or "]"
-    if auction then
-        name = auction:GetFieldName(key)
-        if name == "" then name = nil end
-    end
-    if not name then
-        name = prefix .. CONSTANTS.SLOT_VALUE_TIERS_GUI[key] .. suffix
-    end
-    return name
-end
-
-function UTILS.GetRosterConditionalFieldName(key, roster, prefix, suffix)
-    local name
-    prefix = prefix or "["
-    suffix = suffix or "]"
-    if roster then
-        name = roster:GetFieldName(key)
-        if name == "" then name = nil end
-    end
-    if not name then
-        name = prefix .. CONSTANTS.SLOT_VALUE_TIERS_GUI[key] .. suffix
-    end
-    return name
-end
-
 ---@param changeType number
 ---@return string
 function UTILS.DecodePointTypeChangeName(changeType)

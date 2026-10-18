@@ -39,13 +39,13 @@ UI.COLOR = {
     SELECTED = CreateColor(1, 0.82, 0),
 }
 
--- Bid tier colours follow item qualities (Max orange ... Base white)
+-- Bid tier colours follow item qualities: BiS purple, Major blue, Minor green (unused Large/Max grey)
 UI.TIER_COLOR = {
-    x = CreateColor(1, 0.5, 0),
-    l = CreateColor(0.64, 0.21, 0.93),
-    m = CreateColor(0, 0.44, 0.87),
-    s = CreateColor(0.12, 1, 0),
-    b = CreateColor(1, 1, 1),
+    x = CreateColor(0.62, 0.62, 0.62),
+    l = CreateColor(0.62, 0.62, 0.62),
+    m = CreateColor(0.64, 0.21, 0.93),
+    s = CreateColor(0, 0.44, 0.87),
+    b = CreateColor(0.12, 1, 0),
 }
 
 local LOGO = CLM.MEDIA_PATH .. "Icons\\bpgp-32.png"
