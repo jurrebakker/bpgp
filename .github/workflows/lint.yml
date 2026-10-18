@@ -1,5 +1,8 @@
 name: Lint
 
+# "lint" is a required check on master, so the job always runs. On a pull request that only touches
+# the updater or the docs, it skips the addon checks (the updater has its own build, updater-build.yml).
+
 on:
   push:
   pull_request:
@@ -9,15 +12,35 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0 # to compare a pull request with its base
+
+      - name: Addon files changed?
+        id: changes
+        run: |
+          if [ "${{ github.event_name }}" = "pull_request" ]; then
+            # Anything outside updater/, docs/ and Markdown files counts as an addon change
+            if git diff --name-only "${{ github.event.pull_request.base.sha }}" HEAD | grep -qvE '^(updater/|docs/)|\.md$'; then
+              echo "addon=true" >> "$GITHUB_OUTPUT"
+            else
+              echo "addon=false" >> "$GITHUB_OUTPUT"
+              echo "Only updater or docs changed: addon checks skipped."
+            fi
+          else
+            echo "addon=true" >> "$GITHUB_OUTPUT"
+          fi
 
       - name: File references and packager markers
+        if: steps.changes.outputs.addon == 'true'
         run: python3 scripts/check_addon.py
 
       - name: Install luacheck
+        if: steps.changes.outputs.addon == 'true'
         run: |
           sudo apt-get update
           sudo apt-get install -y luarocks
           sudo luarocks install luacheck
 
       - name: luacheck
+        if: steps.changes.outputs.addon == 'true'
         run: luacheck . --no-color -q

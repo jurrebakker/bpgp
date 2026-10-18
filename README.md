@@ -74,7 +74,7 @@ Practise first in **test mode** (`/bpgp test`): a separate ledger and sync chann
 - Link the addon folder into `World of Warcraft\_retail_\Interface\AddOns\` (a directory junction works on Windows) and use `/reload` in-game.
 - Install BugSack + !BugGrabber to see Lua errors.
 - Test in **test mode** (`/bpgp test`, `/bpgp testgroup 10`, *Simulate bids*). See [docs/features/test-mode.md](docs/features/test-mode.md).
-- `python -I scripts/check_addon.py` checks file references, packager-only markers and Lua block balance. luacheck runs in CI (config in `.luacheckrc`).
+- `python -I scripts/check_addon.py` checks file references, packager-only markers and Lua block balance. luacheck runs in CI (config in `.luacheckrc`). Pull requests that change `updater/` also build the updater in CI; the exe can be downloaded from the run's artifacts.
 - All libraries are vendored in `BPGP/Libs` (see its README), so a git clone runs as-is.
 - `updater/` is the Windows updater (C#, WPF on .NET Framework 4.8), styled like the addon, with tabs BPGP, Settings and About. Build it with `dotnet publish updater/BPGPUpdater.csproj -c Release -o updater/out` (.NET 8 SDK). It leaves a linked (junction) `AddOns\BPGP` alone.
 - Releasing the addon: push a tag like `v1.0.0`. `.github/workflows/release.yml` builds the addon zip and publishes it as a GitHub Release.

@@ -1,0 +1,38 @@
+name: Updater build
+
+# Builds BPGP Updater when a pull request (or master) changes it, so a broken build shows up
+# before an updater-v* tag is pushed. The exe is kept as a downloadable artifact for 14 days,
+# so a PR's version can be tried without building it locally.
+
+on:
+  pull_request:
+    paths:
+      - 'updater/**'
+      - '.github/workflows/updater-build.yml'
+      - '.github/workflows/updater-release.yml'
+  push:
+    branches: [master]
+    paths:
+      - 'updater/**'
+      - '.github/workflows/updater-build.yml'
+      - '.github/workflows/updater-release.yml'
+
+jobs:
+  build:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '8.0.x'
+
+      - name: Build BPGPUpdater.exe
+        shell: pwsh
+        run: dotnet publish updater/BPGPUpdater.csproj -c Release -o out
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: BPGPUpdater
+          path: out/BPGPUpdater.exe
+          retention-days: 14
