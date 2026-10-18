@@ -436,8 +436,9 @@ local function BuildBidList(self, panel, top)
             local row = selection[1]
             if row and not row.hidden then
                 SetWinner(self, row.values.name, row.response)
-                self:Refresh()
             end
+            -- Refresh also puts the highlight back on the winner (clicking the winner again deselects it)
+            self:Refresh()
         end,
         onEnter = ShowBidTooltip,
     })
@@ -622,6 +623,8 @@ function AuctionWindow:Refresh(visibleOnly)
     RefreshItem(self, auction)
     RefreshControls(self, auction)
     self.bidList:SetData(self.auctionItem and BuildBidRows(self.auctionItem) or {})
+    -- Highlight the winner, so the preselected (first) player is selected when the next item loads
+    self.bidList:SetSelection(self.awardPlayer and { self.awardPlayer } or nil)
     RefreshAward(self)
     self:UpdateHeader()
     if not auction:GetRoster() then

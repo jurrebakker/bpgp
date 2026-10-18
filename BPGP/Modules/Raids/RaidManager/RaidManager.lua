@@ -387,6 +387,25 @@ function RaidManager:EndRaid(raid)
     if CLM.GlobalConfigs:GetRaidWarning() and GroupIsInRaid() then
         UTILS.SendChatMessage(string.format(CLM.L["Raid [%s] ended"], raid:Name()) , CHAT_MESSAGE_CHANNEL)
     end
+    -- Raid feedback 3 (2026-10-18): the loot collector (Need on everything) is asked for the weekly decay
+    -- (next frame: EndRaid is often called from the End raid confirmation, which hides itself after this returns)
+    if CLM.GlobalConfigs:GetNeedOnEverything() then
+        C_Timer.After(0, function() self:OfferEndOfRaidDecay(raid) end)
+    end
+end
+
+local END_OF_RAID_DECAY = 10
+
+---@param raid Raid
+function RaidManager:OfferEndOfRaidDecay(raid)
+    local roster = raid:Roster()
+    if not roster then return end
+    local decayType = CONSTANTS.POINT_CHANGE_TYPE.TOTAL
+    CLM.UI.Confirm(string.format(CLM.L["Raid %s ended. Decay %s%% %s to everyone in roster?"], raid:Name(),
+        END_OF_RAID_DECAY, UTILS.DecodePointTypeChangeName(decayType)), function()
+        CLM.MODULES.PointManager:UpdateRosterPoints(roster, END_OF_RAID_DECAY, CONSTANTS.POINT_CHANGE_REASON.DECAY,
+            CONSTANTS.POINT_MANAGER_ACTION.DECAY, true, nil, decayType)
+    end, YES, CLM.L["Not now"])
 end
 
 ---@param raid Raid

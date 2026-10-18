@@ -30,7 +30,7 @@ local UI = CLM.UI
       options.onEnter(row, rowFrame) / options.onLeave(row, rowFrame)
 
     Rows: { id = unique, values = { key = value }, classFile = "WARRIOR"? }
-    Methods: :SetData(rows) · :GetSelection() · :ClearSelection() · :SetSort(key, desc) · :Refresh()
+    Methods: :SetData(rows) · :GetSelection() · :SetSelection(ids) · :ClearSelection() · :SetSort(key, desc) · :Refresh()
 ]]--
 
 local HIGHLIGHT = "Interface\\QuestFrame\\UI-QuestTitleHighlight"
@@ -146,6 +146,14 @@ function List:GetSelection()
         if self.selected[row.id] then result[#result + 1] = row end
     end
     return result
+end
+
+-- Select these row ids without calling onSelectionChanged (to show a choice made in code)
+---@param ids table
+function List:SetSelection(ids)
+    wipe(self.selected)
+    for _, id in ipairs(ids or {}) do self.selected[id] = true end
+    self:UpdateSelectionVisuals()
 end
 
 function List:ClearSelection()

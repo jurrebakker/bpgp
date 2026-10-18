@@ -103,7 +103,19 @@ local function BuildPersonal(self, form)
         form:Toggle({ label = CLM.L["Need on everything"],
             desc = CLM.L["Officers only. During our own BPGP raids, automatically roll Need on boss loot, or Greed or Transmog when Need isn't possible, so you collect the items for the auction. While it's on you may run auctions in the raid without being assistant. Overrides Pass on loot. The same items as above are left to you."],
             warning = CLM.L["Same safety rules as Pass on loot: only in our own BPGP raid, led by one of our officers."],
-            get = function() return globals:GetNeedOnEverything() end, set = function(v) globals:SetNeedOnEverything(v) end })
+            get = function() return globals:GetNeedOnEverything() end,
+            set = function(v)
+                -- Raid feedback 3 (2026-10-18): warn when you are not raid leader or assistant
+                if v and not (UnitIsGroupLeader("player") or UnitIsGroupAssistant("player")) then
+                    UI.Confirm(CLM.L["You are not the raid leader or a raid assistant. With Need on everything on you roll Need on all boss loot in our BPGP raids. Turn it on anyway?"],
+                        function()
+                            globals:SetNeedOnEverything(true)
+                            form:Refresh()
+                        end)
+                    return
+                end
+                globals:SetNeedOnEverything(v)
+            end })
     end
 
     local bidding = CLM.GUI.BiddingManager

@@ -229,6 +229,8 @@ globals = {
 	"CombatLogGetCurrentEventInfo",
 	"GetInstanceInfo",
 	"UnitIsPlayer",
+	"UnitIsGroupLeader",
+	"UnitIsGroupAssistant",
 	"UnitClass",
 	"UnitInBattleground",
 	"IsActiveBattlefieldArena",
