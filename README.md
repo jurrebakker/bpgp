@@ -76,7 +76,7 @@ Practise first in **test mode** (`/bpgp test`): a separate ledger and sync chann
 - Test in **test mode** (`/bpgp test`, `/bpgp testgroup 10`, *Simulate bids*). See [docs/features/test-mode.md](docs/features/test-mode.md).
 - `python -I scripts/check_addon.py` checks file references, packager-only markers and Lua block balance. luacheck runs in CI (config in `.luacheckrc`).
 - All libraries are vendored in `BPGP/Libs` (see its README), so a git clone runs as-is.
-- `updater/` is the Windows updater (C#, .NET Framework 4.8). Build it with `dotnet publish updater/BPGPUpdater.csproj -c Release -o updater/out` (.NET 8 SDK). It leaves a linked (junction) `AddOns\BPGP` alone.
+- `updater/` is the Windows updater (C#, WPF on .NET Framework 4.8), styled like the addon, with tabs BPGP, Settings and About. Build it with `dotnet publish updater/BPGPUpdater.csproj -c Release -o updater/out` (.NET 8 SDK). It leaves a linked (junction) `AddOns\BPGP` alone.
 - Releasing the addon: push a tag like `v1.0.0`. `.github/workflows/release.yml` builds the addon zip and publishes it as a GitHub Release.
 - Releasing the updater (separately): push a tag like `updater-v1.0.0`. `.github/workflows/updater-release.yml` builds `BPGPUpdater.exe` and publishes its own release, which is never marked "Latest".
 
