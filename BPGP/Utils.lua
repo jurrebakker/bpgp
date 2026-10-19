@@ -1009,6 +1009,13 @@ CONSTANTS.ITEM_QUALITY = {
     [4] = ColorCodeText(CLM.L["Epic"], "a335ee"),
     [5] = ColorCodeText(CLM.L["Legendary"], "ff8000"),
 }
+-- The item classes we auction (ui-redesign.md R28): only these fill the auction list, and
+-- Pass on loot only passes on these
+CONSTANTS.AUCTION_ITEM_CLASSES = {
+    [Enum.ItemClass.Weapon] = true,
+    [Enum.ItemClass.Armor] = true,
+    [Enum.ItemClass.Miscellaneous] = true,
+}
 CONSTANTS.LOOT_ROLL_TYPE_ANY = -2
 CONSTANTS.LOOT_ROLL_TYPE_IGNORE = -1
 CONSTANTS.LOOT_ROLL_TYPE_TRANSMOG = 4

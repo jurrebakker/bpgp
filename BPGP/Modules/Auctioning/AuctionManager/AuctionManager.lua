@@ -33,64 +33,23 @@ local AuctionManager = {}
 local function InitializeDB(self)
     self.db = CLM.MODULES.Database:Personal('auction', {
         autoTrade = true,
-        fillFromCorpse = true,
-        fillFromLoot = true,
-        lootThreshold = 4,
         removeOnNoBids = false,
         postAllBidsOnAward = false,
         lootDebug = false,
         lootDebugLog = {},
         notes = {},
-        ignoredClasses = {
-            false, false, false, false,
-            false, false, false, true,
-            false, true,  false, false,
-            false, true,  false, false,
-            false, false, false, false
-        },
-        ignoredItems = UTILS.Set({
-            22726, -- Splinter of Atiesh
-            30183, -- Nether Vortex
-            29434, -- Badge of Justice
-            23572, -- Primal Nether
-            40752, -- Emblem of Heroism
-            40753, -- Emblem of Valor
-            45038, -- Fragment of Val'anyr
-        }),
     })
 end
 
+--[[
+    Filling the auction list is fixed (raid feedback 2026-10-19): the auctioneer always fills
+    from corpses and from their own loot, with Epic or better weapons, armor and miscellaneous
+    items (tier tokens, mounts). Everything else, like crafting sparks, is left out.
+]]--
+local FILL_MIN_QUALITY = Enum.ItemQuality.Epic
+local FILL_CLASSES = CLM.CONSTANTS.AUCTION_ITEM_CLASSES
+
 -- Settings (shown in the Settings tab, docs/features/ui-overhaul.md Part 2)
-
----@param value boolean
-function AuctionManager:SetFillFromCorpse(value)
-    self.db.fillFromCorpse = value and true or false
-end
-
----@return boolean
-function AuctionManager:GetFillFromCorpse()
-    return self.db.fillFromCorpse
-end
-
----@param value boolean
-function AuctionManager:SetFillFromLoot(value)
-    self.db.fillFromLoot = value and true or false
-end
-
----@return boolean
-function AuctionManager:GetFillFromLoot()
-    return self.db.fillFromLoot
-end
-
----@param value number item quality
-function AuctionManager:SetFillRarity(value)
-    self.db.lootThreshold = tonumber(value)
-end
-
----@return number
-function AuctionManager:GetFillRarity()
-    return self.db.lootThreshold or 4
-end
 
 ---@param value boolean
 function AuctionManager:SetRemoveOnNoBids(value)
@@ -120,18 +79,6 @@ end
 ---@return boolean
 function AuctionManager:GetAutoTrade()
     return self.db.autoTrade
-end
-
----@param classId number
----@param value boolean
-function AuctionManager:SetIgnoredClass(classId, value)
-    self.db.ignoredClasses[classId] = value and true or false
-end
-
----@param classId number
----@return boolean
-function AuctionManager:GetIgnoredClass(classId)
-    return self.db.ignoredClasses[classId] and true or false
 end
 
 -- Fixed settings (F): remove on award, and passes/cancels in the bid list, are always on
@@ -194,20 +141,15 @@ end
 
 -- The filters every auto-added item goes through
 local function LogFilterSettings(self)
-    LootTrace("filter: fill rarity %s or better", ShowQuality(self:GetFillRarity()))
+    LootTrace("filter: quality %s or better", ShowQuality(FILL_MIN_QUALITY))
     local classes = {}
-    for classId, ignored in pairs(self.db.ignoredClasses) do
-        if ignored then tinsert(classes, ShowClass(classId)) end
+    for classId in pairs(FILL_CLASSES) do
+        tinsert(classes, ShowClass(classId))
     end
-    LootTrace("filter: ignored item classes: %s", #classes > 0 and table.concat(classes, ", ") or "none")
-    local items = {}
-    for itemId, ignored in pairs(self.db.ignoredItems) do
-        if ignored then tinsert(items, tostring(itemId)) end
-    end
-    LootTrace("filter: ignored items: %s", #items > 0 and table.concat(items, ", ") or "none")
-    LootTrace("filter: fill from corpse %s, fill from loot %s, auctioneer %s, active raid %s",
-        Show(self:GetFillFromCorpse()), Show(self:GetFillFromLoot()), Show(self:IsAuctioneer()),
-        Show(CLM.MODULES.RaidManager:IsInActiveRaid()))
+    table.sort(classes)
+    LootTrace("filter: only item classes %s", table.concat(classes, ", "))
+    LootTrace("filter: auctioneer %s, active raid %s",
+        Show(self:IsAuctioneer()), Show(CLM.MODULES.RaidManager:IsInActiveRaid()))
 end
 
 ---@param value boolean
@@ -228,25 +170,6 @@ function AuctionManager:ClearLootDebugLog()
 end
 
 -- Filling
-local ItemClasses = {}
-do
-    local ignoredClasses = {
-        [8] = true,
-        [10] = true,
-        [14] = true,
-    }
-    for _, id in pairs(Enum.ItemClass) do
-        if not ignoredClasses[id] then
-            ItemClasses[id] = C_Item.GetItemClassInfo(id)
-        end
-    end
-end
-
--- Item classes that can be ignored when filling the auction list: { [classId] = name }
----@return table
-function AuctionManager:GetItemClasses()
-    return ItemClasses
-end
 
 local function DefaultCallback(_)
     AuctionManager:RefreshGUI()
@@ -314,16 +237,12 @@ local function AutoAddItemInternal(self, item, source)
     local sourceName = tostring(source or "button")
     LootTrace("%s (%s): quality %s, class %s, subclass %s (%s), bind %s", itemLink, sourceName, ShowQuality(quality),
         ShowClass(classId), Show(subclassId), Show(subType), Show(bindType))
-    if not (quality and quality >= self:GetFillRarity()) then
-        LootTrace("%s (%s): SKIPPED by the rarity filter, %s is below %s", itemLink, sourceName, ShowQuality(quality), ShowQuality(self:GetFillRarity()))
+    if not (quality and quality >= FILL_MIN_QUALITY) then
+        LootTrace("%s (%s): SKIPPED by the quality filter, %s is below %s", itemLink, sourceName, ShowQuality(quality), ShowQuality(FILL_MIN_QUALITY))
         return
     end
-    if self.db.ignoredClasses[classId] then
-        LootTrace("%s (%s): SKIPPED by the class filter, %s is ignored", itemLink, sourceName, ShowClass(classId))
-        return
-    end
-    if self.db.ignoredItems[item:GetItemID()] then
-        LootTrace("%s (%s): SKIPPED by the item filter, %s is on the ignore list", itemLink, sourceName, Show(item:GetItemID()))
+    if not FILL_CLASSES[classId] then
+        LootTrace("%s (%s): SKIPPED by the class filter, %s is not a weapon, armor or miscellaneous item", itemLink, sourceName, ShowClass(classId))
         return
     end
     if source and not CreditLootSource(source, item:GetItemID()) then
@@ -372,7 +291,6 @@ local function HandleLootMessage(addon, event, message, _, _, _, playerName, ...
     if not message then return end
     if not CLM.MODULES.RaidManager:IsInActiveRaid() then return end
     if not self:IsAuctioneer() then return end
-    if not self:GetFillFromLoot() then return end
     local itemLink = deformat(message, LOOT_ITEM_SELF_MULTIPLE)
     if not itemLink then
         itemLink = deformat(message, LOOT_ITEM_SELF)
@@ -475,10 +393,6 @@ local function HandleLootHistoryDrop(addon, event, encounterID, lootListID)
         LootTrace("history %s: %s SKIPPED, not the auctioneer", key, Show(itemLink))
         return
     end
-    if not self:GetFillFromLoot() then
-        LootTrace("history %s: %s SKIPPED, filling from loot is off", key, Show(itemLink))
-        return
-    end
     AutoAddItemProxy(self, Item:CreateFromItemLink(itemLink), LOOT_SOURCE.HISTORY)
 end
 
@@ -567,7 +481,6 @@ local alreadyAddedLoot = {}
 local function FillLootFromCorpse()
     if not CLM.MODULES.RaidManager:IsInActiveRaid() then return end
     if not AuctionManager:IsAuctioneer() then return end
-    if not AuctionManager:GetFillFromCorpse() then return end
 
     local targetGuid = UnitGUID("target")
     if UTILS.IsSecret(targetGuid) then targetGuid = nil end

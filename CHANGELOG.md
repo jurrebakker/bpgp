@@ -1,3 +1,11 @@
+# BPGP v1.0.6 (2026-10-19)
+
+## Changes
+### Auction list filling
+The auction list always fills from boss corpses and from the auctioneer's own loot, with Epic or better weapons, armor and miscellaneous items (like tier tokens) only. Crafting sparks, reagents, consumables and the like are no longer added. The "Filling the auction list" settings are gone. Adding an item by hand (auction click) still works for any item.
+### Pass on loot and Need on everything
+Both now only roll on weapons, armor and miscellaneous items. Raiders roll on everything else themselves, like consumables and housing decor.
+
 # BPGP v1.0.0 (2026-10-18)
 
 ## Changes

@@ -121,10 +121,10 @@ Legend for **Your call**: **K** = keep (move to a settings tab) · **F** = fix: 
 | Auto-trade after award | Opens trade with the winner when possible | K (trade helper) | ✅ |
 | Include passes / Include cancels | Shows passes/cancels in the auction bid list | F: on | ✅ |
 | Post all bids on award | Posts the full bid list to chat when awarding | K | ✅ |
-| Fill auction list from corpse | Adds items from your loot window to the auction list | K | ✅ |
-| Fill auction list with looted items | Adds items you receive to the auction list | K | ✅ |
-| Loot rarity threshold | Minimum quality for the two fill options | K | ✅ |
-| Ignore (item classes) | Item types never added to the auction list | K | ✅ |
+| Fill auction list from corpse | Adds items from your loot window to the auction list | F: on (ui-redesign.md R28) | ✅ |
+| Fill auction list with looted items | Adds items you receive to the auction list | F: on (R28) | ✅ |
+| Loot rarity threshold | Minimum quality for the two fill options | F: Epic (R28) | ✅ |
+| Ignore (item classes) | Item types never added to the auction list | F: only Weapon, Armor, Miscellaneous are added (R28) | ✅ |
 | Store bids (auction history) | Saves all bids in auction history | F: on | ✅ |
 | Post channel (auction history) | Where "post bids" sends to | K | ✅ |
 | Master Loot Only / Group Loot Only | Sub-options of the fill toggles | D. Retail raids have no master or group loot | ✅ |
