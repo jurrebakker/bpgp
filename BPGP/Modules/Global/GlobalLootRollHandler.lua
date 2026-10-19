@@ -18,6 +18,9 @@ local UTILS     = CLM.UTILS
       - you are in a raid group inside a raid instance;
       - that group's leader is an officer of our guild (a pug leader never is).
     Never passed either: quest items, legendaries, stacks, recipes, mounts, toys, cosmetics.
+    Both only roll on the item classes we auction: weapons, armor and miscellaneous
+    (2026-10-19, ui-redesign.md R28). Consumables, housing decor, crafting materials and the
+    like are left to the player to roll on.
 
     Need on everything (officers only, off by default, 2026-10-18): the officer who collects the
     loot rolls Need, or Greed / Transmog when Need isn't possible. Same safety rules and the same
@@ -82,6 +85,14 @@ local function CollectRollType(rollID)
     return nil
 end
 
+-- Is it an item class we auction? (false when not cached yet: then we don't roll)
+local function IsAuctionedClass(rollID)
+    local itemLink = GetLootRollItemLink(rollID)
+    if not itemLink or UTILS.IsSecret(itemLink) then return false end
+    local classID = select(12, UTILS.GetItemInfo(itemLink))
+    return CLM.CONSTANTS.AUCTION_ITEM_CLASSES[classID] or false
+end
+
 -- The roll to make, or nil to leave it to the player
 local function AutoRollType(rollID)
     local collect = CLM.GlobalConfigs:GetNeedOnEverything()
@@ -90,6 +101,7 @@ local function AutoRollType(rollID)
     if not (collect or pass) then return nil end
     if not InOwnRaid() then return nil end
     if not IsAutoRollable(rollID) then return nil end
+    if not IsAuctionedClass(rollID) then return nil end
     if collect then return CollectRollType(rollID) end
     return LOOT_ROLL_TYPE_PASS or 0
 end

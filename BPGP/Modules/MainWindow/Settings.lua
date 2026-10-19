@@ -70,14 +70,6 @@ local function ModifierOptions()
     return options
 end
 
-local function QualityOptions()
-    local options = {}
-    for value = 0, 5 do
-        options[#options + 1] = { text = CONSTANTS.ITEM_QUALITY[value], value = value }
-    end
-    return options
-end
-
 --[[
  * Personal *
 ]]--
@@ -96,12 +88,12 @@ local function BuildPersonal(self, form)
 
     form:Header(CLM.L["Loot"])
     form:Toggle({ label = CLM.L["Pass on loot"],
-        desc = CLM.L["During our own BPGP raids, automatically pass on boss loot rolls, so the officer who runs the auctions can loot the items. Quest items, legendaries, stacks, recipes, mounts, toys and cosmetics are never passed."],
+        desc = CLM.L["During our own BPGP raids, automatically pass on boss weapons, armor and miscellaneous items (like tier tokens), so the officer who runs the auctions can loot them. You roll on everything else yourself, like consumables and housing decor. Quest items, legendaries, stacks, recipes, mounts, toys and cosmetics are never passed."],
         warning = CLM.L["Only in a BPGP raid started by our officers (less than 12 hours ago), in a raid group led by one of our officers. Outside our own raids (pugs, other guilds, dungeons) you NEVER pass automatically."],
         get = function() return globals:GetPassOnLoot() end, set = function(v) globals:SetPassOnLoot(v) end })
     if self.isOfficer then
         form:Toggle({ label = CLM.L["Need on everything"],
-            desc = CLM.L["Officers only. During our own BPGP raids, automatically roll Need on boss loot, or Greed or Transmog when Need isn't possible, so you collect the items for the auction. While it's on you may run auctions in the raid without being assistant. Overrides Pass on loot. The same items as above are left to you."],
+            desc = CLM.L["Officers only. During our own BPGP raids, automatically roll Need on boss weapons, armor and miscellaneous items, or Greed or Transmog when Need isn't possible, so you collect the items for the auction. While it's on you may run auctions in the raid without being assistant. Overrides Pass on loot. Everything else, and quest items, legendaries, stacks, recipes, mounts, toys and cosmetics, are left to you."],
             warning = CLM.L["Same safety rules as Pass on loot: only in our own BPGP raid, led by one of our officers."],
             get = function() return globals:GetNeedOnEverything() end,
             set = function(v)
@@ -173,23 +165,6 @@ local function BuildPersonal(self, form)
             return options
         end,
         get = function() return history:GetPostBidsChannel() end, set = function(v) history:SetPostBidsChannel(v) end })
-
-    form:Header(CLM.L["Filling the auction list"])
-    form:Toggle({ label = CLM.L["Items from corpses"], desc = CLM.L["Adds the items in a loot window you open to the auction list."],
-        get = function() return auction:GetFillFromCorpse() end, set = function(v) auction:SetFillFromCorpse(v) end })
-    form:Toggle({ label = CLM.L["Items you loot"], desc = CLM.L["Adds the items you receive to the auction list."],
-        get = function() return auction:GetFillFromLoot() end, set = function(v) auction:SetFillFromLoot(v) end })
-    form:Select({ label = CLM.L["Minimum quality"], options = QualityOptions,
-        get = function() return auction:GetFillRarity() end, set = function(v) auction:SetFillRarity(v) end })
-    form:Description(CLM.L["Never add these item types:"])
-    local classes = {}
-    for id, name in pairs(auction:GetItemClasses()) do classes[#classes + 1] = { id = id, name = name } end
-    table.sort(classes, function(a, b) return a.name < b.name end)
-    for _, class in ipairs(classes) do
-        form:Toggle({ label = "    " .. class.name,
-            get = function() return auction:GetIgnoredClass(class.id) end,
-            set = function(v) auction:SetIgnoredClass(class.id, v) end })
-    end
 end
 
 --[[
