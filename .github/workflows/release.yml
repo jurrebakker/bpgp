@@ -8,8 +8,9 @@ name: Release
 # BPGP Updater (Blood-Promise/bpgp-updater) installs from the GitHub releases and needs the zip
 # to contain BPGP/BPGP.toc with the version filled in.
 # CurseForge is a separate job, so a failed upload there (moderation, API trouble) never blocks
-# the GitHub Release. It needs the repository variable CF_PROJECT_ID and the secret
-# CF_API_TOKEN; without CF_PROJECT_ID the job is skipped. See docs/release-plan-v1.md §10.
+# the GitHub Release. The project ID is in the TOC (X-Curse-Project-ID); the upload token is
+# the repository secret CF_API_TOKEN. Without the secret the upload is skipped with a notice.
+# See docs/curseforge.md.
 
 on:
   push:
@@ -32,32 +33,27 @@ jobs:
 
   curseforge:
     needs: package
-    if: ${{ vars.CF_PROJECT_ID != '' }}
     runs-on: ubuntu-latest
     permissions:
       contents: read
     steps:
-      - name: Check CurseForge settings
+      - name: Check CurseForge token
+        id: check
         env:
-          CF_PROJECT_ID: ${{ vars.CF_PROJECT_ID }}
           CF_API_TOKEN: ${{ secrets.CF_API_TOKEN }}
         run: |
-          if ! [[ "$CF_PROJECT_ID" =~ ^[0-9]+$ ]]; then
-            echo "::error::Repository variable CF_PROJECT_ID must be the numeric CurseForge project ID."
-            exit 1
-          fi
           if [ -z "$CF_API_TOKEN" ]; then
-            echo "::error::Repository secret CF_API_TOKEN is missing (CurseForge upload token)."
-            exit 1
+            echo "::notice::Repository secret CF_API_TOKEN is not set, skipping the CurseForge upload."
+            echo "skip=true" >> "$GITHUB_OUTPUT"
           fi
 
       - uses: actions/checkout@v4
+        if: steps.check.outputs.skip != 'true'
         with:
           fetch-depth: 0
 
       # Only the CurseForge token is passed, so this run doesn't touch the GitHub Release.
       - uses: BigWigsMods/packager@v2
-        with:
-          args: -p ${{ vars.CF_PROJECT_ID }}
+        if: steps.check.outputs.skip != 'true'
         env:
           CF_API_TOKEN: ${{ secrets.CF_API_TOKEN }}

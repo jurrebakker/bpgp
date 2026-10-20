@@ -414,8 +414,8 @@ There is no automated test harness for WoW UI code; luacheck catches syntax/glob
 
 > **Decision 2026-10-20: also on CurseForge** (your call). Every `v*` tag is uploaded to CurseForge as well, next to the GitHub Release. The GitHub Release stays, because BPGP Updater installs from it. `.github/workflows/release.yml` has a separate `curseforge` job after the GitHub job, so a failed CurseForge upload never blocks the GitHub Release. The job needs:
 >
-> - repository **variable** `CF_PROJECT_ID`: the numeric project ID (no `## X-Curse-Project-ID` in the TOC, so setting it up needs no code change). Without it the job is skipped.
-> - repository **secret** `CF_API_TOKEN`: an upload token from <https://authors.curseforge.com/#/settings/api-tokens>.
+> - the project ID in the TOC: `## X-Curse-Project-ID: 1754670`;
+> - repository **secret** `CF_API_TOKEN`: an upload token from <https://authors.curseforge.com/#/settings/api-tokens>. Without it the upload is skipped with a notice.
 >
 > Tag → CurseForge release type as in §10.5 (alpha / beta / release). The project texts, logo and the one-time setup steps are in [curseforge.md](curseforge.md). This replaces the "no CurseForge" part of the decision below; the rest of it still holds.
 >

@@ -5,7 +5,7 @@ Since 2026-10-20 every `v*` tag is also uploaded to CurseForge (decision in [rel
 ## How it works
 
 - `.github/workflows/release.yml` runs on a `v*` tag. Job `package` builds `BPGP-<tag>.zip` and creates the GitHub Release (BPGP Updater installs from there). Job `curseforge` runs after it and uploads the same build to CurseForge.
-- The `curseforge` job is skipped while the repository variable `CF_PROJECT_ID` is empty. If the variable is set but the secret `CF_API_TOKEN` is missing, the job fails with a clear error. Either way the GitHub Release is already done.
+- The project ID (1754670) is in `BPGP/BPGP.toc` as `## X-Curse-Project-ID`. The upload token is the repository secret `CF_API_TOKEN`; while it's missing, the `curseforge` job skips the upload with a notice. Either way the GitHub Release is already done.
 - Release type comes from the tag: `v1.0.7-alpha1` → Alpha, `v1.0.7-beta1` → Beta, `v1.0.7` → Release.
 - Game version comes from `## Interface:` in `BPGP/BPGP.toc` (now 12.1.0 and 12.1.5). If CurseForge doesn't know a version yet, the packager picks the closest one.
 - The changelog shown on CurseForge is `CHANGELOG.md` (`manual-changelog` in `.pkgmeta`).
@@ -16,11 +16,9 @@ Since 2026-10-20 every `v*` tag is also uploaded to CurseForge (decision in [rel
 
 1. Sign in at <https://authors.curseforge.com/> (Google, Discord, GitHub or Twitch) and accept the author terms.
 2. **Create Project** → World of Warcraft → Addons, with the texts below and logo `assets/Icons/bpgp-400.png`.
-3. Copy the numeric **Project ID** from the "About Project" box.
+3. Copy the numeric **Project ID** from the "About Project" box into `BPGP/BPGP.toc` (`## X-Curse-Project-ID: 1754670`, done).
 4. Create an upload token at <https://authors.curseforge.com/#/settings/api-tokens> (not the "Core API" key from console.curseforge.com).
-5. In GitHub, `jurrebakker/bpgp` → **Settings → Secrets and variables → Actions**:
-   - tab **Variables** → *New repository variable*: name `CF_PROJECT_ID`, value the project ID;
-   - tab **Secrets** → *New repository secret*: name `CF_API_TOKEN`, value the token.
+5. In GitHub, `jurrebakker/bpgp` → **Settings → Secrets and variables → Actions** → tab **Secrets** → *New repository secret*: name `CF_API_TOKEN`, value the token. Never put the token in the repository.
 6. Push the next tag. Check the run under **Actions** (both jobs green) and the file under the project's **Files** tab.
 
 ## Project page
