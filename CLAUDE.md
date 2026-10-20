@@ -23,7 +23,7 @@ EPGP loot addon for our guild, **WoW retail (Midnight, 12.x) only**. It's a fork
 - `BPGP/Libs/` holds all libraries, vendored (see `Libs/README.md`). Don't edit third-party libs. `LibEventSourcing` is the exception: it's part of the CLM source and is ours to change (Phase 8 hardened it).
 - `BPGP/Modules/UI/` holds the shared Blizzard-template UI pieces for the redesign: `UI.lua` (windows, tabs, buttons, inputs, dropdown, menus, item buttons, progress bar) and `List.lua` (ScrollBox list with headers, sort and selection). `Demo.lua` is `/bpgp uitest`. New windows are built from these, not from AceGUI.
 - `scripts/check_addon.py` checks that TOC/XML references resolve, that no packager markers remain, and that Lua blocks are balanced.
-- **Releases:** a `v*` tag runs `.github/workflows/release.yml`, which builds `BPGP-<tag>.zip` with the packager and attaches it to the GitHub Release. There is no CurseForge release (release-plan §10, decision 2026-10-18).
+- **Releases:** a `v*` tag runs `.github/workflows/release.yml`, which builds `BPGP-<tag>.zip` with the packager and attaches it to the GitHub Release; a second job uploads the same build to CurseForge (release-plan §10, decision 2026-10-20; setup in `docs/curseforge.md`).
 - **BPGP Updater**, the Windows app raiders use to install and update the addon from those releases, lives in its own repo: [Blood-Promise/bpgp-updater](https://github.com/Blood-Promise/bpgp-updater), cloned at `C:\Users\patri\dev\bpgp-updater` (split out of this repo's `updater/` on 2026-10-18). It expects each addon release to have a `BPGP-*.zip` with `BPGP/BPGP.toc` and a filled-in `## Version:`. Keep that layout, or change the updater with it.
 - See `ARCHITECTURE.md` for the module map.
 
