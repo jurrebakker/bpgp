@@ -76,7 +76,7 @@ Practise first in **test mode** (`/bpgp test`): a separate ledger and sync chann
 - Test in **test mode** (`/bpgp test`, `/bpgp testgroup 10`, *Simulate bids*). See [docs/features/test-mode.md](docs/features/test-mode.md).
 - `python -I scripts/check_addon.py` checks file references, packager-only markers and Lua block balance. luacheck runs in CI (config in `.luacheckrc`).
 - All libraries are vendored in `BPGP/Libs` (see its README), so a git clone runs as-is.
-- Releasing: push a tag like `v1.0.0`. `.github/workflows/release.yml` builds the addon zip and publishes it as a GitHub Release, which [BPGP Updater](https://github.com/Blood-Promise/bpgp-updater) installs from.
+- Releasing: push a tag like `v1.0.0`. `.github/workflows/release.yml` builds the addon zip and publishes it as a GitHub Release, which [BPGP Updater](https://github.com/Blood-Promise/bpgp-updater) installs from, and uploads it to CurseForge ([docs/curseforge.md](docs/curseforge.md)).
 
 ## License
 

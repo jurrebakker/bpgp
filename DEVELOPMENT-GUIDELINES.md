@@ -254,7 +254,8 @@ The full process is in `docs/release-plan-v1.md` §10. In short:
 
 - Version in the TOC is `@project-version@`; the packager fills it from the git tag.
 - Tags: `v1.0.0-alpha1` (alpha), `v1.0.0-beta1` (beta, officers), `v1.0.0` (release).
-- Pushing a `v*` tag runs `.github/workflows/release.yml`: the BigWigs packager creates a GitHub Release with `BPGP-<tag>.zip`. No CurseForge. Raiders install and update with BPGP Updater; alpha/beta tags become pre-releases, which the updater skips.
+- Pushing a `v*` tag runs `.github/workflows/release.yml`: the BigWigs packager creates a GitHub Release with `BPGP-<tag>.zip`, then a separate job uploads the same build to CurseForge (project ID in the TOC as `## X-Curse-Project-ID`, upload token in the repository secret `CF_API_TOKEN`, see `docs/curseforge.md`). Raiders install and update with BPGP Updater; alpha/beta tags become pre-releases on GitHub, which the updater skips, and alpha/beta files on CurseForge.
+- Every CurseForge file is moderated before it's public (minutes to a few days), so don't count on a same-day CurseForge hotfix; the GitHub Release (and so the updater) is immediate.
 - BPGP Updater has its own repository and releases: [Blood-Promise/bpgp-updater](https://github.com/Blood-Promise/bpgp-updater). It needs each addon release to have a `BPGP-*.zip` containing `BPGP/BPGP.toc` with a filled-in `## Version:`. Don't change that layout without changing the updater.
 - Before tagging: `CHANGELOG.md` has a section for the version, checks pass, and the in-game checklist (§7 of the release plan) has been run.
 - After 1.0, ledger entry formats are frozen (§4) and every client in the guild must run a compatible version.
