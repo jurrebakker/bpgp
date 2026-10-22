@@ -1,4 +1,4 @@
-## Interface: 120100, 120105
+## Interface: 120100, 120105, 120107
 ## Title: BPGP
 ## Notes: BPGP (Boomer Points / Gear Points) loot system for our guild, with officer sync. Based on Core Loot Manager.
 ## Author: Jurre Bakker
