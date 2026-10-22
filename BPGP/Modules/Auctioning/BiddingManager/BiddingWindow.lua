@@ -304,7 +304,7 @@ local function BuildButtons(self, area)
         self.tierButtons[i] = button
     end
     local y = -(ITEM_SIZE + S.M + 40 + S.S)
-    self.osButton = UI.CreateButton(area, CLM.L["OS"], 74, function(frame) SendBid(self, frame.value, CONSTANTS.BID_TYPE.OFF_SPEC) end)
+    self.osButton = UI.CreateButton(area, CLM.L["OS"], 74, function() SendBid(self, 0, CONSTANTS.BID_TYPE.OFF_SPEC) end)
     self.osButton:SetHeight(24)
     self.osButton:SetPoint("TOPLEFT", 0, y)
     self.transmogButton = UI.CreateButton(area, CLM.L["Transmog"], 84, function() SendBid(self, 0, CONSTANTS.BID_TYPE.TRANSMOG) end)
@@ -326,7 +326,7 @@ local function BidLabel(auction, response)
     local bidType = response:Type()
     if bidType == CONSTANTS.BID_TYPE.CANCEL then return CLM.L["Cancel"] end
     if bidType == CONSTANTS.BID_TYPE.PASS then return CLM.L["Pass"] end
-    if bidType == CONSTANTS.BID_TYPE.OFF_SPEC then return CLM.L["OS"] .. " " .. tostring(response:Value()) end
+    if bidType == CONSTANTS.BID_TYPE.OFF_SPEC then return CLM.L["OS"] end
     if bidType == CONSTANTS.BID_TYPE.TRANSMOG then return CLM.L["Transmog"] end
     if CONSTANTS.SLOT_VALUE_TIERS[bidType] then
         return auction:GetFieldDisplayName(bidType) .. " " .. tostring(response:Value())
@@ -503,7 +503,6 @@ local function RefreshButtons(self, auction)
     local useOS = auction and auction:GetUseOS() and true or false
     local useTransmog = auction and auction:GetUseTransmog() and true or false
     self.osButton:SetShown(useOS)
-    self.osButton.value = item and tonumber(item:GetValues()[CONSTANTS.SLOT_VALUE_TIER.BASE]) or 0
     self.osButton:SetEnabled(running)
     self.transmogButton:SetShown(useTransmog)
     self.transmogButton:SetEnabled(running)

@@ -267,7 +267,7 @@ local function BuildGearValues(self, form)
     local readOnly = function() return not self.isOfficer end
     form:Description(function()
         if NoRoster() then return CLM.L["Set up BPGP first (Standings tab)."] end
-        return CLM.L["GP per gear slot for each bid tier (BiS, Major, Minor). A negative value hides that tier's button. OS costs the Minor value."]
+        return CLM.L["GP per gear slot for each bid tier (BiS, Major, Minor). A negative value hides that tier's button. OS is free (0 GP)."]
     end)
 
     form:Header(CLM.L["Default slot values"])

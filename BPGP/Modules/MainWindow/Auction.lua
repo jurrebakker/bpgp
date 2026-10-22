@@ -79,7 +79,7 @@ local function BidLabel(auction, response)
     local bidType = response:Type()
     if bidType == CONSTANTS.BID_TYPE.CANCEL then return CLM.L["Cancel"] end
     if bidType == CONSTANTS.BID_TYPE.PASS then return CLM.L["Pass"] end
-    if bidType == CONSTANTS.BID_TYPE.OFF_SPEC then return CLM.L["OS"] .. " " .. tostring(response:Value()) end
+    if bidType == CONSTANTS.BID_TYPE.OFF_SPEC then return CLM.L["OS"] end
     if bidType == CONSTANTS.BID_TYPE.TRANSMOG then return CLM.L["Transmog"] end
     if CONSTANTS.SLOT_VALUE_TIERS[bidType] then
         return auction:GetFieldDisplayName(bidType) .. " " .. tostring(response:Value())

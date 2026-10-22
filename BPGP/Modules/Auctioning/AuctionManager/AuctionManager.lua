@@ -1025,10 +1025,10 @@ local function ValidateBid(auction, uid, item, name, userResponse)
     local current = roster:Standings(GUID)
     local minimumPoints = auction:GetMinimumPoints()
     if current < minimumPoints then return false, CONSTANTS.AUCTION_COMM.DENY_BID_REASON.BELOW_MIN_BIDDER end
-    -- transmog is free; a tier bid must be BiS / Major / Minor at exactly that tier's value;
+    -- OS and transmog are free; a tier bid must be BiS / Major / Minor at exactly that tier's value;
     -- anything else must be one of the item's tier values
     local bidType = userResponse:Type()
-    if isTransmog then
+    if isTransmog or bidType == CONSTANTS.BID_TYPE.OFF_SPEC then
         if value ~= 0 then return false, CONSTANTS.AUCTION_COMM.DENY_BID_REASON.BID_VALUE_INVALID end
     elseif CONSTANTS.SLOT_VALUE_TIERS[bidType] then
         local tierValue = tonumber(item:GetValues()[bidType])
@@ -1262,7 +1262,7 @@ function AuctionManager:RefreshGUI()
 end
 
 CONSTANTS.AUCTION_COMM = {
-    CURRENT_VERSION = 5,
+    CURRENT_VERSION = 6,
     BID_PASS  = CLM.L["PASS"],
     NUM_ANNOUNCE_CHANNELS = 2,
     TYPE = {
