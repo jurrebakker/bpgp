@@ -140,7 +140,6 @@ end
 -- focus here, so waiting for Refresh would keep the previous item's GP in it
 local function SetWinner(self, name, response)
     self.awardPlayer = name
-    self.awardResponse = response
     self.awardValue = response and UTILS.round(response:Value(), Auction():GetRounding()) or nil
     if self.valueInput then
         self.valueInput:SetText(self.awardValue and tostring(self.awardValue) or "")
@@ -186,14 +185,22 @@ local function AdvanceAfterAward(self, item)
 end
 
 local function Award(self)
-    local item, name, response = self.auctionItem, self.awardPlayer, self.awardResponse
+    local item, name = self.auctionItem, self.awardPlayer
     local value = tonumber(self.valueInput:GetText())
     if not (item and name and value) or Locked() then return end
     value = UTILS.round(value, Auction():GetRounding())
-    -- show the bid next to the price, so an OS or Transmog winner charged GP stands out
-    local bid = response and BidLabel(Auction(), response) or ""
-    UI.Confirm(string.format(CLM.L["Award %s to %s (%s) for %s GP?"], item:GetItemLink(),
-        UI.COLOR.GOLD:WrapTextInColorCode(Ambiguate(name, "none")), bid, tostring(value)), function()
+    -- show the bid next to the price, so an OS or Transmog winner charged GP stands out. Looked up
+    -- now, not at selection: a bidder picked while the auction runs can still change their bid
+    local response = item:GetResponse(name)
+    local winner = UI.COLOR.GOLD:WrapTextInColorCode(Ambiguate(name, "none"))
+    local text
+    if response then
+        text = string.format(CLM.L["Award %s to %s (%s) for %s GP?"], item:GetItemLink(), winner,
+            BidLabel(Auction(), response), tostring(value))
+    else
+        text = string.format(CLM.L["Award %s to %s for %s GP?"], item:GetItemLink(), winner, tostring(value))
+    end
+    UI.Confirm(text, function()
         Manager():Award(item, name, value)
         self.awarded[item] = self.awarded[item] or {}
         self.awarded[item][name] = true

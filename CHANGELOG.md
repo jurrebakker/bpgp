@@ -1,3 +1,15 @@
+# BPGP v1.0.8 (2026-10-29)
+
+## Changes
+### Award price
+Fixed: after awarding an item, the Auction tab's Value box could keep the previous item's GP, so pressing Enter charged a Transmog or OS winner that price. The box now follows the selected winner and is cleared after every award. The award confirmation shows the winner's bid, e.g. "Award X to Y (Transmog) for 0 GP?".
+
+# BPGP v1.0.7 (2026-10-22)
+
+## Changes
+### OS bids are free
+An OS bid costs 0 GP, like Transmog. OS still ranks above Transmog and is ranked by PR. Raiders on an older version are told to update.
+
 # BPGP v1.0.6 (2026-10-19)
 
 ## Changes
