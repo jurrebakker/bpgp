@@ -10,8 +10,8 @@ local LOG       = CLM.LOG
 local AceConfig = LibStub("AceConfig-3.0")
 
 --[[
-    Slash commands (/bpgp ...). Settings live in the main window's Settings tab (Phase 9c);
-    there are no Options -> AddOns pages any more (docs/features/ui-overhaul.md D2).
+    Slash commands (/bpgp ...). Settings live in the main window's Settings tab;
+    there are no Options -> AddOns pages any more (D2).
 ]]--
 
 ---@class ConfigManager

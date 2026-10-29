@@ -1009,7 +1009,7 @@ CONSTANTS.ITEM_QUALITY = {
     [4] = ColorCodeText(CLM.L["Epic"], "a335ee"),
     [5] = ColorCodeText(CLM.L["Legendary"], "ff8000"),
 }
--- The item classes we auction (ui-redesign.md R28): only these fill the auction list, and
+-- The item classes we auction (R28): only these fill the auction list, and
 -- Pass on loot only passes on these
 CONSTANTS.AUCTION_ITEM_CLASSES = {
     [Enum.ItemClass.Weapon] = true,

@@ -10,7 +10,7 @@ local LOG       = CLM.LOG
 local UI = CLM.UI
 
 --[[
-    /bpgp uitest: a scratch window that shows every shared UI piece (Phase 9a), so they can be
+    /bpgp uitest: a scratch window that shows every shared UI piece, so they can be
     checked in-game at different UI scales before the real windows are rebuilt on them.
     It only shows fake data and never writes anything.
 ]]--

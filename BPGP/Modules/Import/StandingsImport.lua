@@ -7,7 +7,7 @@ local CONSTANTS = CLM.CONSTANTS
 local UTILS     = CLM.UTILS
 -- ------------------------------- --
 
--- Standings import (release plan Phase 6): officers paste "Name,EP,GP" lines (comma, semicolon
+-- Standings import: officers paste "Name,EP,GP" lines (comma, semicolon
 -- or tab separated, e.g. from a spreadsheet) to start BPGP from an existing EPGP list.
 -- Only guild members can be imported. Players on the roster but not in the list keep their values.
 

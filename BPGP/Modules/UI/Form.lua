@@ -11,7 +11,7 @@ local UI = CLM.UI
 local S = UI.SPACE
 
 --[[
-    Settings form: a scrolling column of "label + control" rows (ui-redesign.md "Settings rows").
+    Settings form: a scrolling column of "label + control" rows.
 
     local form = UI.CreateForm(parent)
     form:Header(text)

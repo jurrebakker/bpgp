@@ -10,7 +10,7 @@ local UTILS     = CLM.UTILS
 local UI = CLM.UI
 
 --[[
-    Auction timer bar (optional, off by default: ui-redesign.md R9 "Timer bar").
+    Auction timer bar (optional, off by default: R9).
     Item icon + name, a countdown that turns red for the last 5 seconds and shows "+5s" when
     anti-snipe extends the auction. Click it to toggle the bidding window; drag it to move it.
     Our own code on Modules/UI: replaces LibCandyBar (its licence is "All Rights Reserved").

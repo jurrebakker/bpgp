@@ -49,7 +49,7 @@ end
 local FILL_MIN_QUALITY = Enum.ItemQuality.Epic
 local FILL_CLASSES = CLM.CONSTANTS.AUCTION_ITEM_CLASSES
 
--- Settings (shown in the Settings tab, docs/features/ui-overhaul.md Part 2)
+-- Settings (shown in the Settings tab)
 
 ---@param value boolean
 function AuctionManager:SetRemoveOnNoBids(value)
@@ -1188,7 +1188,7 @@ function AuctionManager:GetBidTypeOrder(bidType)
 end
 
 --[[
-    The winner the Auction tab preselects when an auction ends (ui-redesign.md R10):
+    The winner the Auction tab preselects when an auction ends (R10):
     the highest tier, then the highest PR, then the highest roll. OS ranks above Transmog, and
     Transmog ignores PR (highest roll wins). Passes, cancels and invalid bids never win. `exclude` holds names already awarded this item (items with a count > 1).
 ]]--

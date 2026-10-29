@@ -11,7 +11,7 @@ local UI = CLM.UI
 local S = UI.SPACE
 
 --[[
-    The main window (Phase 9b, docs/features/ui-redesign.md): one portrait frame with bottom tabs.
+    The main window: one portrait frame with bottom tabs.
     Officers get Standings, Auction (R12), Trade, History, Raids, Roster, Audit and Settings; raiders get Standings,
     History, Raids and Settings (R11).
 

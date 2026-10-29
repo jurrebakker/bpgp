@@ -1,7 +1,7 @@
 package-as: BPGP
 
 # All libraries are vendored in BPGP/Libs, so there are no externals.
-# Full release setup (embedded-libraries etc.): docs/release-plan-v1.md, section 10.4.
+# Release setup: DEVELOPMENT-GUIDELINES.md section 12 and docs/curseforge.md.
 
 ignore:
   - scripts

@@ -19,7 +19,7 @@ local UTILS     = CLM.UTILS
       - that group's leader is an officer of our guild (a pug leader never is).
     Never passed either: quest items, legendaries, stacks, recipes, mounts, toys, cosmetics.
     Both only roll on the item classes we auction: weapons, armor and miscellaneous
-    (2026-10-19, ui-redesign.md R28). Consumables, housing decor, crafting materials and the
+    (2026-10-19, R28). Consumables, housing decor, crafting materials and the
     like are left to the player to roll on.
 
     Need on everything (officers only, off by default, 2026-10-18): the officer who collects the

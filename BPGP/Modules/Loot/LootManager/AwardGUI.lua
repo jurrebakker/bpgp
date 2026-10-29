@@ -11,7 +11,7 @@ local UI = CLM.UI
 local S = UI.SPACE
 
 --[[
-    Award window (Phase 9e, ui-redesign.md "Award"): award an item outside an auction.
+    Award window: award an item outside an auction.
     Item, player, GP with the item's tier values as a hint, Cancel · Award. Opened with the award
     click on an item link, by right-click → Award item in Standings (player filled in, R7), or
     /bpgp award. Officers only.
