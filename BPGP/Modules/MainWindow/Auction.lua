@@ -136,18 +136,23 @@ end
  * Actions *
 ]]--
 
+-- Writes the Value box right away: Refresh leaves a focused box alone, and the box usually has
+-- focus here, so waiting for Refresh would keep the previous item's GP in it
+local function SetWinner(self, name, response)
+    self.awardPlayer = name
+    self.awardResponse = response
+    self.awardValue = response and UTILS.round(response:Value(), Auction():GetRounding()) or nil
+    if self.valueInput then
+        self.valueInput:SetText(self.awardValue and tostring(self.awardValue) or "")
+    end
+end
+
 local function SelectItem(self, item)
     if self.auctionItem ~= item then
-        self.awardPlayer = nil
-        self.awardValue = nil
+        SetWinner(self, nil, nil)
     end
     self.auctionItem = item
     self:Refresh()
-end
-
-local function SetWinner(self, name, response)
-    self.awardPlayer = name
-    self.awardValue = response and UTILS.round(response:Value(), Auction():GetRounding()) or nil
 end
 
 -- R10: preselect the winner once the auction has ended, and put the cursor in Value so Enter awards
@@ -181,12 +186,14 @@ local function AdvanceAfterAward(self, item)
 end
 
 local function Award(self)
-    local item, name = self.auctionItem, self.awardPlayer
+    local item, name, response = self.auctionItem, self.awardPlayer, self.awardResponse
     local value = tonumber(self.valueInput:GetText())
     if not (item and name and value) or Locked() then return end
     value = UTILS.round(value, Auction():GetRounding())
-    UI.Confirm(string.format(CLM.L["Award %s to %s for %s GP?"], item:GetItemLink(),
-        UI.COLOR.GOLD:WrapTextInColorCode(Ambiguate(name, "none")), tostring(value)), function()
+    -- show the bid next to the price, so an OS or Transmog winner charged GP stands out
+    local bid = response and BidLabel(Auction(), response) or ""
+    UI.Confirm(string.format(CLM.L["Award %s to %s (%s) for %s GP?"], item:GetItemLink(),
+        UI.COLOR.GOLD:WrapTextInColorCode(Ambiguate(name, "none")), bid, tostring(value)), function()
         Manager():Award(item, name, value)
         self.awarded[item] = self.awarded[item] or {}
         self.awarded[item][name] = true
@@ -196,7 +203,7 @@ local function Award(self)
                 Manager():RemoveItemFromCurrentAuction(item)
             end
         end
-        self.awardPlayer, self.awardValue = nil, nil
+        SetWinner(self, nil, nil)
         AdvanceAfterAward(self, item)
         self:Refresh()
     end)
@@ -207,7 +214,8 @@ local function StartStop(self)
         Manager():StopAuctionManual()
     else
         wipe(self.awarded)
-        self.awardPlayer, self.awardValue, self.focusedFor = nil, nil, nil
+        SetWinner(self, nil, nil)
+        self.focusedFor = nil
         Manager():StartAuction()
     end
     self:Refresh()
@@ -621,7 +629,7 @@ function AuctionWindow:Refresh(visibleOnly)
     if not self.auctionItem then
         local _, first = next(auction:GetItems())
         self.auctionItem = first
-        self.awardPlayer, self.awardValue = nil, nil
+        SetWinner(self, nil, nil)
     end
     PreselectWinner(self)
     RefreshQueue(self, auction)
@@ -676,7 +684,7 @@ end
 ---@param auctionItem AuctionItem?
 function AuctionGUI:SetVisibleAuctionItem(auctionItem)
     AuctionWindow.auctionItem = auctionItem
-    AuctionWindow.awardPlayer, AuctionWindow.awardValue = nil, nil
+    SetWinner(AuctionWindow, nil, nil)
     AuctionWindow:Refresh(true)
 end
 
