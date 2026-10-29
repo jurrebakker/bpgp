@@ -11,7 +11,7 @@ local UI = CLM.UI
 local S = UI.SPACE
 
 --[[
-    Bidding window (Phase 9d, ui-redesign.md "Bidding", R9). Every raider sees it during an auction.
+    Bidding window (R9, R18). Every raider sees it during an auction.
       header  "14s left" (docked countdown) and YOUR PR
       left    the auctioned items as icons (like the Auction tab): the shown item is highlighted,
               items you bid on get a green border, items you passed a grey one; click to switch
@@ -67,7 +67,7 @@ local function Auction()
 end
 
 --[[
- * Settings (Settings tab, ui-overhaul.md Part 2 "Bidding window") *
+ * Settings (Settings tab) *
 ]]--
 
 local function Flag(key)

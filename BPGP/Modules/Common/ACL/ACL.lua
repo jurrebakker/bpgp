@@ -48,7 +48,7 @@ end
 ---@diagnostic disable-next-line: missing-fields
 CONSTANTS.ACL = {}
 -- Officer = a guild rank with "Is Officer" (rank permission flags 11/12, view/edit officer note).
--- See docs/sync-and-security.md, decisions S1/S2.
+-- See docs/decisions.md, S1/S2.
 CONSTANTS.ACL.LEVEL = {
     PLEBS = 0,
     OFFICER = 1,

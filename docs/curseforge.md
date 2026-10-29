@@ -1,13 +1,13 @@
 # CurseForge
 
-Since 2026-10-20 every `v*` tag is also uploaded to CurseForge (decision in [release-plan-v1.md §10](release-plan-v1.md#10-releasing)). This page has the one-time setup and the texts for the project page.
+Since 2026-10-20 every `v*` tag is also uploaded to CurseForge (decisions V13 and V14 in [decisions.md](decisions.md)). This page has the one-time setup and the texts for the project page.
 
 ## How it works
 
-- `.github/workflows/release.yml` runs on a `v*` tag. Job `package` builds `BPGP-<tag>.zip` and creates the GitHub Release (BPGP Updater installs from there). Job `curseforge` runs after it and uploads the same build to CurseForge.
+- `.github/workflows/release.yml` runs on a `v*` tag. Job `package` builds `BPGP-<tag>.zip` and creates the GitHub Release. Job `curseforge` runs after it and uploads the same build to CurseForge.
 - The project ID (1754670) is in `BPGP/BPGP.toc` as `## X-Curse-Project-ID`. The upload token is the repository secret `CF_API_TOKEN`; while it's missing, the `curseforge` job skips the upload with a notice. Either way the GitHub Release is already done.
 - Release type comes from the tag: `v1.0.7-alpha1` → Alpha, `v1.0.7-beta1` → Beta, `v1.0.7` → Release.
-- Game version comes from `## Interface:` in `BPGP/BPGP.toc` (now 12.1.0 and 12.1.5). If CurseForge doesn't know a version yet, the packager picks the closest one.
+- Game version comes from `## Interface:` in `BPGP/BPGP.toc` (now 12.1.0, 12.1.5 and 12.1.7). If CurseForge doesn't know a version yet, the packager picks the closest one.
 - The changelog shown on CurseForge is `CHANGELOG.md` (`manual-changelog` in `.pkgmeta`).
 - Every file is moderated by CurseForge before it's public: from a few minutes to a few working days. The first upload also triggers the review of the project itself.
 - Re-running an old release run doesn't help: it uses the workflow of that tag, which had no CurseForge job. The first upload happens on the first tag after this change was merged.

@@ -8,7 +8,7 @@ local UTILS     = CLM.UTILS
 -- ------------------------------- --
 
 --[[
-    Shared UI pieces for the native-Blizzard redesign (docs/features/ui-redesign.md).
+    Shared UI pieces for native Blizzard windows (DEVELOPMENT-GUIDELINES.md §7).
     Every window and control is built from Blizzard templates. Template names can change between
     patches, so each one is created with fallbacks: a missing template degrades the look, it never
     stops the addon from loading.
@@ -728,7 +728,7 @@ end
 
 --[[
  * Confirmations *
-    Every write asks first (ui-redesign.md R6). One shared StaticPopup; the text says exactly
+    Every write asks first (R6). One shared StaticPopup; the text says exactly
     what will happen, onAccept runs on Accept. The buttons say Yes / No unless other texts are given.
 ]]--
 

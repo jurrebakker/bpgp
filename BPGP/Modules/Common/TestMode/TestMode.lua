@@ -7,7 +7,7 @@ local LOG       = CLM.LOG
 -- local UTILS     = CLM.UTILS
 -- ------------------------------- --
 
--- Test mode (docs/features/test-mode.md): BPGP runs against a separate world.
+-- Test mode (V10, ARCHITECTURE.md §6): BPGP runs against a separate world.
 --  * ledger: the 'ledger_test' section of BPGP_DB (Database:Ledger()); the live ledger is never read or written
 --  * comms: prefix BPGPT instead of BPGP (Comms), so only other clients in test mode see the traffic
 --  * chat: printed locally with a [TEST] prefix, never sent (UTILS.SendChatMessage)

@@ -6,7 +6,7 @@ Usage: python scripts/check_addon.py [addon_folder]
    with exact case (WoW on macOS is case-sensitive).
 2. No packager-only markers (@do-not-package@, @debug@, @non-debug@) remain in
    our own Lua/XML/TOC files. Code inside those blocks behaves differently in a
-   git clone than in a packaged build (see docs/sync-and-security.md, C1).
+   git clone than in a packaged build (see docs/decisions.md, C1).
 3. Our Lua files have balanced blocks (function/if/do/repeat vs end/until) and
    brackets. Not a parser, but it catches most broken edits without Lua installed.
 """

@@ -12,7 +12,7 @@ local S = UI.SPACE
 
 --[[
     Audit tab (officers, R4): every ledger entry in order, with a readable description.
-    Entries that could not be applied (Phase 8, S3) are shown in red with a count in the footer.
+    Entries that could not be applied (S3) are shown in red with a count in the footer.
     Right-click removes an entry (an ignore entry, synced to everyone).
 ]]--
 

@@ -3,10 +3,10 @@
 How we build and maintain BPGP. These are the conventions every change follows, for people and for Claude.
 
 - **What the addon is and how it works:** [ARCHITECTURE.md](ARCHITECTURE.md).
-- **What we're building and why:** [docs/](docs/README.md) (release plan, decisions, feature specs).
+- **Decisions that bind:** [docs/decisions.md](docs/decisions.md). **Words:** [GLOSSARY.md](GLOSSARY.md).
 - **This file:** *how* we write, check, test and ship the code.
 
-When a rule here conflicts with a decision in `docs/`, the decision wins. Fix this file in the same PR.
+When a rule here conflicts with a decision in `docs/decisions.md`, the decision wins. Fix this file in the same PR.
 
 ---
 
@@ -31,11 +31,11 @@ When a rule here conflicts with a decision in `docs/`, the decision wins. Fix th
 ### 1.2 From idea to code
 
 1. **Idea** → a file in `docs/ideas/` (template in `docs/README.md`).
-2. **Decision** → when something has more than one reasonable answer, ask the user with concrete options and a recommendation. Record the answer in the feature doc (for example R1-R11 in `docs/features/ui-redesign.md`). Don't reopen recorded decisions without asking.
-3. **Plan** → the phase in `docs/release-plan-v1.md` §6, with a "done when".
+2. **Decision** → when something has more than one reasonable answer, ask the user with concrete options and a recommendation. Decisions that will still bind once it's built go in `docs/decisions.md` with the next free ID. Don't reopen recorded decisions without asking.
+3. **Plan** → move the file to `docs/features/` and fill in scope and how we'll test it.
 4. **Build** → on a branch, following this file.
 5. **Check** → static checks (§9) plus an in-game checklist (§10).
-6. **Record** → tick the phase, update the status table, the feature doc's status and `CHANGELOG.md`.
+6. **Record** → `CHANGELOG.md`, `ARCHITECTURE.md` if the structure changed, then delete the feature file: once shipped, the code, the decisions and git history are the record.
 
 ### 1.3 Definition of done
 
@@ -45,7 +45,7 @@ A change is done when:
 - [ ] new WoW globals are added to `.luacheckrc`, and CI's luacheck passes;
 - [ ] `/reload` gives no Lua errors (BugSack empty), in normal mode and in test mode;
 - [ ] the in-game checklist for the change passes (the user runs it);
-- [ ] docs are updated: plan status, feature doc, `ARCHITECTURE.md` if the structure changed, `CHANGELOG.md`.
+- [ ] docs are updated: `docs/decisions.md` for new binding decisions, `ARCHITECTURE.md` if the structure changed, `GLOSSARY.md` for new terms, `CHANGELOG.md`.
 
 ---
 
@@ -109,9 +109,8 @@ This is where mistakes are expensive: a bad ledger entry syncs to the whole guil
 - **Undo** is `LedgerManager:Remove(entry)` (an ignore entry), never a deletion.
 - **Mutators are pure state updates.** No chat, no UI, no comms, no `C_Timer` inside a mutator. They run again on every replay.
 - **Mutators must be safe.** Check that the referenced roster/profile exists and that values are in range; return early otherwise. A throwing mutator is skipped and recorded, but its change is lost for everyone.
-- **Entry formats:**
-  - until the 1.0 release we may change entry types and fields (fresh ledger);
-  - **after 1.0 they're frozen.** An unknown or changed entry type breaks replay for everyone who has it. Add new entry types instead of changing old ones;
+- **Entry formats are frozen** since v1.0.0 (V7). An unknown or changed entry type breaks replay for everyone who has it:
+  - add new entry types instead of changing or removing old ones;
   - `RosterConfiguration` fields are stored by position: add new ones at the end only.
 - **Class ids** for entries are short and unique (`"DM"`, `"R6"`). Check `LedgerEntries.lua` files before picking one.
 - **Refresh the UI from ledger updates**, not from your own submit: use `LedgerManager:RegisterOnUpdate` and check `lag == 0 and uncommitted == 0` before a full refresh.
@@ -125,7 +124,7 @@ This is where mistakes are expensive: a bad ledger entry syncs to the whole guil
 - There is one officer level: guild ranks with "Is Officer". Check it with `CLM.MODULES.ACL:CheckLevel(CONSTANTS.ACL.LEVEL.OFFICER[, name])`.
 - **Every officer check is enforced on receive**, not only in the UI. Hiding a button is a convenience; the receiving side is the security.
 - Officer-only UI is **hidden** for raiders, not shown disabled (R11). Read-only settings are the exception: shown, but disabled.
-- Comm handlers check the *sender* (guild rank, raid role, creator == sender). See `docs/sync-and-security.md`.
+- Comm handlers check the *sender* (guild rank, raid role, creator == sender). See [ARCHITECTURE.md §9](ARCHITECTURE.md#9-sync-and-security) and decisions S3-S9.
 
 ### 5.2 No packager-only code
 
@@ -140,7 +139,7 @@ The guild still runs the real CLM, and both addons may be loaded together. Anyth
 | SavedVariables | `BPGP_*` |
 | Comm prefix | `BPGP` (`BPGPT` in test mode); prefix + channel ≤ 16 characters |
 | Frames, popups, tooltips | `BPGP_*` (global frame names are needed for Escape-to-close and tabs) |
-| AceGUI widget types, AceConfig app names | `BPGP...` / `bpgp_...` |
+| AceConfig app names | `BPGP...` / `bpgp_...` |
 | LibStub names of our forked libs | `BPGP-EventSourcing/*`, `BPGP-EventDispatcher` |
 | Global functions | only when WoW needs them (`BPGP_ToggleMainWindow` for the addon compartment) |
 
@@ -185,19 +184,20 @@ LibStub shares libraries between addons, so a forked lib under CLM's name would 
 
 ---
 
-## 7. UI conventions (Phase 9 onwards)
+## 7. UI conventions
 
-The full design language is in `docs/features/ui-redesign.md`. The short version:
+Every window looks like a native Blizzard frame.
 
 - **Build windows from `CLM.UI`:** `UI.CreateWindow`, `UI.CreateTabs`, `UI.CreateList`, `UI.CreateButton`, `UI.CreateInput`, `UI.CreateDropdown`, `UI.CreateCheckbox`, `UI.ShowContextMenu`, `UI.CreateItemButton`, `UI.CreateProgressBar`, `UI.CreateForm` (settings rows), `UI.Confirm` (confirmation popup), `UI.AcceptItems` (shift-click / drag an item into a field). No new AceGUI, AceConfigDialog, lib-st or LibUIDropDownMenu code.
 - If a piece is missing, add it to `Modules/UI/` (and to `Demo.lua`, so `/bpgp uitest` shows it) instead of building a one-off in a window.
+- **Frames:** the main window and the Bidding window use `PortraitFrameTemplate` with the BPGP logo; smaller windows (Award, Auction history, Import) use `DefaultPanelFlatTemplate`. Tabs sit along the bottom. Content wells use `InsetFrameTemplate`, column headers `ColumnDisplayTemplate`.
 - **Spacing:** the 4 px grid in `UI.SPACE`. 8 between controls and from frame edge to inset, 12 between groups, rows 20, buttons 22, inputs 20, a 60 px top band on portrait frames.
-- **Fonts:** GameFont objects only (`GameFontNormal` labels, `GameFontHighlight` values, `GameFontDisableSmall` meta, `NumberFontNormal` numbers, `GameFontNormalHuge` your PR).
-- **Colours:** `UI.COLOR` and `UI.TIER_COLOR`; class colours for names, item quality colours for items. Orange only in test mode.
+- **Fonts:** GameFont objects only (`GameFontNormal` labels, `GameFontHighlight` values, `GameFontDisableSmall` meta, `GameFontNormalLarge` section titles, `NumberFontNormal` numbers, `GameFontNormalHuge` your PR).
+- **Colours:** `UI.COLOR` and `UI.TIER_COLOR`. Class colours for names, item quality colours for items; green for BP, gold for GP and PR, grey for decay, red for problems. Tiers: BiS purple, Major blue, Minor green (R16). Orange only in test mode (frame edge, portrait tint, " — TEST MODE" in the title and a banner).
 - **Buttons:** one primary button per area, bottom-right; secondary buttons to its left.
 - **Confirm every write** with a `StaticPopup` (R6). Popup names are `BPGP_*`; the text says exactly what will happen ("Award 100 EP to 18 players in the raid?").
 - **Windows** are movable, clamped, close on Escape, remember their position (`dbKey`), get the test-mode tint, and respect the UI scale setting.
-- **New settings** go in the Settings tab (`Modules/MainWindow/Settings.lua`) as a form row that calls the module's getter and setter. Never add an Options → AddOns page.
+- **New settings** go in the Settings tab (`Modules/MainWindow/Settings.lua`) as a form row that calls the module's getter and setter. Never add an Options → AddOns page (D2).
 - **Views stay thin:** a window turns manager data into rows and calls manager methods on clicks. Business rules (who can be awarded, what a decay does) stay in managers.
 
 ---
@@ -229,33 +229,47 @@ There is no Lua interpreter or test harness for WoW UI code, so the static check
 ## 10. Testing in-game
 
 - **The user runs the in-game tests.** After every change that needs testing, give a **numbered, step-by-step checklist**: what to type or click and what they should see. Ask them to report BugSack errors with the step number.
-- **Test mode first** for anything that writes: `/bpgp test` (reloads the UI), `/bpgp testgroup 10`, *Simulate bids*. Test mode uses its own ledger and comm prefix.
+- **Test mode first** for anything that writes. Test mode has its own ledger and comm prefix, so nothing reaches the guild:
+  - `/bpgp test`, or Settings → Advanced → Test mode, switches it on or off (reloads the UI);
+  - `/bpgp testgroup 10` makes a simulated raid group, so you can start raids and auctions solo;
+  - alt-click an item, or type a link or item ID in the Auction tab's *Add item* box, to put it on the auction list without looting it;
+  - the *Simulate bids* button in the Auction tab makes the simulated raid members bid;
+  - *Reset test data* starts empty or from a copy of live data.
 - **Check that live data is untouched:** note the minimap tooltip's "N events (0x…)" before and after a test-mode session.
 - Test as an officer and, where the change differs for them, as a raider (a non-officer character or the raider view).
 - Test at UI scale 0.64 and 1.15 when the change is visual.
-- Multi-client parts (sync, bidding) need a second account; collect them for Phase 10 when that isn't possible now.
-- The addon folder is linked into `_retail_\Interface\AddOns\` with a directory junction, so `/reload` picks up changes. Adding or removing files that WoW loads by itself needs a full game restart.
+- Multi-client parts (sync, bidding) need a second account, both in test mode.
+
+### 10.1 Getting a branch into WoW
+
+The game runs whatever is in `<WoW>\_retail_\Interface\AddOns\BPGP`, normally the release installed from CurseForge. To test a branch:
+
+1. Turn off auto-update for BPGP in the CurseForge app, so it doesn't overwrite or flag the folder.
+2. Rename or remove `AddOns\BPGP`, then create a junction to the repo: `New-Item -ItemType Junction -Path "<WoW>\_retail_\Interface\AddOns\BPGP" -Target "<repo>\BPGP"`. `/reload` now picks up every edit.
+3. When done, remove **only the link**: `[System.IO.Directory]::Delete("<WoW>\_retail_\Interface\AddOns\BPGP")`. Never delete it recursively: that follows the link and deletes the repo's files.
+4. Reinstall the release from CurseForge and turn auto-update back on.
+
+Adding or removing files that WoW loads by itself (like `Bindings.xml`) needs a full game restart.
 
 ---
 
 ## 11. Documentation
 
-- Decisions go in `docs/` with the user's call; the code links to them in comments only where it helps ("R6: confirm everything").
-- Keep `docs/release-plan-v1.md` §6 status table current: it's the first thing anyone reads.
+- Docs hold what is still true. A plan or spec is deleted once it's carried out; git keeps the history. See [docs/README.md](docs/README.md).
+- Binding decisions go in `docs/decisions.md` with the user's call; the code cites them by ID in comments only where it helps ("R6: confirm everything").
 - `ARCHITECTURE.md` describes the structure. Update it when modules, entry types, channels or windows change.
-- `CHANGELOG.md` gets a line for every user-visible change.
-- Write docs in plain, short English: lists and tables over long paragraphs.
+- `GLOSSARY.md` holds our own terms; add one when a new concept gets a name.
+- `CHANGELOG.md` gets a line for every user-visible change. Released sections are never edited.
+- Write docs in plain, short English: lists and tables over long paragraphs. State each fact in one place and link to it.
 
 ---
 
 ## 12. Releasing
 
-The full process is in `docs/release-plan-v1.md` §10. In short:
-
 - Version in the TOC is `@project-version@`; the packager fills it from the git tag.
 - Tags: `v1.0.0-alpha1` (alpha), `v1.0.0-beta1` (beta, officers), `v1.0.0` (release).
-- Pushing a `v*` tag runs `.github/workflows/release.yml`: the BigWigs packager creates a GitHub Release with `BPGP-<tag>.zip`, then a separate job uploads the same build to CurseForge (project ID in the TOC as `## X-Curse-Project-ID`, upload token in the repository secret `CF_API_TOKEN`, see `docs/curseforge.md`). Raiders install and update with BPGP Updater; alpha/beta tags become pre-releases on GitHub, which the updater skips, and alpha/beta files on CurseForge.
-- Every CurseForge file is moderated before it's public (minutes to a few days), so don't count on a same-day CurseForge hotfix; the GitHub Release (and so the updater) is immediate.
-- BPGP Updater has its own repository and releases: [Blood-Promise/bpgp-updater](https://github.com/Blood-Promise/bpgp-updater). It needs each addon release to have a `BPGP-*.zip` containing `BPGP/BPGP.toc` with a filled-in `## Version:`. Don't change that layout without changing the updater.
-- Before tagging: `CHANGELOG.md` has a section for the version, checks pass, and the in-game checklist (§7 of the release plan) has been run.
-- After 1.0, ledger entry formats are frozen (§4) and every client in the guild must run a compatible version.
+- Pushing a `v*` tag runs `.github/workflows/release.yml`: the BigWigs packager creates a GitHub Release with `BPGP-<tag>.zip`, then a separate job uploads the same build to CurseForge (V13). Alpha/beta tags become pre-releases on GitHub and alpha/beta files on CurseForge. Setup, tokens and project texts: [docs/curseforge.md](docs/curseforge.md).
+- Raiders install and update from CurseForge, or download the zip from the GitHub Release (V14). Every CurseForge file is moderated before it's public (minutes to a few days), so a same-day hotfix only reaches people through the GitHub Release.
+- **Keep the zip layout:** `BPGP-*.zip` contains `BPGP/BPGP.toc` with a filled-in `## Version:`. CurseForge validates it, manual installs need it, and [BPGP Updater](https://github.com/Blood-Promise/bpgp-updater), still used by a few raiders, reads it.
+- Before tagging: `CHANGELOG.md` has a section for the version, checks pass, and the changes were tested in-game.
+- Ledger entry formats are frozen (§4); every client in the guild must run a compatible version.

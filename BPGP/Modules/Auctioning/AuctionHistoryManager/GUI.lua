@@ -11,7 +11,7 @@ local UI = CLM.UI
 local S = UI.SPACE
 
 --[[
-    Auction history window (Phase 9e, ui-redesign.md "Auction history"). Officers only.
+    Auction history window. Officers only.
     Finished auctions, newest first. Click an entry to show its bids under it.
     Right-click: Post bids · Remove auction · Remove older than 7 days · Remove all.
 ]]--

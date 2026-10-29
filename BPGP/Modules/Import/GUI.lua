@@ -11,7 +11,7 @@ local UI = CLM.UI
 local S = UI.SPACE
 
 --[[
-    Standings import window (Phase 6, rebuilt on Modules/UI in 9e). Officers only.
+    Standings import window. Officers only.
     Paste "Name, EP, GP" lines, Preview checks every line, Apply writes the SET entries.
 ]]--
 

@@ -11,12 +11,12 @@ local UI = CLM.UI
 local S = UI.SPACE
 
 --[[
-    Settings tab (Phase 9c, ui-redesign.md R3, ui-overhaul.md): one tab with sections on the left.
+    Settings tab (R3): one tab with sections on the left.
       Personal     your own settings, stored per character (officer parts only for officers)
       Guild        roster settings: ledger entries that sync to everyone; read-only unless officer (D3)
       Gear values  default GP per slot and tier, and the per-item overrides
       Advanced     test mode for everyone; logging and removing the roster for officers
-    The Options -> AddOns pages are gone (D2). Which settings exist follows the K/F/D calls in ui-overhaul.md.
+    The Options -> AddOns pages are gone (D2).
 ]]--
 
 local NAV_WIDTH = 110

@@ -7,7 +7,7 @@ if not eventDispatcher then return end
 ---@field Amount FontString
 ---@field Icon Texture
 
--- Toasts use Blizzard's loot toast art with our logo; text colours follow the UI roles (ui-redesign.md)
+-- Toasts use Blizzard's loot toast art with our logo; text colours follow the UI roles (DEVELOPMENT-GUIDELINES.md §7)
 local LOGO = CLM.MEDIA_PATH .. "Icons\\bpgp-32.png"
 local GREEN, GOLD, GREY, RED = {0.12, 1, 0}, {1, 0.82, 0}, {0.62, 0.62, 0.62}, {1, 0.13, 0.13}
 
