@@ -2,8 +2,8 @@
 
 > **Audience:** developers working on the addon.
 > Covers structure, key design patterns, data flow and module responsibilities.
-> BPGP is a fork of Core Loot Manager (CLM) v5.7.8, trimmed to EPGP only on retail (Midnight, 12.x). The internal Lua namespace is still `CLM`. Players see effort points as **Boomer Points (BP)**; the code and these docs still call them EP.
-> Plans and decisions live in [`docs/`](docs/README.md).
+> BPGP is a fork of Core Loot Manager (CLM) v5.7.8, trimmed to EPGP only on retail (Midnight, 12.x). The internal Lua namespace is still `CLM`. Players see effort points as **Boomer Points (BP)**; the code and these docs still call them EP ([GLOSSARY.md](GLOSSARY.md)).
+> Binding decisions (S3, R16, …) are in [docs/decisions.md](docs/decisions.md).
 
 ---
 
@@ -33,20 +33,19 @@ bp-epgp/
 │       ├── Ledger/LedgerManager/    # Wrapper around LibEventSourcing
 │       ├── Profiles/                # ProfileManager (one character = one profile), ProfileInfoManager (versions)
 │       ├── Rosters/RosterManager/   # The single roster, its configuration, slot values, item overrides
-│       ├── Raids/RaidManager/       # Raids, raid members, on-time bonus
+│       ├── Raids/                   # RaidManager (raids, raid members, on-time bonus), RaidReminders (start/end raid prompts)
 │       ├── Points/PointManager/     # EP/GP award, set and decay
 │       ├── Loot/LootManager/        # Loot awards (GP charges), Award window
 │       ├── Auctioning/              # AuctionManager (officer), BiddingManager (raider), AuctionHistory, TradeHelper, Common
-│       ├── Import/                  # Standings import (Name, EP, GP)
-│       ├── Global/                  # Slash commands, chat handlers, global configs, guild change handler
+│       ├── Import/                  # Standings import (Name, EP, GP) and its window
+│       ├── Global/                  # Slash commands, chat handlers, global configs, guild change handler,
+│       │                            # loot roll handler (Pass on loot, Need on everything)
 │       ├── UI/                      # Shared Blizzard-template UI pieces (windows, tabs, lists, inputs, menus)
 │       ├── MainWindow/              # Main window and its pages (Standings, Auction, Trade, History, Raids, Roster, Audit, Settings)
 │       └── Alerts/                  # Alert toasts (points received, bid accepted/denied)
-├── docs/                            # Release plan, decisions, feature docs, design spec (not packaged)
+├── docs/                            # Decisions, plans for upcoming work, CurseForge reference (not packaged)
 └── scripts/                         # check_addon.py (TOC/XML references, packager markers, Lua balance)
 ```
-
-Phase 9 of the release plan replaces the AceGUI/lib-st windows with Blizzard templates, built from shared pieces in `Modules/UI/` ([docs/features/ui-redesign.md](docs/features/ui-redesign.md)).
 
 ---
 
@@ -71,7 +70,7 @@ All files share one addon table via `local name, CLM = ...`. It's also exposed a
 - SavedVariables: `BPGP_DB`, `BPGP_Logs`, `BPGP_Minimap`;
 - comm prefix: `BPGP` (`BPGPT` in test mode);
 - frames and popups: `BPGP_*`;
-- AceGUI widget types, and the LibStub names of the forked libraries: `BPGP-EventSourcing/*`, `BPGP-EventDispatcher`.
+- AceConfig app names, and the LibStub names of the forked libraries: `BPGP-EventSourcing/*`, `BPGP-EventDispatcher`.
 
 ---
 
@@ -104,10 +103,7 @@ This is the most important thing to understand.
 
 1. **Every change** (create roster, add profiles, award EP, charge GP, decay, settings) is a `LogEntry` submitted to the ledger. It is never applied to state directly.
 2. **State is a replay.** Registered *mutators* rebuild all in-memory state from the entries. An entry inserted in the past triggers a full replay.
-3. **Sync** happens over the `LedgerS3` (control) and `LedgerD3` (data) channels:
-   - officers advertise week hashes on GUILD;
-   - clients request the weeks they're missing;
-   - a new entry is pushed live to the guild.
+3. **Sync** keeps every client's ledger the same (§9).
 
 ```lua
 -- 1. Entry type (LedgerEntries.lua next to the manager)
@@ -124,14 +120,10 @@ end)
 CLM.MODULES.LedgerManager:Submit(MyEntry:new(uid, 10), true)
 ```
 
-- **Undo:** `LedgerManager:Remove(entry)` writes an ignore entry; the target is skipped on replay.
-- **Hardening** (Phase 8, [docs/sync-and-security.md](docs/sync-and-security.md)):
-  - A failing or unknown entry is skipped and recorded, not fatal.
-  - Checksums include each entry's content.
-  - Only officers advertise or send data.
-  - A live push must come from the entry's creator.
-  - Entries dated in the future are dropped.
-- **Entry formats are free to change until 1.0**, because v1.0 starts with a fresh ledger. After 1.0 they're frozen.
+- **Identity:** an entry is identified by `(timestamp, counter, creator realm, creator id)`, where the creator is the integer part of the character GUID. The ledger is sorted by identity and only ever appended to.
+- **Undo:** `LedgerManager:Remove(entry)` writes an ignore (`IGN`) entry; the target is skipped on replay.
+- **A failing or unknown entry** is skipped and shown in the Audit tab, not fatal (S3). Its change is lost for everyone, so mutators must check their input.
+- **Entry formats are frozen** since v1.0.0 (V7): add new entry types, never change or remove old ones.
 
 ---
 
@@ -149,10 +141,17 @@ CLM.MODULES.LedgerManager:Submit(MyEntry:new(uid, 10), true)
 
 The optional `schema` fills in missing keys on load.
 
-**Test mode** is fixed for a session; switching reloads the UI ([docs/features/test-mode.md](docs/features/test-mode.md)). In test mode:
-- `DB:Ledger()` returns the test ledger;
-- comms use the `BPGPT` prefix;
-- chat is printed locally instead of sent.
+**Test mode** (`Modules/Common/TestMode`, V10) is fixed for a session; switching reloads the UI, and is blocked during a running auction. Isolation is structural:
+- `DB:Ledger()` returns `ledger_test`, so a test client never holds a reference to the live ledger;
+- every comm prefix is `BPGPT…` instead of `BPGP…`, and a live client never registers it. Prefix + channel name must fit WoW's 16 characters, so channel names stay ≤ 11;
+- chat is printed locally with a `[TEST]` prefix; raid warnings are never sent;
+- permissions are unchanged: test mode never loosens who may write.
+
+Simulation tools are normal shipped code behind `TestMode:IsOn()`:
+- **Simulated raid group:** `TestMode:GetSimulatedGroup()` returns you (raid leader) plus guild members, roster members first. `RaidManager` reads it instead of the raid roster while you're not in a real group. It's stored in the personal DB.
+- **Solo auctions:** without a real group, `Comms:Send` turns RAID/PARTY traffic into a whisper to yourself, so your own Bidding window receives the auction. Whispers to simulated players are dropped.
+- **Simulated bidders:** each other raid member gets a random tier bid, OS bid, pass or no response, passed to `AuctionManager:HandleSubmitBid` like a received bid.
+- In a real group (several testers), the real raid roster and comms are used on the `BPGPT` prefix.
 
 ---
 
@@ -167,9 +166,9 @@ Roster
 ├── uid
 ├── configuration        RosterConfiguration (starting EP/GP, min GP, rounding, on-time bonus,
 │                        min standing, OS, auction length, anti-snipe, roll time, ...)
-├── defaultSlotValues    GP per gear slot × 5 tiers (Base, Small, Medium, Large, Max)
+├── defaultSlotValues    GP per gear slot × tier key; only Base, Small and Medium are used (Minor, Major, BiS, R16)
 ├── itemValues           per-item overrides (written automatically when an auction starts)
-├── fieldNames           tier button names
+├── fieldNames           old custom tier names: still replayed, no longer shown
 ├── inRoster / standings (EP) / pointInfo (GP and totals)
 ├── pointHistory / profilePointHistory
 └── raidLoot / profileLoot
@@ -199,13 +198,49 @@ An awarded item: item, GP charged, time, raid, player. Rebuilt from loot entries
 | `OFFICER` | Guild ranks with **"Is Officer"** (rank permission flags 11/12) |
 | `GUILD_MASTER` | Guild Master |
 
-- `TrustInfoProvider` reads the guild roster and rank permissions.
+- `TrustInfoProvider` reads the guild roster and rank permissions every time the guild roster updates. Ranks and permissions come from the server, and only the GM can change them.
+- On Midnight the Rank Permissions screen has one **"Is Officer"** checkbox instead of separate view/edit officer note boxes. Flags 11 and 12 (`C_GuildInfo.GuildControlGetRankFlags`) are on for exactly those ranks, on a GM's and a raider's client alike (verified in-game 2026-10-16). Giving a rank "Is Officer" therefore gives it full ledger rights (S1, S2).
 - `ACL:CheckLevel(level, name)` gates actions, both when sending and when receiving.
-- Officer checks are enforced on **receive** too, not only in the UI.
+- Officer checks are enforced on **receive** too, not only in the UI. Hiding a button is a convenience; the receiving side is the security.
+- Before the guild roster has loaded the trust cache is empty and all data is dropped: this fails safe, the first sync is just slower.
 
 ---
 
-## 9. Communications (`CLM.MODULES.Comms`)
+## 9. Sync and security
+
+Every client ends up with the union of all accepted entries (eventually consistent). Only officers send data; raiders listen, compare hashes and ask for missing weeks. Live updates and catch-up carry the same entries: one entry when it's created, whole weeks for someone who was offline.
+
+```
+ Officer A (creates entry)               Everyone in guild
+ ─────────────────────────               ─────────────────
+ Submit(entry)
+   ├─ local check: am I an officer?
+   ├─ insert in own ledger
+   └─ entry ── LedgerD3, GUILD ───────► sender is an officer? creator == sender? not in the future?
+                                        → insert into ledger → replay → standings update
+
+ Every 10 s, each officer:
+   AdvertiseHash{ last 8 weeks + 8 rolling older weeks:
+                  (week, checksum incl. entry content, entry count),
+                  overall state checksum }  ── LedgerS3, GUILD ──►  every client compares each week
+                                                                    mismatch → RequestWeek(w)
+ Officers that advertised week w (alphabetically first name wins, 3-8 s random delay):
+   WeekData{w, all entries of week w} ── LedgerD3, GUILD ──► everyone merges missing entries (dedup by identity)
+```
+
+The receive-side rules are S3-S7 in [docs/decisions.md](docs/decisions.md). The code is `Libs/LibEventSourcing/source/ListSync.lua` (adverts, requests, week data), `StateManager.lua` (replay), `Modules/Ledger/LedgerManager/LedgerManager.lua` (authorization handlers) and `Modules/Common/Comms/Comms.lua` (per-channel checks, before decoding, so junk is cheap to drop).
+
+**What holds:**
+- Addon-message sender names are set by the WoW server and can't be faked.
+- Non-officers can't inject data: their data is dropped at the comms layer.
+- Editing your own SavedVariables only affects you, because raiders never send data.
+
+**Inherent limits (accepted):**
+- **Officers are trusted.** Without per-officer signatures, a malicious officer can still write arbitrary entries, including ones relayed in week data that claim another officer as creator. The Audit tab and undo are the safety net.
+- **Data is public within the guild.** Standings and history are broadcast to GUILD, as EPGP intends.
+- **Auctions are not ledger data.** Auction start/stop and bids are live RAID/WHISPER messages; only the result (the GP charge) becomes an entry.
+
+### Communications (`CLM.MODULES.Comms`)
 
 Comms wraps AceComm-3.0 and handles serialisation, compression and a security callback per channel. Addon messages are queued during Midnight's chat or encounter lockdown.
 
@@ -213,22 +248,24 @@ Comms wraps AceComm-3.0 and handles serialisation, compression and a security ca
 |---------|----------|---------------|---------|
 | `LedgerS3` | `LEDGER.SYNC` | guild members | Hash advertisements (officers only), week requests, peer state |
 | `LedgerD3` | `LEDGER.DATA` | officers | Week data and live entries |
-| `Auction5` | `AUCTION` | officer raid leader/assistant | Auction start/stop, anti-snipe, bid accepted/denied |
+| `Auction5` | `AUCTION` | an officer in your raid group (S9, R19) | Auction start/stop, anti-snipe, bid accepted/denied |
 | `Bidding5` | `BIDDING` | anyone (validated by the auctioneer) | Bids |
-| `Bids2<n>` | `BIDANNOUNCE` | officer raid leader/assistant | Bid list for raiders (open auction) |
+| `Bids2<n>` | `BIDANNOUNCE` | an officer in your raid group | Bid list for raiders (open auction) |
 | `Version2` | `GLOBAL` | anyone | Version announcements |
 
 ---
 
 ## 10. Auctioning
 
-- **AuctionManager:** runs on the auctioneer's client (an officer who is raid leader/assistant). It owns the auction, broadcasts items, timers and bids, validates bids, and awards the winner (a GP ledger entry).
+- **AuctionManager:** runs on the auctioneer's client: an officer who is raid leader/assistant, or the officer with *Need on everything* on (R19). It owns the auction, broadcasts items, timers and bids, validates bids, and awards the winner (a GP ledger entry).
 - **BiddingManager:** runs on every raider's client. It shows the bidding window and sends bids.
 - **AuctionInfo / AuctionItem:** shared models of the auction in progress.
 - **AuctionHistoryManager:** keeps finished auctions with their bids.
 - **TradeHelper:** tracks awarded items per winner and puts them in the trade window.
 
-Auctions are always **Open** with **named tier buttons**: each of the 5 tiers has its own GP, plus OS, Pass and Cancel. GP values come from the slot table or item overrides. Anti-snipe and a `/roll` phase are supported.
+Auctions are always **Open**. Bidders choose one of three fixed tiers (BiS, Major, Minor, R16), each with its own GP from the slot table or item overrides, or OS or Transmog (both 0 GP, R14, R29), Pass or Cancel. Ranking: tier → OS → Transmog, then PR, then roll; among Transmog bids PR doesn't count. Anti-snipe and a `/roll` phase are supported.
+
+The auction list fills from corpses, the auctioneer's own loot and the Loot Rolls history, keeping only tradeable Epic+ Weapon, Armor and Miscellaneous items (R20, R26, R28). `Global/GlobalLootRollHandler.lua` handles *Pass on loot* and *Need on everything* for the same item classes.
 
 ---
 
@@ -253,7 +290,7 @@ Each works for selected players, the whole roster, or the current raid. PR is EP
 - Separate windows, all on `Modules/UI`: Bidding (`BiddingWindow.lua`), Award (`AwardGUI.lua`), Auction history and Import standings (each module's `GUI.lua`). The trade list is the Trade tab (`Modules/MainWindow/Trade.lua`).
 - The rule: GUI reads from managers and writes only through manager methods.
 
-Shared pieces for every window are in `Modules/UI/` ([docs/features/ui-redesign.md](docs/features/ui-redesign.md)).
+Shared pieces for every window are in `Modules/UI/` (`UI.lua`, `List.lua`); `/bpgp uitest` shows them. The conventions are in [DEVELOPMENT-GUIDELINES.md §7](DEVELOPMENT-GUIDELINES.md#7-ui-conventions).
 
 ---
 
@@ -267,7 +304,7 @@ Shared pieces for every window are in `Modules/UI/` ([docs/features/ui-redesign.
 
 ## 14. Adding a feature: checklist
 
-1. **Ledger entry** in the manager's `LedgerEntries.lua`, with a unique short class id. Formats are frozen after 1.0.
+1. **Ledger entry** in the manager's `LedgerEntries.lua`, with a unique short class id. Existing formats are frozen: add a new type instead of changing one.
 2. **Mutator** registered in the manager's `Initialize()`. Make it robust: a throwing mutator is skipped, not fatal, but the change is lost.
 3. **Manager** initialized in `CORE:_InitializeFeatures()` at the right position.
 4. **GUI** in `CLM.GUI`. It reads from managers and writes through them.
