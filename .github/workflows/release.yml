@@ -3,10 +3,10 @@ name: Release
 # Pushing a tag like v1.0.0 publishes the addon as a GitHub Release with BPGP-v1.0.0.zip,
 # built by the BigWigs packager (fills in @project-version@, uses .pkgmeta), and uploads the
 # same build to CurseForge.
-# Tags with "alpha" or "beta" become a pre-release on GitHub (BPGP Updater skips those) and an
-# alpha/beta file on CurseForge.
-# BPGP Updater (Blood-Promise/bpgp-updater) installs from the GitHub releases and needs the zip
-# to contain BPGP/BPGP.toc with the version filled in.
+# Tags with "alpha" or "beta" become a pre-release on GitHub and an alpha/beta file on CurseForge.
+# Raiders install from CurseForge or the GitHub release; a few still use BPGP Updater
+# (Blood-Promise/bpgp-updater). All of them need the zip to contain BPGP/BPGP.toc with the
+# version filled in.
 # CurseForge is a separate job, so a failed upload there (moderation, API trouble) never blocks
 # the GitHub Release. The project ID is in the TOC (X-Curse-Project-ID); the upload token is
 # the repository secret CF_API_TOKEN. Without the secret the upload is skipped with a notice.

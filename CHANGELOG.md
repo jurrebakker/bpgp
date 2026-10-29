@@ -3,6 +3,8 @@
 ## Changes
 ### Award price
 Fixed: after awarding an item, the Auction tab's Value box could keep the previous item's GP, so pressing Enter charged a Transmog or OS winner that price. The box now follows the selected winner and is cleared after every award. The award confirmation shows the winner's bid, e.g. "Award X to Y (Transmog) for 0 GP?".
+### Installing and updating
+Install and update BPGP with the CurseForge app, or download the zip from the GitHub release. BPGP Updater still works if you already use it.
 
 # BPGP v1.0.7 (2026-10-22)
 
@@ -17,6 +19,26 @@ An OS bid costs 0 GP, like Transmog. OS still ranks above Transmog and is ranked
 The auction list always fills from boss corpses and from the auctioneer's own loot, with Epic or better weapons, armor and miscellaneous items (like tier tokens) only. Crafting sparks, reagents, consumables and the like are no longer added. The "Filling the auction list" settings are gone. Adding an item by hand (auction click) still works for any item.
 ### Pass on loot and Need on everything
 Both now only roll on weapons, armor and miscellaneous items. Raiders roll on everything else themselves, like consumables and housing decor.
+
+# BPGP v1.0.1 - v1.0.5 (2026-10-18)
+
+Written afterwards: these releases came out during the first raid tests without changelog entries.
+
+## Changes
+### Three bid tiers
+The tier buttons are now **BiS**, **Major** and **Minor**, with fixed names and colours; the tier name settings are gone. They use the Medium, Small and Base gear values, so existing GP values keep their meaning.
+### Need on everything
+New officer checkbox under *Pass on loot*: rolls Need (else Greed, else Transmog) on boss loot, so the officer who runs the auctions collects it. Turning it on when you aren't raid leader or assistant asks first. The officer with it on may run auctions without assist.
+### Auction list
+Only tradeable items are added. Items are also added from the Loot Rolls history, and *Add from loot rolls* in the Auction tab adds the last boss's items that are missing. The winner the Auction tab selects is highlighted in the bid list.
+### Trading
+The trade list is now a **Trade** tab in the main window (`/bpgp trade`). Awarding an item whispers the winner to open a trade; items the auctioneer awards to themselves aren't listed. Ending a raid with items still to trade warns first.
+### Bidding window
+An item icon strip on the left replaces "Item 2 of 4": click an icon to switch, and the border shows whether you bid, passed or were denied.
+### Raids
+A small reminder asks to start a raid when you enter the raid instance, and to end it when you leave the group. Ending a raid with *Need on everything* on asks to decay 10% BP and GP.
+### Loot debug
+`/bpgp lootdebug` traces why items are or aren't added to the auction list.
 
 # BPGP v1.0.0 (2026-10-18)
 
